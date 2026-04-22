@@ -1,0 +1,72 @@
+{
+  "name": "alpacabitollama",
+  "version": "1.0.0",
+  "description": "Desktop application for llama.cpp with system tray and auto model downloads",
+  "main": "main.js",
+  "scripts": {
+    "copy-webui": "node build-webui.js",
+    "start": "electron .",
+    "build": "npm run copy-webui && electron-builder --win",
+    "build:portable": "npm run copy-webui && electron-builder --win portable",
+    "build:installer": "npm run copy-webui && electron-builder --win nsis"
+  },
+  "build": {
+    "appId": "com.ggml.llamacpp",
+    "productName": "alpacabitollama",
+    "directories": {
+      "output": "release",
+      "buildResources": "resources"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "setup.html",
+      "settings.html",
+      "loading.html",
+      "public/**/*",
+      "bin/**/*",
+      "resources/**/*",
+      "resources/models/**/*"
+    ],
+    "asarUnpack": [
+      "public/**/*",
+      "bin/**/*"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "resources/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "runAfterFinish": true,
+      "deleteAppDataOnUninstall": true,
+      "artifactName": "alpacabitollama-Setup-${version}.exe"
+    },
+    "portable": {
+      "artifactName": "alpacabitollama-${version}-portable.exe"
+    }
+  },
+  "dependencies": {
+    "electron-store": "^8.1.0"
+  },
+  "devDependencies": {
+    "electron": "^41.2.2",
+    "electron-builder": "^26.8.1"
+  }
+}

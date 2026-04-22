@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { ChevronDown, Loader2, Package } from '@lucide/svelte';
+	import { ChevronDown, Loader2, Package, RefreshCw } from '@lucide/svelte';
 	import * as Sheet from '$lib/components/ui/sheet';
 	import { cn } from '$lib/components/ui/utils';
 	import {
@@ -11,7 +11,7 @@
 		selectedModelId,
 		singleModelName
 	} from '$lib/stores/models.svelte';
-	import { isRouterMode } from '$lib/stores/server.svelte';
+	import { isRouterMode, serverStore } from '$lib/stores/server.svelte';
 	import {
 		DialogModelInformation,
 		ModelsSelectorList,
@@ -85,6 +85,45 @@
 	let showModelDialog = $state(false);
 	let infoModelId = $state<string | null>(null);
 
+	// Electron desktop app support: list installed models in MODEL mode
+	let isElectron = $state(false);
+	let installedModels = $state<{ filename: string; sizeFormatted: string }[]>([]);
+	let switchingModel = $state(false);
+
+	function getApi() {
+		return (window as any).llamaAPI;
+	}
+
+	async function loadInstalledModels() {
+		const api = getApi();
+		if (!api?.getInstalledModels) return;
+		try {
+			installedModels = await api.getInstalledModels();
+		} catch (e) {
+			console.error('Failed to load installed models:', e);
+		}
+	}
+
+	async function switchToModel(filename: string) {
+		const api = getApi();
+		if (!api?.switchModel) return;
+		switchingModel = true;
+		try {
+			const result = await api.switchModel(filename);
+			if (result?.success) {
+				await modelsStore.fetch(true);
+				await serverStore.fetch();
+			} else {
+				console.error('Failed to switch model:', result?.error);
+			}
+		} catch (e) {
+			console.error('Error switching model:', e);
+		} finally {
+			switchingModel = false;
+			sheetOpen = false;
+		}
+	}
+
 	function handleInfoClick(modelName: string) {
 		infoModelId = modelName;
 		showModelDialog = true;
@@ -94,6 +133,10 @@
 		modelsStore.fetch().catch((error) => {
 			console.error('Unable to load models:', error);
 		});
+		isElectron = !!(window as any).llamaAPI;
+		if (isElectron) {
+			loadInstalledModels();
+		}
 	});
 
 	function handleOpenChange(open: boolean) {
@@ -290,29 +333,96 @@
 				</Sheet.Content>
 			</Sheet.Root>
 		{:else}
-			<button
-				class={cn(
-					`inline-flex cursor-pointer items-center gap-1.5 rounded-sm bg-muted-foreground/10 px-1.5 py-1 text-xs transition hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60`,
-					!isCurrentModelInCache
-						? 'bg-red-400/10 !text-red-400 hover:bg-red-400/20 hover:text-red-400'
-						: forceForegroundText
-							? 'text-foreground'
-							: isHighlightedCurrentModelActive
+			{#if isElectron}
+				<Sheet.Root bind:open={sheetOpen} onOpenChange={(open) => { if (!open) sheetOpen = false; if (open && isElectron) loadInstalledModels(); }}>
+					<Sheet.Trigger
+						class={cn(
+							`inline-flex cursor-pointer items-center gap-1.5 rounded-sm bg-muted-foreground/10 px-1.5 py-1 text-xs transition hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60`,
+							forceForegroundText ? 'text-foreground' : 'text-muted-foreground'
+						)}
+						style="max-width: min(calc(100cqw - 6.5rem), 32rem)"
+						disabled={disabled || updating || switchingModel}
+					>
+						<Package class="h-3.5 w-3.5" />
+						{#if switchingModel}
+							<span class="min-w-0 truncate font-medium">Restarting…</span>
+						{:else if selectedOption}
+							<span class="min-w-0 truncate font-medium">{selectedOption.name}</span>
+						{/if}
+						{#if switchingModel}
+							<Loader2 class="h-3 w-3.5 animate-spin" />
+						{:else}
+							<ChevronDown class="h-3 w-3.5" />
+						{/if}
+					</Sheet.Trigger>
+					<Sheet.Content side="bottom" class="max-h-[60vh] gap-1">
+						<Sheet.Header>
+							<Sheet.Title>Select Model</Sheet.Title>
+							<Sheet.Description class="sr-only">
+								Choose an installed model to load
+							</Sheet.Description>
+						</Sheet.Header>
+						<div class="flex flex-col gap-1 pb-4">
+							{#if installedModels.length === 0}
+								<p class="px-3 py-3 text-center text-sm text-muted-foreground">
+									No models installed.
+								</p>
+							{:else}
+								{#each installedModels as model (model.filename)}
+									{@const isCurrent = selectedOption?.name === model.filename}
+									<button
+										type="button"
+										class={cn(
+											'flex w-full flex-col gap-0.5 rounded-md px-3 py-2.5 text-left text-sm',
+											isCurrent
+												? 'bg-accent text-foreground'
+												: 'hover:bg-muted/50'
+										)}
+										disabled={isCurrent || switchingModel}
+										onclick={() => {
+											if (!isCurrent) switchToModel(model.filename);
+										}}
+									>
+										<div class="flex w-full items-center justify-between gap-2">
+											<span class="truncate">{model.filename}</span>
+											{#if isCurrent}
+												<span class="text-xs text-muted-foreground">Active</span>
+											{:else if switchingModel}
+												<RefreshCw class="h-3 w-3 animate-spin" />
+											{/if}
+										</div>
+										<span class="text-xs text-muted-foreground">{model.sizeFormatted}</span>
+									</button>
+								{/each}
+							{/if}
+						</div>
+					</Sheet.Content>
+				</Sheet.Root>
+			{:else}
+				<button
+					class={cn(
+						`inline-flex cursor-pointer items-center gap-1.5 rounded-sm bg-muted-foreground/10 px-1.5 py-1 text-xs transition hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60`,
+						!isCurrentModelInCache
+							? 'bg-red-400/10 !text-red-400 hover:bg-red-400/20 hover:text-red-400'
+							: forceForegroundText
 								? 'text-foreground'
-								: 'text-muted-foreground'
-				)}
-				style="max-width: min(calc(100cqw - 6.5rem), 32rem)"
-				onclick={() => handleOpenChange(true)}
-				disabled={disabled || updating}
-			>
-				<Package class="h-3.5 w-3.5" />
+								: isHighlightedCurrentModelActive
+									? 'text-foreground'
+									: 'text-muted-foreground'
+					)}
+					style="max-width: min(calc(100cqw - 6.5rem), 32rem)"
+					onclick={() => handleOpenChange(true)}
+					disabled={disabled || updating}
+				>
+					<Package class="h-3.5 w-3.5" />
 
-				<TruncatedText text={selectedOption?.model || ''} class="min-w-0 font-medium" />
+					<TruncatedText text={selectedOption?.model || ''} class="min-w-0 font-medium" />
 
-				{#if updating}
-					<Loader2 class="h-3 w-3.5 animate-spin" />
-				{/if}
-			</button>
+					{#if updating}
+						<Loader2 class="h-3 w-3.5 animate-spin" />
+					{/if}
+				</button>
+			{/if}
 		{/if}
 	{/if}
 </div>

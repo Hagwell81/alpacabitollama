@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>alpacabitollama - Settings</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      margin: 0;
+      background: #f5f6fa;
+      color: #333;
+      min-height: 100vh;
+    }
+    .header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 20px 30px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .header h1 { margin: 0; font-size: 24px; }
+    .header .subtitle { opacity: 0.9; font-size: 14px; }
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .section {
+      background: white;
+      border-radius: 10px;
+      padding: 25px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    .section-title {
+      font-size: 18px;
+      font-weight: 600;
+      margin: 0 0 15px 0;
+      color: #444;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .section-desc {
+      color: #666;
+      font-size: 14px;
+      margin-bottom: 20px;
+    }
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin-bottom: 15px;
+    }
+    .info-card {
+      background: #f8f9fa;
+      border-radius: 8px;
+      padding: 15px;
+      text-align: center;
+    }
+    .info-card .value {
+      font-size: 22px;
+      font-weight: 600;
+      color: #667eea;
+    }
+    .info-card .label {
+      font-size: 12px;
+      color: #888;
+      margin-top: 5px;
+    }
+    .search-box {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+    .search-box input {
+      flex: 1;
+      padding: 12px 15px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+    .search-box input:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+    .search-box button {
+      padding: 12px 24px;
+      background: #667eea;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+    }
+    .search-box button:hover { background: #5568d3; }
+    .search-box button:disabled { opacity: 0.6; cursor: not-allowed; }
+    .hf-token {
+      margin-bottom: 10px;
+    }
+    .hf-token input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 13px;
+    }
+    .model-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    .model-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 15px;
+      border-bottom: 1px solid #eee;
+      transition: background 0.2s;
+    }
+    .model-item:hover { background: #f8f9fa; }
+    .model-item:last-child { border-bottom: none; }
+    .model-info {
+      flex: 1;
+    }
+    .model-name {
+      font-weight: 500;
+      font-size: 14px;
+      color: #333;
+    }
+    .model-meta {
+      font-size: 12px;
+      color: #888;
+      margin-top: 3px;
+    }
+    .model-actions {
+      display: flex;
+      gap: 8px;
+    }
+    .btn-small {
+      padding: 6px 12px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 500;
+    }
+    .btn-danger { background: #e74c3c; color: white; }
+    .btn-danger:hover { background: #c0392b; }
+    .btn-primary { background: #667eea; color: white; }
+    .btn-primary:hover { background: #5568d3; }
+    .btn-secondary { background: #6c757d; color: white; }
+    .btn-secondary:hover { background: #5a6268; }
+    .progress-bar {
+      width: 100%;
+      height: 6px;
+      background: #eee;
+      border-radius: 3px;
+      overflow: hidden;
+      margin-top: 8px;
+    }
+    .progress-fill {
+      height: 100%;
+      background: #667eea;
+      transition: width 0.3s;
+    }
+    .progress-text {
+      font-size: 11px;
+      color: #888;
+      margin-top: 4px;
+    }
+    .empty-state {
+      text-align: center;
+      padding: 40px;
+      color: #888;
+    }
+    .empty-state .icon { font-size: 40px; margin-bottom: 10px; }
+    .repo-result {
+      background: #f8f9fa;
+      border-radius: 8px;
+      padding: 15px;
+      margin-top: 15px;
+    }
+    .repo-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 10px;
+    }
+    .repo-title {
+      font-weight: 600;
+      font-size: 16px;
+    }
+    .repo-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-top: 5px;
+    }
+    .tag {
+      background: #667eea;
+      color: white;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+    }
+    .gguf-files {
+      margin-top: 10px;
+    }
+    .gguf-file {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 10px;
+      background: white;
+      border-radius: 6px;
+      margin-bottom: 6px;
+    }
+    .gguf-file-info {
+      flex: 1;
+    }
+    .gguf-file-name {
+      font-size: 13px;
+      font-weight: 500;
+    }
+    .gguf-file-size {
+      font-size: 11px;
+      color: #888;
+    }
+    .spinner {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid #ddd;
+      border-top-color: #667eea;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      padding: 12px 20px;
+      border-radius: 8px;
+      color: white;
+      font-weight: 500;
+      z-index: 1000;
+      animation: slideIn 0.3s ease;
+    }
+    .toast.success { background: #27ae60; }
+    .toast.error { background: #e74c3c; }
+    .toast.info { background: #3498db; }
+    @keyframes slideIn {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+    .back-link {
+      color: white;
+      text-decoration: none;
+      opacity: 0.8;
+      font-size: 14px;
+    }
+    .back-link:hover { opacity: 1; }
+    .data-folder-path {
+      font-family: monospace;
+      font-size: 12px;
+      background: #f0f0f0;
+      padding: 8px 10px;
+      border-radius: 5px;
+      word-break: break-all;
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div>
+      <h1>alpacabitollama Settings</h1>
+      <div class="subtitle">Manage models, storage, and data</div>
+    </div>
+    <a href="#" class="back-link" onclick="goBack()">&larr; Back to Chat</a>
+  </div>
+
+  <div class="container">
+    <!-- Storage Overview -->
+    <div class="section">
+      <div class="section-title">Storage</div>
+      <div class="section-desc">Local data storage usage and location</div>
+      <div class="info-grid" id="storageGrid">
+        <div class="info-card">
+          <div class="value" id="totalSize">-</div>
+          <div class="label">Total Used</div>
+        </div>
+        <div class="info-card">
+          <div class="value" id="modelsSize">-</div>
+          <div class="label">Models</div>
+        </div>
+        <div class="info-card">
+          <div class="value" id="chatsSize">-</div>
+          <div class="label">Chat History</div>
+        </div>
+      </div>
+      <div class="data-folder-path" id="dataFolderPath">-</div>
+      <button class="btn-secondary btn-small" onclick="openDataFolder()">Open Data Folder</button>
+    </div>
+
+    <!-- Installed Models -->
+    <div class="section">
+      <div class="section-title">Installed Models</div>
+      <div class="section-desc">Manage your downloaded GGUF models</div>
+      <ul class="model-list" id="installedModels">
+        <li class="empty-state">
+          <div class="icon">📦</div>
+          <div>Loading models...</div>
+        </li>
+      </ul>
+    </div>
+
+    <!-- HuggingFace Model Search -->
+    <div class="section">
+      <div class="section-title">HuggingFace Model Hub</div>
+      <div class="section-desc">Search and install GGUF models directly from HuggingFace</div>
+
+      <div class="hf-token">
+        <input type="password" id="hfToken" placeholder="HuggingFace Token (optional - for gated/private repos)">
+      </div>
+
+      <div class="search-box">
+        <input type="text" id="repoSearch" placeholder="Search repo: author/model-name (e.g., unsloth/Llama-3.2-1B-Instruct-GGUF)">
+        <button id="searchBtn" onclick="searchHuggingFace()">Search</button>
+      </div>
+
+      <div id="searchResults"></div>
+    </div>
+  </div>
+
+  <div id="toastContainer"></div>
+
+  <script>
+    // --- Storage ---
+    async function loadStorageInfo() {
+      try {
+        const info = await window.llamaAPI.getStorageInfo();
+        document.getElementById('totalSize').textContent = formatBytes(info.totalSize);
+        document.getElementById('modelsSize').textContent = formatBytes(info.modelsSize);
+        document.getElementById('chatsSize').textContent = formatBytes(info.chatsSize);
+        document.getElementById('dataFolderPath').textContent = info.appDataDir;
+      } catch (e) {
+        console.error('Failed to load storage info:', e);
+      }
+    }
+
+    function formatBytes(bytes) {
+      if (!bytes) return '0 B';
+      const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+      const i = Math.floor(Math.log2(bytes) / 10);
+      return `${(bytes / Math.pow(1024, i)).toFixed(1)} ${sizes[i]}`;
+    }
+
+    async function openDataFolder() {
+      await window.llamaAPI.openDataFolder();
+    }
+
+    // --- Installed Models ---
+    async function loadInstalledModels() {
+      try {
+        const models = await window.llamaAPI.getInstalledModels();
+        const list = document.getElementById('installedModels');
+        if (models.length === 0) {
+          list.innerHTML = `
+            <li class="empty-state">
+              <div class="icon">📦</div>
+              <div>No models installed yet</div>
+              <div style="font-size: 12px; margin-top: 5px;">Use the HuggingFace Hub below to search and install models</div>
+            </li>`;
+          return;
+        }
+        list.innerHTML = models.map(m => `
+          <li class="model-item">
+            <div class="model-info">
+              <div class="model-name">${escapeHtml(m.filename)}</div>
+              <div class="model-meta">${m.sizeFormatted} &middot; ${new Date(m.modified).toLocaleString()}</div>
+            </div>
+            <div class="model-actions">
+              <button class="btn-danger btn-small" onclick="deleteModel('${escapeHtml(m.filename)}')">Delete</button>
+            </div>
+          </li>
+        `).join('');
+      } catch (e) {
+        console.error('Failed to load models:', e);
+      }
+    }
+
+    async function deleteModel(filename) {
+      if (!confirm(`Delete ${filename}? This cannot be undone.`)) return;
+      try {
+        await window.llamaAPI.deleteModel(filename);
+        showToast('Model deleted', 'success');
+        loadInstalledModels();
+        loadStorageInfo();
+      } catch (e) {
+        showToast('Failed to delete model', 'error');
+      }
+    }
+
+    // --- HuggingFace Search ---
+    let currentSearch = null;
+
+    async function searchHuggingFace() {
+      const repoId = document.getElementById('repoSearch').value.trim();
+      const hfToken = document.getElementById('hfToken').value.trim();
+      const btn = document.getElementById('searchBtn');
+      const results = document.getElementById('searchResults');
+
+      if (!repoId) {
+        showToast('Please enter a repository ID', 'error');
+        return;
+      }
+
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> Searching...';
+      results.innerHTML = '';
+
+      try {
+        const data = await window.llamaAPI.searchHuggingFace(repoId, hfToken || undefined);
+        currentSearch = data;
+
+        if (data.error) {
+          results.innerHTML = `<div style="color: #e74c3c; padding: 10px;">Error: ${escapeHtml(data.error)}</div>`;
+          return;
+        }
+
+        if (!data.ggufFiles || data.ggufFiles.length === 0) {
+          results.innerHTML = `
+            <div class="repo-result">
+              <div class="repo-title">${escapeHtml(data.repoId)}</div>
+              <div style="color: #888; font-size: 13px;">No GGUF files found in this repository</div>
+              <div class="repo-tags">${(data.tags || []).map(t => `<span class="tag">${escapeHtml(t)}</span>`).join('')}</div>
+            </div>`;
+          return;
+        }
+
+        results.innerHTML = `
+          <div class="repo-result">
+            <div class="repo-header">
+              <div>
+                <div class="repo-title">${escapeHtml(data.repoId)}</div>
+                <div style="font-size: 12px; color: #888;">${data.downloads || 0} downloads</div>
+                <div class="repo-tags">${(data.tags || []).map(t => `<span class="tag">${escapeHtml(t)}</span>`).join('')}</div>
+              </div>
+            </div>
+            <div class="gguf-files">
+              <div style="font-size: 13px; font-weight: 500; margin-bottom: 8px;">Available GGUF Files:</div>
+              ${data.ggufFiles.map(f => `
+                <div class="gguf-file" id="file-${escapeHtml(f.filename).replace(/[^a-zA-Z0-9]/g, '-')}">
+                  <div class="gguf-file-info">
+                    <div class="gguf-file-name">${escapeHtml(f.filename)}</div>
+                    <div class="gguf-file-size">${f.sizeFormatted}</div>
+                    <div class="progress-bar" style="display:none;" id="progress-${escapeHtml(f.filename).replace(/[^a-zA-Z0-9]/g, '-')}">
+                      <div class="progress-fill" style="width: 0%;"></div>
+                    </div>
+                    <div class="progress-text" style="display:none;" id="text-${escapeHtml(f.filename).replace(/[^a-zA-Z0-9]/g, '-')}"></div>
+                  </div>
+                  <button class="btn-primary btn-small" onclick="downloadModel('${escapeHtml(data.repoId)}', '${escapeHtml(f.filename)}')">Download</button>
+                </div>
+              `).join('')}
+            </div>
+          </div>`;
+      } catch (e) {
+        showToast('Search failed: ' + e.message, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Search';
+      }
+    }
+
+    async function downloadModel(repoId, filename) {
+      const hfToken = document.getElementById('hfToken').value.trim();
+      const safeId = filename.replace(/[^a-zA-Z0-9]/g, '-');
+      const btn = document.querySelector(`#file-${safeId} button`);
+
+      btn.disabled = true;
+      btn.textContent = 'Starting...';
+
+      try {
+        const result = await window.llamaAPI.downloadHuggingFaceModel(repoId, filename, hfToken || undefined);
+        if (result.skipped) {
+          showToast(`${filename} already exists`, 'info');
+          btn.textContent = 'Installed';
+          loadInstalledModels();
+          loadStorageInfo();
+          return;
+        }
+
+        // Poll progress
+        const downloadId = `${repoId}/${filename}`;
+        pollDownloadProgress(downloadId, safeId, filename, btn);
+      } catch (e) {
+        showToast(`Download failed: ${e.message || 'Unknown error'}`, 'error');
+        btn.disabled = false;
+        btn.textContent = 'Download';
+      }
+    }
+
+    async function pollDownloadProgress(downloadId, safeId, filename, btn) {
+      const progressBar = document.getElementById(`progress-${safeId}`);
+      const progressText = document.getElementById(`text-${safeId}`);
+      if (progressBar) progressBar.style.display = 'block';
+      if (progressText) progressText.style.display = 'block';
+
+      const poll = async () => {
+        try {
+          const progress = await window.llamaAPI.getDownloadProgress(downloadId);
+          if (!progress) {
+            setTimeout(poll, 1000);
+            return;
+          }
+
+          if (progress.status === 'completed') {
+            if (progressBar) progressBar.querySelector('.progress-fill').style.width = '100%';
+            if (progressText) progressText.textContent = 'Complete!';
+            btn.textContent = 'Installed';
+            showToast(`${filename} downloaded successfully`, 'success');
+            loadInstalledModels();
+            loadStorageInfo();
+            return;
+          }
+
+          if (progress.status === 'error') {
+            if (progressText) progressText.textContent = `Error: ${progress.error}`;
+            btn.disabled = false;
+            btn.textContent = 'Retry';
+            showToast(`Download error: ${progress.error}`, 'error');
+            return;
+          }
+
+          if (progress.status === 'downloading') {
+            const pct = progress.total ? Math.round(progress.progress * 100) : 0;
+            if (progressBar) progressBar.querySelector('.progress-fill').style.width = `${pct}%`;
+            if (progressText) {
+              const current = formatBytes(progress.current);
+              const total = formatBytes(progress.total);
+              progressText.textContent = progress.total ? `${pct}% (${current} / ${total})` : 'Downloading...';
+            }
+            btn.textContent = `${pct}%`;
+            setTimeout(poll, 500);
+          }
+        } catch (e) {
+          setTimeout(poll, 1000);
+        }
+      };
+
+      poll();
+    }
+
+    // --- Utilities ---
+    function escapeHtml(text) {
+      if (!text) return '';
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      toast.textContent = message;
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transition = 'opacity 0.3s';
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    }
+
+    async function goBack() {
+      if (window.llamaAPI && window.llamaAPI.goBackToMain) {
+        await window.llamaAPI.goBackToMain();
+      } else {
+        window.location.href = 'http://localhost:13434';
+      }
+    }
+
+    // --- Init ---
+    document.addEventListener('DOMContentLoaded', () => {
+      loadStorageInfo();
+      loadInstalledModels();
+
+      // Enter key to search
+      document.getElementById('repoSearch').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') searchHuggingFace();
+      });
+    });
+  </script>
+</body>
+</html>

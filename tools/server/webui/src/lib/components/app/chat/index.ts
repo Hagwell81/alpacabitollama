@@ -707,6 +707,12 @@ export { default as ChatSettingsFields } from './ChatSettings/ChatSettingsFields
 export { default as ChatSettingsImportExportTab } from './ChatSettings/ChatSettingsImportExportTab.svelte';
 
 /**
+ * Models tab content for the settings panel. Displays current loaded model info,
+ * available models list, and provides access to desktop model management features.
+ */
+export { default as ChatSettingsModelsTab } from './ChatSettings/ChatSettingsModelsTab.svelte';
+
+/**
  * Badge indicating parameter source for sampling settings. Shows one of:
  * - **Custom**: User has explicitly set this value (orange badge)
  * - **Server Props**: Using default from `/props` endpoint (blue badge)

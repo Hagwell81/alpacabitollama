@@ -92,7 +92,7 @@
 </script>
 
 <svelte:head>
-	<title>llama.cpp - AI Chat Interface</title>
+	<title>alpacabitollama - AI Chat Interface</title>
 </svelte:head>
 
 <ChatScreen showCenteredEmpty />

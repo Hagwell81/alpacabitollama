@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { ChevronDown, Loader2, Package } from '@lucide/svelte';
+	import { ChevronDown, Loader2, Package, RefreshCw } from '@lucide/svelte';
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
 	import * as Tooltip from '$lib/components/ui/tooltip';
 	import { cn } from '$lib/components/ui/utils';
@@ -13,7 +13,7 @@
 		singleModelName
 	} from '$lib/stores/models.svelte';
 	import { KeyboardKey } from '$lib/enums';
-	import { isRouterMode } from '$lib/stores/server.svelte';
+	import { isRouterMode, serverStore } from '$lib/stores/server.svelte';
 	import {
 		DialogModelInformation,
 		DropdownMenuSearchable,
@@ -91,6 +91,45 @@
 	let showModelDialog = $state(false);
 	let infoModelId = $state<string | null>(null);
 
+	// Electron desktop app support: list installed models in MODEL mode
+	let isElectron = $state(false);
+	let installedModels = $state<{ filename: string; sizeFormatted: string }[]>([]);
+	let switchingModel = $state(false);
+
+	function getApi() {
+		return (window as any).llamaAPI;
+	}
+
+	async function loadInstalledModels() {
+		const api = getApi();
+		if (!api?.getInstalledModels) return;
+		try {
+			installedModels = await api.getInstalledModels();
+		} catch (e) {
+			console.error('Failed to load installed models:', e);
+		}
+	}
+
+	async function switchToModel(filename: string) {
+		const api = getApi();
+		if (!api?.switchModel) return;
+		switchingModel = true;
+		try {
+			const result = await api.switchModel(filename);
+			if (result?.success) {
+				// Refresh server model info after switch
+				await modelsStore.fetch(true);
+				await serverStore.fetch();
+			} else {
+				console.error('Failed to switch model:', result?.error);
+			}
+		} catch (e) {
+			console.error('Error switching model:', e);
+		} finally {
+			switchingModel = false;
+		}
+	}
+
 	function handleInfoClick(modelName: string) {
 		infoModelId = modelName;
 		showModelDialog = true;
@@ -100,6 +139,10 @@
 		modelsStore.fetch().catch((error) => {
 			console.error('Unable to load models:', error);
 		});
+		isElectron = !!(window as any).llamaAPI;
+		if (isElectron) {
+			loadInstalledModels();
+		}
 	});
 
 	function handleOpenChange(open: boolean) {
@@ -386,48 +429,106 @@
 				</DropdownMenu.Content>
 			</DropdownMenu.Root>
 		{:else}
-			<button
-				class={cn(
-					`inline-flex cursor-pointer items-center gap-1.5 rounded-sm bg-muted-foreground/10 px-1.5 py-1 text-xs transition hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60`,
-					!isCurrentModelInCache
-						? 'bg-red-400/10 !text-red-400 hover:bg-red-400/20 hover:text-red-400'
-						: forceForegroundText
-							? 'text-foreground'
-							: isHighlightedCurrentModelActive
+			{#if isElectron}
+				<DropdownMenu.Root onOpenChange={(open) => { if (open && isElectron) loadInstalledModels(); }}>
+					<DropdownMenu.Trigger
+						class={cn(
+							`inline-flex cursor-pointer items-center gap-1.5 rounded-sm bg-muted-foreground/10 px-1.5 py-1 text-xs transition hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60`,
+							forceForegroundText ? 'text-foreground' : 'text-muted-foreground'
+						)}
+						style="max-width: min(calc(100cqw - 6.5rem), 32rem)"
+						disabled={disabled || updating || switchingModel}
+					>
+						<Package class="h-3.5 w-3.5" />
+						{#if switchingModel}
+							<span class="min-w-0 truncate font-medium">Restarting…</span>
+						{:else if selectedOption}
+							<span class="min-w-0 truncate font-medium">{selectedOption.name}</span>
+						{/if}
+						{#if switchingModel}
+							<Loader2 class="h-3 w-3.5 animate-spin" />
+						{:else}
+							<ChevronDown class="h-3 w-3.5" />
+						{/if}
+					</DropdownMenu.Trigger>
+					<DropdownMenu.Content
+						align="end"
+						class="w-[18rem]"
+					>
+						<DropdownMenu.Label>Installed Models</DropdownMenu.Label>
+						<DropdownMenu.Separator />
+						{#if installedModels.length === 0}
+							<DropdownMenu.Item disabled>
+								No models installed
+							</DropdownMenu.Item>
+						{:else}
+							{#each installedModels as model (model.filename)}
+								{@const isCurrent = selectedOption?.name === model.filename}
+								<DropdownMenu.Item
+									onclick={() => {
+										if (!isCurrent) switchToModel(model.filename);
+									}}
+									class={isCurrent ? 'bg-accent' : ''}
+									disabled={isCurrent || switchingModel}
+								>
+									<div class="flex w-full items-center justify-between gap-2">
+										<span class="truncate text-sm">{model.filename}</span>
+										{#if isCurrent}
+											<span class="text-xs text-muted-foreground">Active</span>
+										{:else if switchingModel}
+											<RefreshCw class="h-3 w-3 animate-spin" />
+										{/if}
+									</div>
+									<div class="text-xs text-muted-foreground">{model.sizeFormatted}</div>
+								</DropdownMenu.Item>
+							{/each}
+						{/if}
+					</DropdownMenu.Content>
+				</DropdownMenu.Root>
+			{:else}
+				<button
+					class={cn(
+						`inline-flex cursor-pointer items-center gap-1.5 rounded-sm bg-muted-foreground/10 px-1.5 py-1 text-xs transition hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60`,
+						!isCurrentModelInCache
+							? 'bg-red-400/10 !text-red-400 hover:bg-red-400/20 hover:text-red-400'
+							: forceForegroundText
 								? 'text-foreground'
-								: 'text-muted-foreground',
-					isOpen ? 'text-foreground' : ''
-				)}
-				style="max-width: min(calc(100cqw - 6.5rem), 32rem)"
-				onclick={() => handleOpenChange(true)}
-				disabled={disabled || updating}
-			>
-				<Package class="h-3.5 w-3.5" />
+								: isHighlightedCurrentModelActive
+									? 'text-foreground'
+									: 'text-muted-foreground',
+						isOpen ? 'text-foreground' : ''
+					)}
+					style="max-width: min(calc(100cqw - 6.5rem), 32rem)"
+					onclick={() => handleOpenChange(true)}
+					disabled={disabled || updating}
+				>
+					<Package class="h-3.5 w-3.5" />
 
-				{#if selectedOption}
-					<Tooltip.Root>
-						<Tooltip.Trigger>
-							<!-- prevent another nested button element -->
-							{#snippet child({ props })}
-								<ModelId
-									modelId={selectedOption.model}
-									class="min-w-0 overflow-hidden"
-									showOrgName
-									{...props}
-								/>
-							{/snippet}
-						</Tooltip.Trigger>
+					{#if selectedOption}
+						<Tooltip.Root>
+							<Tooltip.Trigger>
+								<!-- prevent another nested button element -->
+								{#snippet child({ props })}
+									<ModelId
+										modelId={selectedOption.model}
+										class="min-w-0 overflow-hidden"
+										showOrgName
+										{...props}
+									/>
+								{/snippet}
+							</Tooltip.Trigger>
 
-						<Tooltip.Content>
-							<p class="font-mono">{selectedOption.model}</p>
-						</Tooltip.Content>
-					</Tooltip.Root>
-				{/if}
+							<Tooltip.Content>
+								<p class="font-mono">{selectedOption.model}</p>
+							</Tooltip.Content>
+						</Tooltip.Root>
+					{/if}
 
-				{#if updating}
-					<Loader2 class="h-3 w-3.5 animate-spin" />
-				{/if}
-			</button>
+					{#if updating}
+						<Loader2 class="h-3 w-3.5 animate-spin" />
+					{/if}
+				</button>
+			{/if}
 		{/if}
 	{/if}
 </div>
