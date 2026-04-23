@@ -10,6 +10,39 @@ This project expands `llama.cpp` beyond its server and command-line roots into a
 
 No cloud APIs. No data leaving your machine. Just download a model and start chatting.
 
+## Installation
+
+1. Download `alpacabitollama-Setup-1.0.0.exe`
+2. Run the installer and follow the prompts
+3. Launch **Alpacabitollama** from your Start Menu or Desktop
+4. On first run, the app will guide you to download your first model from HuggingFace
+5. Start chatting!
+
+## System Requirements
+
+- **OS:** Windows 10/11 (macOS and Linux builds planned)
+- **CPU:** Modern x86-64 processor with AVX2 support
+- **RAM:** 8 GB minimum (16 GB recommended for larger models)
+- **GPU:** Optional — CUDA and Vulkan acceleration supported for faster inference
+- **Storage:** ~2 GB free space for the app + additional space for models
+
+## What's Next
+
+This initial release establishes the foundation. The project roadmap includes:
+
+- **Web search integration** — Search the internet and fetch page content directly from chat
+- **MCP server marketplace** — Browse and install tool servers from a curated registry
+- **Subagent library** — Delegate tasks to specialized AI assistants (code review, backend dev, etc.)
+- **Skills system** — Reusable prompt templates and workflows
+- **Knowledgebase** — Persistent document ingestion, web crawling, and RAG-powered chat
+- **Self-improving agent** — Autonomous task execution with memory, learning, and skill generation
+
+See [[PLAN.md](cci:7://file:///c:/Users/Tom/source/projects/llama.cpp/tools/server/PLAN.md:0:0-0:0)](./PLAN.md) for the full phased development roadmap.
+
+## Acknowledgements
+
+Built upon the incredible work of the [llama.cpp](https://github.com/ggml-org/llama.cpp) project by Georgi Gerganov and the ggml-org team. Their high-performance inference engine makes local AI accessible to everyone.
+
 # llama.cpp
 
 ![llama](https://user-images.githubusercontent.com/1991296/230134379-7181e485-c521-4d23-a0d6-f7b3b61ba524.png)
