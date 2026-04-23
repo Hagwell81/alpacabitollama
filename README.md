@@ -1,3 +1,15 @@
+# Alpacabitollama
+
+![llama](https://raw.githubusercontent.com/Hagwell81/alpacabitollama/refs/heads/master/media/alpaca.png)
+
+**Alpacabitollama** is a user-friendly desktop application and web chat interface built on top of [llama.cpp](https://github.com/ggml-org/llama.cpp), bringing the power of local LLM inference to everyday users through an intuitive, Ollama-like experience.
+
+## What is Alpacabitollama?
+
+This project expands `llama.cpp` beyond its server and command-line roots into a **complete desktop application** with a modern chat interface, model management, and extensible tooling — all running **fully locally** on your hardware.
+
+No cloud APIs. No data leaving your machine. Just download a model and start chatting.
+
 # llama.cpp
 
 ![llama](https://user-images.githubusercontent.com/1991296/230134379-7181e485-c521-4d23-a0d6-f7b3b61ba524.png)
