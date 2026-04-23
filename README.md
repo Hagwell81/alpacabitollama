@@ -26,19 +26,6 @@ No cloud APIs. No data leaving your machine. Just download a model and start cha
 - **GPU:** Optional — CUDA and Vulkan acceleration supported for faster inference
 - **Storage:** ~2 GB free space for the app + additional space for models
 
-## What's Next
-
-This initial release establishes the foundation. The project roadmap includes:
-
-- **Web search integration** — Search the internet and fetch page content directly from chat
-- **MCP server marketplace** — Browse and install tool servers from a curated registry
-- **Subagent library** — Delegate tasks to specialized AI assistants (code review, backend dev, etc.)
-- **Skills system** — Reusable prompt templates and workflows
-- **Knowledgebase** — Persistent document ingestion, web crawling, and RAG-powered chat
-- **Self-improving agent** — Autonomous task execution with memory, learning, and skill generation
-
-See [[PLAN.md](cci:7://file:///c:/Users/Tom/source/projects/llama.cpp/tools/server/PLAN.md:0:0-0:0)](./PLAN.md) for the full phased development roadmap.
-
 ## Acknowledgements
 
 Built upon the incredible work of the [llama.cpp](https://github.com/ggml-org/llama.cpp) project by Georgi Gerganov and the ggml-org team. Their high-performance inference engine makes local AI accessible to everyone.
