@@ -335,6 +335,14 @@
         <button id="searchBtn" onclick="searchHuggingFace()">Search</button>
       </div>
 
+      <div style="background: #fff8e1; border: 1px solid #ffc107; border-radius: 6px; padding: 12px 16px; margin: 12px 0 8px; font-size: 13px; color: #5d4037; line-height: 1.6;">
+        <strong>Download times vary by model size and internet speed.</strong><br>
+        <strong>Large models (&gt;10 GB):</strong> 30-60+ minutes.<br>
+        <strong>Medium models (5-10 GB):</strong> 10-30+ minutes.<br>
+        <strong>Small models (&lt;5 GB):</strong> 5-10+ minutes.<br>
+        <em>Please remain on this settings page until the download completes.</em>
+      </div>
+
       <div id="searchResults"></div>
     </div>
   </div>
@@ -387,12 +395,32 @@
               <div class="model-meta">${m.sizeFormatted} &middot; ${new Date(m.modified).toLocaleString()}</div>
             </div>
             <div class="model-actions">
+              <button class="btn-primary btn-small" onclick="activateModel('${escapeHtml(m.filename)}')">Switch</button>
               <button class="btn-danger btn-small" onclick="deleteModel('${escapeHtml(m.filename)}')">Delete</button>
             </div>
           </li>
         `).join('');
       } catch (e) {
         console.error('Failed to load models:', e);
+      }
+    }
+
+    async function activateModel(filename) {
+      if (!window.llamaAPI || !window.llamaAPI.switchModel) {
+        showToast('Model switching is not available', 'error');
+        return;
+      }
+      showToast(`Switching to ${filename}...`, 'info');
+      try {
+        const result = await window.llamaAPI.switchModel(filename);
+        if (result?.success) {
+          showToast(`Switched to ${filename}`, 'success');
+          loadInstalledModels();
+        } else {
+          showToast(`Switch failed: ${result?.error || 'Unknown error'}`, 'error');
+        }
+      } catch (e) {
+        showToast(`Switch failed: ${e.message || 'Unknown error'}`, 'error');
       }
     }
 
@@ -596,7 +624,55 @@
       document.getElementById('repoSearch').addEventListener('keypress', (e) => {
         if (e.key === 'Enter') searchHuggingFace();
       });
+
+      // Listen for background download completion notifications
+      if (window.llamaAPI && window.llamaAPI.onDownloadComplete) {
+        window.llamaAPI.onDownloadComplete((data) => {
+          if (data.success) {
+            showToast(`Downloaded ${data.filename}`, 'success');
+            loadInstalledModels();
+            loadStorageInfo();
+          } else {
+            showToast(`Download failed: ${data.error || data.filename}`, 'error');
+          }
+        });
+      }
+
+      // Resume polling for any in-progress downloads from before page navigation
+      resumePollingForActiveDownloads();
     });
+
+    async function resumePollingForActiveDownloads() {
+      if (!window.llamaAPI || !window.llamaAPI.getAllDownloadProgress) return;
+      try {
+        const active = await window.llamaAPI.getAllDownloadProgress();
+        if (!active || active.length === 0) return;
+        for (const dl of active) {
+          showToast(`Resuming download: ${dl.downloadId}...`, 'info');
+          const poll = async () => {
+            try {
+              const progress = await window.llamaAPI.getDownloadProgress(dl.downloadId);
+              if (!progress || progress.status === 'completed') {
+                showToast(`Download completed: ${dl.downloadId}`, 'success');
+                loadInstalledModels();
+                loadStorageInfo();
+                return;
+              }
+              if (progress.status === 'error') {
+                showToast(`Download error: ${progress.error}`, 'error');
+                return;
+              }
+              setTimeout(poll, 1000);
+            } catch (e) {
+              setTimeout(poll, 1000);
+            }
+          };
+          poll();
+        }
+      } catch (e) {
+        console.error('Failed to resume download polling:', e);
+      }
+    }
   </script>
 </body>
 </html>

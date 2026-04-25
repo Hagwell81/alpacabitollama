@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import {
 		Box,
 		Search,
@@ -60,6 +61,46 @@
 		return () => {
 			if (downloadPollInterval) clearInterval(downloadPollInterval);
 		};
+	});
+
+	// Register download-complete listener and resume any in-progress downloads on mount
+	$effect(() => {
+		if (!isElectron) return;
+		const api = getApi();
+		if (!api?.onDownloadComplete) return;
+
+		const handler = (data: any) => {
+			if (data?.success) {
+				loadInstalledModels();
+				modelsStore.fetch(true).catch(() => {});
+			}
+		};
+		api.onDownloadComplete(handler);
+		return () => {
+			api.offDownloadComplete?.(handler);
+		};
+	});
+
+	onMount(() => {
+		if (!isElectron) return;
+		const api = getApi();
+		if (!api?.getAllDownloadProgress) return;
+		api.getAllDownloadProgress().then((downloads: any[]) => {
+			if (!downloads || downloads.length === 0) return;
+			for (const dl of downloads) {
+				if (!activeDownloads.has(dl.downloadId)) {
+					activeDownloads.set(dl.downloadId, {
+						filename: dl.downloadId.split('/').pop() || dl.downloadId,
+						progress: Math.round((dl.progress ?? 0) * 100),
+						status: dl.status
+					});
+				}
+			}
+			activeDownloads = new Map(activeDownloads);
+			startDownloadPolling();
+		}).catch((e: any) => {
+			console.error('Failed to resume download polling:', e);
+		});
 	});
 
 	function getApi() {
@@ -291,6 +332,14 @@
 
 			<div class="grid border-t border-border/30 pt-4">
 				<h4 class="mb-2 text-sm font-medium">HuggingFace Model Search</h4>
+
+				<div class="rounded-md bg-amber-500/10 border border-amber-500/30 p-3 mb-3 text-xs text-amber-600 leading-relaxed">
+					<strong>Download times vary by model size and internet speed.</strong><br>
+					Large models (&gt;10 GB): 30-60+ minutes.<br>
+					Medium models (5-10 GB): 10-30+ minutes.<br>
+					Small models (&lt;5 GB): 5-10+ minutes.<br>
+					<em>Please keep this settings dialog open until the download completes.</em>
+				</div>
 
 				<div class="space-y-3">
 					<div class="flex gap-2">

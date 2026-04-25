@@ -1,5 +1,7 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
+const downloadCompleteCallbacks = new Map();
+
 contextBridge.exposeInMainWorld('llamaAPI', {
   getServerStatus: () => ipcRenderer.invoke('get-server-status'),
   startServer: () => ipcRenderer.invoke('start-server'),
@@ -19,8 +21,22 @@ contextBridge.exposeInMainWorld('llamaAPI', {
   searchHuggingFace: (repoId, hfToken) => ipcRenderer.invoke('search-huggingface', repoId, hfToken),
   downloadHuggingFaceModel: (repoId, filename, hfToken) => ipcRenderer.invoke('download-huggingface-model', repoId, filename, hfToken),
   getDownloadProgress: (downloadId) => ipcRenderer.invoke('get-download-progress', downloadId),
+  getAllDownloadProgress: () => ipcRenderer.invoke('get-all-download-progress'),
   // Storage info
   getStorageInfo: () => ipcRenderer.invoke('get-storage-info'),
   // Navigation
   goBackToMain: () => ipcRenderer.invoke('go-back-to-main'),
+  // Download notifications
+  onDownloadComplete: (callback) => {
+    const wrapper = (event, data) => callback(data);
+    downloadCompleteCallbacks.set(callback, wrapper);
+    ipcRenderer.on('download-complete', wrapper);
+  },
+  offDownloadComplete: (callback) => {
+    const wrapper = downloadCompleteCallbacks.get(callback);
+    if (wrapper) {
+      ipcRenderer.removeListener('download-complete', wrapper);
+      downloadCompleteCallbacks.delete(callback);
+    }
+  },
 });

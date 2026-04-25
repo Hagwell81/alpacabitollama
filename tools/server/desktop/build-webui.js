@@ -60,13 +60,17 @@ if (fs.existsSync(serverExeSrc)) {
   console.log('Copied llama-server.exe');
 }
 
-// Copy all required DLLs
-const dllFiles = fs.readdirSync(buildReleaseDir).filter(f => f.endsWith('.dll'));
-dllFiles.forEach(dll => {
-  const src = path.join(buildReleaseDir, dll);
-  const dest = path.join(binTargetDir, dll);
-  fs.copyFileSync(src, dest);
-  console.log('Copied', dll);
-});
+// Copy all required DLLs (only if build release dir exists)
+if (fs.existsSync(buildReleaseDir)) {
+  const dllFiles = fs.readdirSync(buildReleaseDir).filter(f => f.endsWith('.dll'));
+  dllFiles.forEach(dll => {
+    const src = path.join(buildReleaseDir, dll);
+    const dest = path.join(binTargetDir, dll);
+    fs.copyFileSync(src, dest);
+    console.log('Copied', dll);
+  });
+} else {
+  console.log('Build release directory not found, skipping DLL copy');
+}
 
 console.log('Server binary copy complete!');

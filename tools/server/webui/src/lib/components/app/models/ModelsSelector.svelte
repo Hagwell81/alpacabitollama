@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
 	import { ChevronDown, Loader2, Package, RefreshCw } from '@lucide/svelte';
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
 	import * as Tooltip from '$lib/components/ui/tooltip';
@@ -95,6 +95,7 @@
 	let isElectron = $state(false);
 	let installedModels = $state<{ filename: string; sizeFormatted: string }[]>([]);
 	let switchingModel = $state(false);
+	let _downloadCompleteHandler: ((data: any) => void) | null = null;
 
 	function getApi() {
 		return (window as any).llamaAPI;
@@ -142,6 +143,23 @@
 		isElectron = !!(window as any).llamaAPI;
 		if (isElectron) {
 			loadInstalledModels();
+			const api = getApi();
+			if (api?.onDownloadComplete) {
+				_downloadCompleteHandler = (data: any) => {
+					if (data?.success) {
+						loadInstalledModels();
+						modelsStore.fetch(true).catch(() => {});
+					}
+				};
+				api.onDownloadComplete(_downloadCompleteHandler);
+			}
+		}
+	});
+
+	onDestroy(() => {
+		const api = getApi();
+		if (api?.offDownloadComplete && _downloadCompleteHandler) {
+			api.offDownloadComplete(_downloadCompleteHandler);
 		}
 	});
 

@@ -14,6 +14,8 @@ let tray = null;
 let llamaServerProcess = null;
 let isServerRunning = false;
 
+app.isQuitting = false;
+
 // Models to download
 const MODELS_TO_DOWNLOAD = [
   // Qwen models
@@ -109,77 +111,90 @@ function checkModelsExist() {
   return null;
 }
 
-function loadSettingsWindow() {
-  if (!mainWindow) {
-    createWindow();
+function getHtmlDir() {
+  const htmlDir = path.join(app.getPath('userData'), 'html');
+  if (!fs.existsSync(htmlDir)) {
+    fs.mkdirSync(htmlDir, { recursive: true });
   }
-  const settingsHtmlPath = path.join(__dirname, 'settings.html');
-  if (fs.existsSync(settingsHtmlPath)) {
-    mainWindow.loadFile(settingsHtmlPath);
-    mainWindow.show();
-    mainWindow.focus();
-  }
+  return htmlDir;
 }
 
-function createWindow() {
-  mainWindow = new BrowserWindow({
-    width: 1200,
-    height: 800,
-    title: 'alpacabitollama',
-    autoHideMenuBar: true,
-    webPreferences: {
-      preload: path.join(__dirname, 'preload.js'),
-      contextIsolation: true,
-      nodeIntegration: false,
-      webSecurity: true
-    },
-    icon: path.join(__dirname, 'resources', 'icon.png')
-  });
+function getSetupHtmlPath() {
+  return path.join(getHtmlDir(), 'setup.html');
+}
 
-  // Remove the default application menu (File, Edit, View, Window)
-  Menu.setApplicationMenu(null);
-
-  // Check if models exist before loading webui
-  const validModel = checkModelsExist();
-  if (validModel) {
-    console.log(`Loading webui with model: ${validModel}`);
-    // Auto-start llama-server when models are available
-    const serverStarted = startLlamaServer();
-    if (!serverStarted) {
-      // Server failed to start (binary or model missing), show setup
-      console.error('Failed to start llama-server, showing setup screen');
-      const setupHtmlPath = path.join(__dirname, 'setup.html');
-      if (fs.existsSync(setupHtmlPath)) {
-        mainWindow.loadFile(setupHtmlPath);
+function getLoadingGifBase64() {
+  const gifPaths = [
+    path.join(__dirname, '..', '..', '..', 'media', 'alpaca-load-dark.gif'),
+    path.join(__dirname, 'alpaca-load-dark.gif'),
+    path.join(process.resourcesPath, 'media', 'alpaca-load-dark.gif')
+  ];
+  for (const gifPath of gifPaths) {
+    try {
+      if (fs.existsSync(gifPath)) {
+        return fs.readFileSync(gifPath).toString('base64');
       }
-    } else {
-      // Wait for server to be ready before loading webui
-      waitForServerReady('http://localhost:13434/')
-        .then(() => {
-          console.log('Server is ready, loading webui...');
-          mainWindow.loadURL('http://localhost:13434');
-        })
-        .catch((err) => {
-          console.error('Server failed to start:', err.message);
-          // Load setup screen as fallback
-          const setupHtmlPath = path.join(__dirname, 'setup.html');
-          if (fs.existsSync(setupHtmlPath)) {
-            mainWindow.loadFile(setupHtmlPath);
-          }
-        });
-    }
-  } else {
-    // Show setup screen with model selection
-    const setupHtmlPath = path.join(__dirname, 'setup.html');
-    if (fs.existsSync(setupHtmlPath)) {
-      mainWindow.loadFile(setupHtmlPath);
-    } else {
-      // Create setup HTML file if it doesn't exist
-      const setupHtml = `<!DOCTYPE html>
+    } catch (_) { /* continue */ }
+  }
+  return null;
+}
+
+let cachedLoadingGifBase64 = null;
+function getCachedLoadingGifBase64() {
+  if (cachedLoadingGifBase64 === null) {
+    cachedLoadingGifBase64 = getLoadingGifBase64();
+  }
+  return cachedLoadingGifBase64;
+}
+
+function getLoadingScreenHtml(title = 'alpacabitollama', message = 'Starting...') {
+  const gifBase64 = getCachedLoadingGifBase64();
+  const gifHtml = gifBase64
+    ? `<img src="data:image/gif;base64,${gifBase64}" alt="Loading" style="width:120px;height:120px;margin-bottom:24px;" />`
+    : '';
+  return `<!DOCTYPE html>
 <html>
 <head>
-  <title>alpacabitollama - Setup</title>
+  <meta charset="UTF-8">
   <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background: #0d1117;
+      color: #e6edf3;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      text-align: center;
+    }
+    .logo { margin-bottom: 8px; }
+    h1 { font-size: 1.6rem; font-weight: 600; margin-bottom: 8px; letter-spacing: 0.5px; }
+    p { font-size: 0.95rem; color: #8b949e; }
+  </style>
+</head>
+<body>
+  <div class="logo">${gifHtml}</div>
+  <h1>${title}</h1>
+  <p>${message}</p>
+</body>
+</html>`;
+}
+
+const LOADING_DATA_URL = `data:text/html,${encodeURIComponent(getLoadingScreenHtml())}`;
+
+function getSetupHtml(modelOptions = '') {
+  const gifBase64 = getCachedLoadingGifBase64();
+  const gifHtml = gifBase64
+    ? `<div class="logo"><img src="data:image/gif;base64,${gifBase64}" alt="alpacabitollama" style="width:120px;height:120px;" /></div>`
+    : '<div class="logo" style="font-size:48px;">🦙</div>';
+  return `<!DOCTYPE html>
+<html>
+<head>
+  <title>alpacabitollama Setup</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       display: flex;
@@ -187,31 +202,47 @@ function createWindow() {
       align-items: center;
       min-height: 100vh;
       margin: 0;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: #0d1117;
       padding: 20px;
     }
     .container {
-      background: white;
+      background: #161b22;
+      border: 1px solid #30363d;
       padding: 40px;
       border-radius: 10px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.4);
       max-width: 700px;
       max-height: 90vh;
       overflow-y: auto;
+      text-align: center;
     }
-    h1 { color: #333; margin-bottom: 20px; text-align: center; }
-    p { color: #666; line-height: 1.6; margin-bottom: 20px; }
+    .logo {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .logo img {
+      width: 120px;
+      height: 120px;
+      margin-bottom: 16px;
+    }
+    h1 { color: #e6edf3; margin-bottom: 8px; text-align: center; font-size: 1.6rem; font-weight: 600; letter-spacing: 0.5px; }
+    .subtitle { color: #8b949e; font-size: 0.95rem; margin-bottom: 24px; text-align: center; }
+    p { color: #8b949e; line-height: 1.6; margin-bottom: 20px; text-align: left; }
     .category {
       margin-bottom: 25px;
-      border: 1px solid #e0e0e0;
+      border: 1px solid #30363d;
       border-radius: 8px;
       padding: 15px;
+      background: #0d1117;
     }
     .category-title {
       font-weight: bold;
-      color: #333;
+      color: #e6edf3;
       margin-bottom: 10px;
       font-size: 16px;
+      text-align: left;
     }
     .model-item {
       display: flex;
@@ -222,17 +253,19 @@ function createWindow() {
       transition: background 0.2s;
     }
     .model-item:hover {
-      background: #f5f5f5;
+      background: #1c2128;
     }
     .model-item input[type="checkbox"] {
       margin-right: 10px;
       width: 18px;
       height: 18px;
+      accent-color: #667eea;
     }
     .model-item label {
       cursor: pointer;
       flex: 1;
-      color: #555;
+      color: #c9d1d9;
+      text-align: left;
     }
     .buttons {
       display: flex;
@@ -263,93 +296,30 @@ function createWindow() {
 </head>
 <body>
   <div class="container">
-    <h1>🦙 alpacabitollama Setup</h1>
+    ${gifHtml}
+    <h1>alpacabitollama</h1>
+    <p class="subtitle">Setup</p>
     <p>Select the AI models you want to download. Models are large files (1-10GB each), so choose wisely based on your disk space and needs.</p>
-    
-    <div class="category">
-      <div class="category-title">Qwen Models</div>
-      <div class="model-item">
-        <input type="checkbox" id="qwen35" name="model" value="Qwen3.5-9B-GGUF">
-        <label for="qwen35">Qwen3.5-9B-GGUF (~5GB) - Balanced performance</label>
-      </div>
-      <div class="model-item">
-        <input type="checkbox" id="qwen36" name="model" value="Qwen3.6-35B-A3B-GGUF">
-        <label for="qwen36">Qwen3.6-35B-A3B-GGUF (~20GB) - High performance</label>
-      </div>
-    </div>
-    
-    <div class="category">
-      <div class="category-title">Gemma Models</div>
-      <div class="model-item">
-        <input type="checkbox" id="gemma4b" name="model" value="gemma-4-E4B-it-GGUF">
-        <label for="gemma4b">gemma-4-E4B-it-GGUF (~3GB) - Efficient</label>
-      </div>
-      <div class="model-item">
-        <input type="checkbox" id="gemma26b" name="model" value="gemma-4-26B-A4B-it-GGUF">
-        <label for="gemma26b">gemma-4-26B-A4B-it-GGUF (~15GB) - High performance</label>
-      </div>
-    </div>
-    
-    <div class="category">
-      <div class="category-title">OpenAI Models</div>
-      <div class="model-item">
-        <input type="checkbox" id="gpt20b" name="model" value="gpt-oss-20b-GGUF">
-        <label for="gpt20b">gpt-oss-20b-GGUF (~12GB) - OpenAI-style</label>
-      </div>
-    </div>
-    
-    <div class="category">
-      <div class="category-title">Mistral Models</div>
-      <div class="model-item">
-        <input type="checkbox" id="mistral24" name="model" value="Mistral-Small-24B-Instruct-2501-GGUF">
-        <label for="mistral24">Mistral-Small-24B-Instruct-2501-GGUF (~14GB)</label>
-      </div>
-      <div class="model-item">
-        <input type="checkbox" id="devstral" name="model" value="Devstral-Small-2505-GGUF">
-        <label for="devstral">Devstral-Small-2505-GGUF (~3GB)</label>
-      </div>
-    </div>
-    
-    <div class="category">
-      <div class="category-title">Bonsai Models</div>
-      <div class="model-item">
-        <input type="checkbox" id="bonsai17" name="model" value="Bonsai-1.7B-gguf">
-        <label for="bonsai17">Bonsai-1.7B-gguf (~1GB) - Smallest</label>
-      </div>
-      <div class="model-item">
-        <input type="checkbox" id="bonsai4b" name="model" value="Bonsai-4B-gguf">
-        <label for="bonsai4b">Bonsai-4B-gguf (~2.5GB) - Compact</label>
-      </div>
-      <div class="model-item">
-        <input type="checkbox" id="bonsai8b" name="model" value="Bonsai-8B-gguf">
-        <label for="bonsai8b">Bonsai-8B-gguf (~1.1GB) - Balanced</label>
-      </div>
-    </div>
-    
+    ${modelOptions}
     <div class="buttons">
       <button onclick="downloadSelected()">Download Selected</button>
       <button class="secondary" onclick="selectNone()">Deselect All</button>
       <button class="secondary" onclick="selectAll()">Select All</button>
     </div>
   </div>
-  
   <script>
     function selectAll() {
       document.querySelectorAll('input[name="model"]').forEach(cb => cb.checked = true);
     }
-    
     function selectNone() {
       document.querySelectorAll('input[name="model"]').forEach(cb => cb.checked = false);
     }
-    
     async function downloadSelected() {
       const selected = Array.from(document.querySelectorAll('input[name="model"]:checked')).map(cb => cb.value);
       if (selected.length === 0) {
         alert('Please select at least one model to download.');
         return;
       }
-
-      // Save selection via IPC
       if (window.llamaAPI && window.llamaAPI.setSelectedModels) {
         await window.llamaAPI.setSelectedModels(selected);
         await window.llamaAPI.downloadModels();
@@ -362,8 +332,100 @@ function createWindow() {
   </script>
 </body>
 </html>`;
-      fs.writeFileSync(setupHtmlPath, setupHtml);
+}
+
+function loadSettingsWindow() {
+  if (!mainWindow) {
+    createWindow();
+  }
+  const settingsHtmlPath = path.join(__dirname, 'settings.html');
+  if (fs.existsSync(settingsHtmlPath)) {
+    mainWindow.loadFile(settingsHtmlPath);
+    mainWindow.show();
+    mainWindow.focus();
+  }
+}
+
+async function createWindow() {
+  mainWindow = new BrowserWindow({
+    width: 1200,
+    height: 800,
+    title: 'alpacabitollama',
+    autoHideMenuBar: true,
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js'),
+      contextIsolation: true,
+      nodeIntegration: false,
+      webSecurity: true
+    },
+    icon: path.join(__dirname, 'resources', 'icon.png')
+  });
+
+  // Remove the default application menu (File, Edit, View, Window)
+  Menu.setApplicationMenu(null);
+
+  // Load initial dark loading screen so the window is never blank
+  mainWindow.loadURL(LOADING_DATA_URL);
+
+  // Check if models exist before loading webui
+  const validModel = checkModelsExist();
+  if (validModel) {
+    console.log(`Loading webui with model: ${validModel}`);
+    // Auto-start llama-server when models are available
+    const serverStarted = await startLlamaServer();
+    if (!serverStarted) {
+      // Server failed to start (binary or model missing), show setup
+      console.error('Failed to start llama-server, showing setup screen');
+      const setupHtmlPath = getSetupHtmlPath();
+      if (fs.existsSync(setupHtmlPath)) {
+        mainWindow.loadFile(setupHtmlPath);
+      }
+    } else {
+      // Wait for server to be ready before loading webui
+      waitForServerReady('http://localhost:13434/')
+        .then(() => {
+          console.log('Server is ready, loading webui...');
+          mainWindow.loadURL('http://localhost:13434');
+        })
+        .catch((err) => {
+          console.error('Server failed to start:', err.message);
+          // Force-kill any orphan and retry once
+          killProcessOnPort(13434);
+          startLlamaServer().then((retryStarted) => {
+            if (retryStarted) {
+              return waitForServerReady('http://localhost:13434/', 30000);
+            }
+            throw new Error('Retry failed');
+          }).then(() => {
+            console.log('Server ready after retry, loading webui...');
+            mainWindow.loadURL('http://localhost:13434');
+          }).catch((retryErr) => {
+            console.error('Server retry failed:', retryErr.message);
+            const setupHtmlPath = getSetupHtmlPath();
+            if (fs.existsSync(setupHtmlPath)) {
+              mainWindow.loadFile(setupHtmlPath);
+            }
+          });
+        });
+    }
+  } else {
+    // Show setup screen with model selection
+    const setupHtmlPath = getSetupHtmlPath();
+    if (fs.existsSync(setupHtmlPath)) {
       mainWindow.loadFile(setupHtmlPath);
+    } else {
+      // Create setup HTML file if it doesn't exist
+      const setupHtml = getSetupHtml();
+      try {
+        fs.writeFileSync(setupHtmlPath, setupHtml);
+      } catch (err) {
+        console.error('Failed to write setup.html to userData:', err.message);
+      }
+      if (fs.existsSync(setupHtmlPath)) {
+        mainWindow.loadFile(setupHtmlPath);
+      } else {
+        mainWindow.loadURL(LOADING_DATA_URL);
+      }
     }
   }
 
@@ -434,12 +496,12 @@ function createTray() {
         },
         {
           label: 'Start Server',
-          click: () => startLlamaServer(),
+          click: async () => { await startLlamaServer(); },
           enabled: !isServerRunning
         },
         {
           label: 'Stop Server',
-          click: () => stopLlamaServer(),
+          click: async () => { await stopLlamaServer(); },
           enabled: isServerRunning
         }
       ]
@@ -447,8 +509,9 @@ function createTray() {
     { type: 'separator' },
     {
       label: 'Quit',
-      click: () => {
+      click: async () => {
         app.isQuitting = true;
+        await stopLlamaServer(5000);
         app.quit();
       }
     }
@@ -467,14 +530,30 @@ function createTray() {
   });
 }
 
-function startLlamaServer() {
+async function startLlamaServer() {
+  // Check if the stored process reference is actually alive
   if (llamaServerProcess) {
-    console.log('llama-server is already running');
-    return true;
+    try {
+      process.kill(llamaServerProcess.pid, 0);
+      console.log('llama-server is already running (PID:', llamaServerProcess.pid, ')');
+      return true;
+    } catch (e) {
+      console.log('llama-server process is dead, clearing stale reference');
+      llamaServerProcess = null;
+      isServerRunning = false;
+    }
   }
 
   // Ensure no zombie server is holding the port
   killProcessOnPort(13434);
+
+  // Wait for the OS to release the port
+  try {
+    await waitForPortFree(13434, 10000);
+  } catch (e) {
+    console.error('Port 13434 is still in use, cannot start server:', e.message);
+    return false;
+  }
 
   const llamaServerBinary = findLlamaServerBinary();
   if (!llamaServerBinary) {
@@ -547,20 +626,24 @@ function startLlamaServer() {
     console.log('Serving webui from:', publicDir);
   }
 
-  llamaServerProcess = spawn(llamaServerBinary, args);
+  const spawnedProcess = spawn(llamaServerBinary, args);
+  llamaServerProcess = spawnedProcess;
 
-  llamaServerProcess.stdout.on('data', (data) => {
+  spawnedProcess.stdout.on('data', (data) => {
     console.log('llama-server stdout:', data.toString());
   });
 
-  llamaServerProcess.stderr.on('data', (data) => {
+  spawnedProcess.stderr.on('data', (data) => {
     console.log('llama-server stderr:', data.toString());
   });
 
-  llamaServerProcess.on('close', (code) => {
+  spawnedProcess.on('close', (code) => {
     console.log(`llama-server process exited with code ${code}`);
-    llamaServerProcess = null;
-    isServerRunning = false;
+    // Only null out if this is still the current process (prevents race during model switch)
+    if (llamaServerProcess === spawnedProcess) {
+      llamaServerProcess = null;
+      isServerRunning = false;
+    }
   });
 
   isServerRunning = true;
@@ -592,25 +675,78 @@ function killProcessOnPort(port) {
   } catch (e) {
     // no process on port
   }
+  // Nuclear option: kill all llama-server.exe instances regardless of port
+  try {
+    execSync('taskkill /F /IM llama-server.exe');
+    console.log('Killed all llama-server.exe instances');
+  } catch (e) {
+    // No llama-server.exe processes found
+  }
 }
 
-function stopLlamaServer() {
-  if (llamaServerProcess) {
-    const pid = llamaServerProcess.pid;
+async function stopLlamaServer(timeoutMs = 10000) {
+  return new Promise((resolve) => {
+    if (!llamaServerProcess) {
+      killProcessOnPort(13434);
+      isServerRunning = false;
+      resolve();
+      return;
+    }
+
+    const processToKill = llamaServerProcess;
+    const pid = processToKill.pid;
+    let resolved = false;
+
+    // If the process has already exited, resolve immediately
+    if (processToKill.exitCode !== null || processToKill.killed) {
+      if (llamaServerProcess === processToKill) {
+        llamaServerProcess = null;
+        isServerRunning = false;
+      }
+      killProcessOnPort(13434);
+      resolve();
+      return;
+    }
+
+    function finish() {
+      if (resolved) return;
+      resolved = true;
+      clearTimeout(timeout);
+      // Only clear the global reference if it still points to this process
+      if (llamaServerProcess === processToKill) {
+        llamaServerProcess = null;
+        isServerRunning = false;
+      }
+      killProcessOnPort(13434);
+      resolve();
+    }
+
+    // Listen for the process to actually exit
+    processToKill.once('close', () => {
+      console.log(`llama-server process ${pid} exited`);
+      finish();
+    });
+
+    // Fallback timeout in case the event never fires
+    const timeout = setTimeout(() => {
+      console.warn(`Timeout waiting for llama-server ${pid} to exit, forcing cleanup`);
+      finish();
+    }, timeoutMs);
+
     try {
       if (process.platform === 'win32') {
         execSync(`taskkill /F /T /PID ${pid}`);
       } else {
-        llamaServerProcess.kill('SIGTERM');
+        processToKill.kill('SIGTERM');
       }
     } catch (e) {
       console.error('Error killing llama-server process:', e.message);
+      // Process may have already exited between the existence check and the kill attempt
+      if (processToKill.exitCode !== null || processToKill.killed) {
+        finish();
+      }
     }
-    llamaServerProcess = null;
-    isServerRunning = false;
-  }
-  // Also clear any zombie process on the port
-  killProcessOnPort(13434);
+  });
 }
 
 function findLlamaServerBinary() {
@@ -778,7 +914,7 @@ function getSettingsDirectory() {
 }
 
 function getSelectedModels() {
-  // Check if user has selected specific models (stored in electron-store)
+  const selectedModelsPath = path.join(app.getPath('userData'), 'selectedModels.json');
   const selectedModels = store.get('selectedModels', []);
   if (selectedModels.length > 0) {
     return MODELS_TO_DOWNLOAD.filter(model => selectedModels.includes(model.name));
@@ -791,87 +927,97 @@ function setSelectedModels(modelNames) {
   store.set('selectedModels', modelNames);
 }
 
-function downloadModels() {
+async function downloadModels() {
   const modelsDir = getModelsDirectory();
   const modelsToDownload = getSelectedModels();
-  
+
   console.log('Starting model downloads...');
   console.log('Models directory:', modelsDir);
   console.log(`Models to download: ${modelsToDownload.length}`);
-  
-  modelsToDownload.forEach((model, index) => {
-    const modelPath = path.join(modelsDir, model.filename);
-    
-    if (fs.existsSync(modelPath)) {
-      const stats = fs.statSync(modelPath);
-      console.log(`Model ${model.name} already exists (${(stats.size / 1024 / 1024).toFixed(2)} MB), skipping download`);
-      return;
-    }
 
-    console.log(`[${index + 1}/${modelsToDownload.length}] Downloading ${model.name} from ${model.url}`);
-    
-    const file = fs.createWriteStream(modelPath);
-    
-    https.get(model.url, (response) => {
-      // Check if we got a redirect (301, 302, 307, 308)
-      if (response.statusCode === 301 || response.statusCode === 302 || 
-          response.statusCode === 307 || response.statusCode === 308) {
-        const redirectUrl = response.headers.location;
-        console.log(`Following redirect to: ${redirectUrl}`);
-        https.get(redirectUrl, (redirectResponse) => {
-          if (redirectResponse.statusCode === 200) {
-            const totalSize = parseInt(redirectResponse.headers['content-length'], 10);
-            let downloadedSize = 0;
-            
-            redirectResponse.on('data', (chunk) => {
-              downloadedSize += chunk.length;
-              if (totalSize) {
-                const progress = ((downloadedSize / totalSize) * 100).toFixed(2);
-                console.log(`Downloading ${model.name}: ${progress}% (${(downloadedSize / 1024 / 1024).toFixed(2)} MB / ${(totalSize / 1024 / 1024).toFixed(2)} MB)`);
-              }
-            });
-            
-            redirectResponse.pipe(file);
-            file.on('finish', () => {
-              file.close();
-              console.log(`\nDownloaded ${model.name} successfully`);
-            });
-          } else {
-            fs.unlink(modelPath, () => {});
-            console.error(`\nError downloading ${model.name}: HTTP ${redirectResponse.statusCode}`);
-          }
-        }).on('error', (err) => {
-          fs.unlink(modelPath, () => {});
-          console.error(`\nError downloading ${model.name}: ${err.message}`);
-        });
-      } else if (response.statusCode === 200) {
-        const totalSize = parseInt(response.headers['content-length'], 10);
-        let downloadedSize = 0;
-        
-        response.on('data', (chunk) => {
-          downloadedSize += chunk.length;
-          if (totalSize) {
-            const progress = ((downloadedSize / totalSize) * 100).toFixed(2);
-            console.log(`Downloading ${model.name}: ${progress}% (${(downloadedSize / 1024 / 1024).toFixed(2)} MB / ${(totalSize / 1024 / 1024).toFixed(2)} MB)`);
-          }
-        });
-        
-        response.pipe(file);
-        file.on('finish', () => {
-          file.close();
-          console.log(`\nDownloaded ${model.name} successfully`);
-        });
-      } else {
-        fs.unlink(modelPath, () => {});
-        console.error(`\nError downloading ${model.name}: HTTP ${response.statusCode}`);
+  const downloadPromises = modelsToDownload.map((model) => {
+    return new Promise((resolve) => {
+      const modelPath = path.join(modelsDir, model.filename);
+
+      if (fs.existsSync(modelPath)) {
+        const stats = fs.statSync(modelPath);
+        console.log(`Model ${model.name} already exists (${(stats.size / 1024 / 1024).toFixed(2)} MB), skipping download`);
+        resolve({ success: true, skipped: true, filename: model.filename });
+        return;
       }
-    }).on('error', (err) => {
-      fs.unlink(modelPath, () => {});
-      console.error(`\nError downloading ${model.name}: ${err.message}`);
+
+      const downloadId = `builtin/${model.filename}`;
+      downloadProgress.set(downloadId, { progress: 0, total: 0, current: 0, status: 'downloading' });
+
+      console.log(`Downloading ${model.name} from ${model.url}`);
+
+      const file = fs.createWriteStream(modelPath);
+
+      https.get(model.url, (response) => {
+        function handleSuccess(stream, totalSize) {
+          let downloadedSize = 0;
+          stream.on('data', (chunk) => {
+            downloadedSize += chunk.length;
+            if (totalSize) {
+              const progress = downloadedSize / totalSize;
+              downloadProgress.set(downloadId, { progress, total: totalSize, current: downloadedSize, status: 'downloading' });
+              console.log(`Downloading ${model.name}: ${(progress * 100).toFixed(2)}% (${(downloadedSize / 1024 / 1024).toFixed(2)} MB / ${(totalSize / 1024 / 1024).toFixed(2)} MB)`);
+            }
+          });
+          stream.pipe(file);
+          file.on('finish', () => {
+            file.close();
+            downloadProgress.set(downloadId, { progress: 1, total: totalSize, current: totalSize, status: 'completed' });
+            console.log(`\nDownloaded ${model.name} successfully`);
+            notifyDownloadComplete(model.filename, true);
+            resolve({ success: true, filename: model.filename });
+          });
+        }
+
+        if (response.statusCode === 301 || response.statusCode === 302 ||
+            response.statusCode === 307 || response.statusCode === 308) {
+          const redirectUrl = response.headers.location;
+          console.log(`Following redirect to: ${redirectUrl}`);
+          https.get(redirectUrl, (redirectResponse) => {
+            if (redirectResponse.statusCode === 200) {
+              const totalSize = parseInt(redirectResponse.headers['content-length'], 10);
+              handleSuccess(redirectResponse, totalSize);
+            } else {
+              fs.unlink(modelPath, () => {});
+              downloadProgress.set(downloadId, { status: 'error', error: `HTTP ${redirectResponse.statusCode}` });
+              console.error(`\nError downloading ${model.name}: HTTP ${redirectResponse.statusCode}`);
+              notifyDownloadComplete(model.filename, false, `HTTP ${redirectResponse.statusCode}`);
+              resolve({ success: false, error: `HTTP ${redirectResponse.statusCode}` });
+            }
+          }).on('error', (err) => {
+            fs.unlink(modelPath, () => {});
+            downloadProgress.set(downloadId, { status: 'error', error: err.message });
+            console.error(`\nError downloading ${model.name}: ${err.message}`);
+            notifyDownloadComplete(model.filename, false, err.message);
+            resolve({ success: false, error: err.message });
+          });
+        } else if (response.statusCode === 200) {
+          const totalSize = parseInt(response.headers['content-length'], 10);
+          handleSuccess(response, totalSize);
+        } else {
+          fs.unlink(modelPath, () => {});
+          downloadProgress.set(downloadId, { status: 'error', error: `HTTP ${response.statusCode}` });
+          console.error(`\nError downloading ${model.name}: HTTP ${response.statusCode}`);
+          notifyDownloadComplete(model.filename, false, `HTTP ${response.statusCode}`);
+          resolve({ success: false, error: `HTTP ${response.statusCode}` });
+        }
+      }).on('error', (err) => {
+        fs.unlink(modelPath, () => {});
+        downloadProgress.set(downloadId, { status: 'error', error: err.message });
+        console.error(`\nError downloading ${model.name}: ${err.message}`);
+        notifyDownloadComplete(model.filename, false, err.message);
+        resolve({ success: false, error: err.message });
+      });
     });
   });
-  
+
   console.log('Model download initiated. Check console for progress.');
+  return Promise.all(downloadPromises);
 }
 
 // Download progress tracking for HuggingFace downloads
@@ -1105,18 +1251,41 @@ function handleDownloadResponse(response, file, filename, downloadId, resolve, r
       current: totalSize,
       status: 'completed',
     });
+    notifyDownloadComplete(filename, true);
     resolve({ success: true, filename });
   });
 
   file.on('error', (err) => {
     fs.unlink(file.path || '', () => {});
     downloadProgress.set(downloadId, { status: 'error', error: err.message });
+    notifyDownloadComplete(filename, false, err.message);
     reject(err);
   });
 }
 
 function getDownloadProgress(downloadId) {
   return downloadProgress.get(downloadId) || null;
+}
+
+function getAllDownloadProgress() {
+  const result = [];
+  for (const [downloadId, progress] of downloadProgress.entries()) {
+    if (progress.status === 'downloading') {
+      result.push({ downloadId, ...progress });
+    }
+  }
+  return result;
+}
+
+function notifyDownloadComplete(filename, success, errorMessage) {
+  const { BrowserWindow } = require('electron');
+  BrowserWindow.getAllWindows().forEach((win) => {
+    try {
+      win.webContents.send('download-complete', { filename, success, error: errorMessage || null });
+    } catch (_) {
+      // Window may have been destroyed
+    }
+  });
 }
 
 function deleteModel(filename) {
@@ -1247,7 +1416,7 @@ app.whenReady().then(async () => {
     closeLoadingWindow();
   }
 
-  createWindow();
+  await createWindow();
   createTray();
 
   // Don't auto-download models - let user do it manually from tray
@@ -1258,12 +1427,25 @@ app.on('window-all-closed', () => {
   // Don't quit on window close, keep running in tray
 });
 
-app.on('before-quit', () => {
-  stopLlamaServer();
+app.on('before-quit', async (event) => {
+  if (app.isQuitting && !llamaServerProcess) return;
+  if (llamaServerProcess) {
+    event.preventDefault();
+    app.isQuitting = true;
+    try {
+      await stopLlamaServer(5000);
+    } catch (_) {
+      // ignore cleanup errors
+    }
+    app.quit();
+  } else {
+    // Safety net: force-kill any orphan llama-server.exe
+    killProcessOnPort(13434);
+  }
 });
 
 app.on('quit', () => {
-  stopLlamaServer();
+  killProcessOnPort(13434);
 });
 
 // IPC handlers for renderer process
@@ -1271,18 +1453,18 @@ ipcMain.handle('get-server-status', () => {
   return isServerRunning;
 });
 
-ipcMain.handle('start-server', () => {
-  startLlamaServer();
-  return isServerRunning;
+ipcMain.handle('start-server', async () => {
+  const started = await startLlamaServer();
+  return started && isServerRunning;
 });
 
-ipcMain.handle('stop-server', () => {
-  stopLlamaServer();
+ipcMain.handle('stop-server', async () => {
+  await stopLlamaServer();
   return !isServerRunning;
 });
 
-ipcMain.handle('download-models', () => {
-  downloadModels();
+ipcMain.handle('download-models', async () => {
+  await downloadModels();
   return true;
 });
 
@@ -1341,6 +1523,10 @@ ipcMain.handle('get-download-progress', (event, downloadId) => {
   return getDownloadProgress(downloadId);
 });
 
+ipcMain.handle('get-all-download-progress', () => {
+  return getAllDownloadProgress();
+});
+
 // Storage info IPC handler
 ipcMain.handle('get-storage-info', () => {
   return getStorageInfo();
@@ -1365,25 +1551,38 @@ ipcMain.handle('switch-model', async (event, filename) => {
   if (llamaServerProcess || portBusy) {
     console.log(`Gracefully switching to model: ${filename}`);
     try {
-      // 1. Stop the old server (ends current model session)
-      stopLlamaServer();
+      // 1. Stop the old server gracefully and wait for process exit
+      await stopLlamaServer(15000);
+
+      // 1b. Aggressively kill any remaining process on the port
+      killProcessOnPort(13434);
 
       // 2. Wait for port to be fully freed (old process + children gone)
-      await waitForPortFree(13434, 15000);
+      try {
+        await waitForPortFree(13434, 10000);
+      } catch (e) {
+        console.warn('Port not fully freed after stop, forcing another kill');
+        killProcessOnPort(13434);
+        await waitForPortFree(13434, 10000);
+      }
 
       // 3. Start new server with the new model
-      const started = startLlamaServer();
+      const started = await startLlamaServer();
       if (!started) {
         return { success: false, error: 'Failed to start server with new model' };
       }
 
       // 4. Wait for new server to be ready before telling UI it's done
-      await waitForServerReady('http://localhost:13434/', 60000);
+      await waitForServerReady('http://localhost:13434/', 120000);
       console.log(`Server ready with model: ${filename}`);
 
       return { success: true, restarted: true, ready: true };
     } catch (err) {
       console.error('Model switch failed:', err.message);
+      // Attempt cleanup if something went wrong
+      try {
+        await stopLlamaServer(5000);
+      } catch (_) { /* ignore cleanup errors */ }
       return { success: false, error: err.message };
     }
   }
@@ -1398,7 +1597,7 @@ ipcMain.handle('go-back-to-main', () => {
   if (validModel && isServerRunning) {
     mainWindow.loadURL('http://localhost:13434');
   } else {
-    const setupHtmlPath = path.join(__dirname, 'setup.html');
+    const setupHtmlPath = getSetupHtmlPath();
     if (fs.existsSync(setupHtmlPath)) {
       mainWindow.loadFile(setupHtmlPath);
     }
