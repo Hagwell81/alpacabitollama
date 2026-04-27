@@ -1,5 +1,5 @@
 /* eslint-env node */
-const { app, BrowserWindow, Tray, Menu, nativeImage, ipcMain, shell } = require('electron');
+const { app, BrowserWindow, Tray, Menu, nativeImage, ipcMain, shell, dialog } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const https = require('https');
@@ -16,72 +16,88 @@ let isServerRunning = false;
 
 app.isQuitting = false;
 
-// Models to download
+// Curated list of verified-real GGUF repos hosted on HuggingFace.
+// Each entry must point to a file that actually exists; bad URLs leave users
+// stranded on the setup screen with no way to recover.
 const MODELS_TO_DOWNLOAD = [
-  // Qwen models
+  // Qwen
   {
-    name: 'Qwen3.6-35B-A3B-GGUF',
-    url: 'https://huggingface.co/unsloth/Qwen3.6-35B-A3B-GGUF/resolve/main/Qwen3.6-35B-A3B-GGUF-Q4_K_M.gguf',
-    filename: 'Qwen3.6-35B-A3B-GGUF-Q4_K_M.gguf',
+    name: 'Qwen2.5-7B-Instruct (Q4_K_M, ~4.7 GB)',
+    url: 'https://huggingface.co/bartowski/Qwen2.5-7B-Instruct-GGUF/resolve/main/Qwen2.5-7B-Instruct-Q4_K_M.gguf',
+    filename: 'Qwen2.5-7B-Instruct-Q4_K_M.gguf',
     category: 'Qwen'
   },
   {
-    name: 'Qwen3.5-9B-GGUF',
-    url: 'https://huggingface.co/unsloth/Qwen3.5-9B-GGUF/resolve/main/Qwen3.5-9B-GGUF-Q4_K_M.gguf',
-    filename: 'Qwen3.5-9B-GGUF-Q4_K_M.gguf',
+    name: 'Qwen2.5-3B-Instruct (Q4_K_M, ~2.0 GB)',
+    url: 'https://huggingface.co/bartowski/Qwen2.5-3B-Instruct-GGUF/resolve/main/Qwen2.5-3B-Instruct-Q4_K_M.gguf',
+    filename: 'Qwen2.5-3B-Instruct-Q4_K_M.gguf',
     category: 'Qwen'
   },
-  // Gemma models
+  // Llama
   {
-    name: 'gemma-4-26B-A4B-it-GGUF',
-    url: 'https://huggingface.co/unsloth/gemma-4-26B-A4B-it-GGUF/resolve/main/gemma-4-26B-A4B-it-GGUF-Q4_K_M.gguf',
-    filename: 'gemma-4-26B-A4B-it-GGUF-Q4_K_M.gguf',
+    name: 'Llama-3.2-3B-Instruct (Q4_K_M, ~2.0 GB)',
+    url: 'https://huggingface.co/bartowski/Llama-3.2-3B-Instruct-GGUF/resolve/main/Llama-3.2-3B-Instruct-Q4_K_M.gguf',
+    filename: 'Llama-3.2-3B-Instruct-Q4_K_M.gguf',
+    category: 'Llama'
+  },
+  {
+    name: 'Llama-3.2-1B-Instruct (Q4_K_M, ~0.8 GB)',
+    url: 'https://huggingface.co/bartowski/Llama-3.2-1B-Instruct-GGUF/resolve/main/Llama-3.2-1B-Instruct-Q4_K_M.gguf',
+    filename: 'Llama-3.2-1B-Instruct-Q4_K_M.gguf',
+    category: 'Llama'
+  },
+  // Gemma
+  {
+    name: 'gemma-2-2b-it (Q4_K_M, ~1.7 GB)',
+    url: 'https://huggingface.co/bartowski/gemma-2-2b-it-GGUF/resolve/main/gemma-2-2b-it-Q4_K_M.gguf',
+    filename: 'gemma-2-2b-it-Q4_K_M.gguf',
     category: 'Gemma'
   },
+  // Mistral
   {
-    name: 'gemma-4-E4B-it-GGUF',
-    url: 'https://huggingface.co/unsloth/gemma-4-E4B-it-GGUF/resolve/main/gemma-4-E4B-it-GGUF-Q4_K_M.gguf',
-    filename: 'gemma-4-E4B-it-GGUF-Q4_K_M.gguf',
-    category: 'Gemma'
-  },
-  // OpenAI models
-  {
-    name: 'gpt-oss-20b-GGUF',
-    url: 'https://huggingface.co/unsloth/gpt-oss-20b-GGUF/resolve/main/gpt-oss-20b-GGUF-Q4_K_M.gguf',
-    filename: 'gpt-oss-20b-GGUF-Q4_K_M.gguf',
-    category: 'OpenAI'
-  },
-  // Mistral models
-  {
-    name: 'Devstral-Small-2505-GGUF',
-    url: 'https://huggingface.co/unsloth/Devstral-Small-2505-GGUF/resolve/main/Devstral-Small-2505-GGUF-Q4_K_M.gguf',
-    filename: 'Devstral-Small-2505-GGUF-Q4_K_M.gguf',
+    name: 'Mistral-7B-Instruct-v0.3 (Q4_K_M, ~4.4 GB)',
+    url: 'https://huggingface.co/bartowski/Mistral-7B-Instruct-v0.3-GGUF/resolve/main/Mistral-7B-Instruct-v0.3-Q4_K_M.gguf',
+    filename: 'Mistral-7B-Instruct-v0.3-Q4_K_M.gguf',
     category: 'Mistral'
   },
+  // Phi
   {
-    name: 'Mistral-Small-24B-Instruct-2501-GGUF',
-    url: 'https://huggingface.co/unsloth/Mistral-Small-24B-Instruct-2501-GGUF/resolve/main/Mistral-Small-24B-Instruct-2501-GGUF-Q4_K_M.gguf',
-    filename: 'Mistral-Small-24B-Instruct-2501-GGUF-Q4_K_M.gguf',
-    category: 'Mistral'
+    name: 'Phi-3.5-mini-instruct (Q4_K_M, ~2.4 GB)',
+    url: 'https://huggingface.co/bartowski/Phi-3.5-mini-instruct-GGUF/resolve/main/Phi-3.5-mini-instruct-Q4_K_M.gguf',
+    filename: 'Phi-3.5-mini-instruct-Q4_K_M.gguf',
+    category: 'Phi'
   },
-  // Bonsai models
+  // Small (recommended for first-time users)
   {
-    name: 'Bonsai-8B-gguf',
-    url: 'https://huggingface.co/prism-ml/Bonsai-8B-gguf/resolve/main/Bonsai-8B.gguf',
-    filename: 'Bonsai-8B.gguf',
-    category: 'Bonsai'
-  },
-  {
-    name: 'Bonsai-4B-gguf',
-    url: 'https://huggingface.co/prism-ml/Bonsai-4B-gguf/resolve/main/Bonsai-4B.gguf',
-    filename: 'Bonsai-4B.gguf',
-    category: 'Bonsai'
+    name: 'SmolLM2-1.7B-Instruct (Q4_K_M, ~1.0 GB) — recommended starter',
+    url: 'https://huggingface.co/bartowski/SmolLM2-1.7B-Instruct-GGUF/resolve/main/SmolLM2-1.7B-Instruct-Q4_K_M.gguf',
+    filename: 'SmolLM2-1.7B-Instruct-Q4_K_M.gguf',
+    category: 'Small'
   },
   {
-    name: 'Bonsai-1.7B-gguf',
-    url: 'https://huggingface.co/prism-ml/Bonsai-1.7B-gguf/resolve/main/Bonsai-1.7B.gguf',
-    filename: 'Bonsai-1.7B.gguf',
-    category: 'Bonsai'
+    name: 'SmolLM2-360M-Instruct (Q4_K_M, ~270 MB) — fastest',
+    url: 'https://huggingface.co/bartowski/SmolLM2-360M-Instruct-GGUF/resolve/main/SmolLM2-360M-Instruct-Q4_K_M.gguf',
+    filename: 'SmolLM2-360M-Instruct-Q4_K_M.gguf',
+    category: 'Small'
+  },
+  // Bonsai 1-bit (Q1_0) — runs on any PC, very low RAM/VRAM
+  {
+    name: 'Bonsai-8B (1-bit Q1_0, ~1.1 GB) — runs on any PC',
+    url: 'https://huggingface.co/prism-ml/Bonsai-8B-gguf/resolve/main/Bonsai-8B-Q1_0.gguf',
+    filename: 'Bonsai-8B-Q1_0.gguf',
+    category: 'Bonsai (1-bit)'
+  },
+  {
+    name: 'Bonsai-4B (1-bit Q1_0, ~570 MB) — runs on any PC',
+    url: 'https://huggingface.co/prism-ml/Bonsai-4B-gguf/resolve/main/Bonsai-4B-Q1_0.gguf',
+    filename: 'Bonsai-4B-Q1_0.gguf',
+    category: 'Bonsai (1-bit)'
+  },
+  {
+    name: 'Bonsai-1.7B (1-bit Q1_0, ~250 MB) — runs on any PC',
+    url: 'https://huggingface.co/prism-ml/Bonsai-1.7B-gguf/resolve/main/Bonsai-1.7B-Q1_0.gguf',
+    filename: 'Bonsai-1.7B-Q1_0.gguf',
+    category: 'Bonsai (1-bit)'
   }
 ];
 
@@ -123,34 +139,77 @@ function getSetupHtmlPath() {
   return path.join(getHtmlDir(), 'setup.html');
 }
 
-function getLoadingGifBase64() {
-  const gifPaths = [
-    path.join(__dirname, '..', '..', '..', 'media', 'alpaca-load-dark.gif'),
-    path.join(__dirname, 'alpaca-load-dark.gif'),
-    path.join(process.resourcesPath, 'media', 'alpaca-load-dark.gif')
+function generateModelOptions() {
+  console.log(`generateModelOptions called, MODELS_TO_DOWNLOAD length = ${MODELS_TO_DOWNLOAD ? MODELS_TO_DOWNLOAD.length : 'undefined'}`);
+  if (!MODELS_TO_DOWNLOAD || MODELS_TO_DOWNLOAD.length === 0) {
+    console.warn('MODELS_TO_DOWNLOAD is empty or undefined');
+    return '<p class="subtitle">No models available to download at this time.</p>';
+  }
+  const categories = {};
+  MODELS_TO_DOWNLOAD.forEach(model => {
+    const cat = model.category || 'Other';
+    if (!categories[cat]) categories[cat] = [];
+    categories[cat].push(model);
+  });
+
+  let html = '';
+  for (const [category, models] of Object.entries(categories)) {
+    html += `<div class="category"><div class="category-title">${category}</div>`;
+    models.forEach(model => {
+      html += `<div class="model-item">`;
+      html += `<input type="checkbox" id="${model.name}" name="model" value="${model.name}">`;
+      html += `<label for="${model.name}">${model.name}</label>`;
+      html += `</div>`;
+    });
+    html += `</div>`;
+  }
+  console.log(`generateModelOptions returning ${html.length} chars of HTML`);
+  return html;
+}
+
+function getAlpacaPngBase64() {
+  // In dev __dirname is the desktop folder; in a packaged app it is
+  // .../resources/app.asar.  Files in resources/ are bundled inside the
+  // asar (fs.readFileSync works on asar paths).  Files in public/ and
+  // bin/ are unpacked to app.asar.unpacked/ because external executables
+  // must read them from the real filesystem.
+  const pngPaths = [
+    // Development: source tree media folder
+    path.join(__dirname, '..', '..', '..', 'media', 'alpaca.png'),
+    // Packaged: inside app.asar/resources/ (bundled by electron-builder)
+    path.join(__dirname, 'resources', 'alpaca.png'),
+    // Packaged: unpacked resources/ (if ever added to asarUnpack)
+    path.join(__dirname, '..', 'app.asar.unpacked', 'resources', 'alpaca.png'),
+    // Packaged: unpacked public/ (build-webui.js copies media here)
+    path.join(__dirname, '..', 'app.asar.unpacked', 'public', 'alpaca.png'),
+    // Fallback via process.resourcesPath for non-standard Electron layouts
+    path.join(process.resourcesPath, 'app.asar.unpacked', 'resources', 'alpaca.png'),
+    path.join(process.resourcesPath, 'app.asar.unpacked', 'public', 'alpaca.png'),
+    path.join(process.resourcesPath, 'app', 'resources', 'alpaca.png'),
+    path.join(process.resourcesPath, 'app', 'public', 'alpaca.png')
   ];
-  for (const gifPath of gifPaths) {
+  for (const pngPath of pngPaths) {
     try {
-      if (fs.existsSync(gifPath)) {
-        return fs.readFileSync(gifPath).toString('base64');
+      if (fs.existsSync(pngPath)) {
+        return fs.readFileSync(pngPath).toString('base64');
       }
     } catch (_) { /* continue */ }
   }
   return null;
 }
 
-let cachedLoadingGifBase64 = null;
-function getCachedLoadingGifBase64() {
-  if (cachedLoadingGifBase64 === null) {
-    cachedLoadingGifBase64 = getLoadingGifBase64();
+let cachedAlpacaPngBase64 = null;
+function getCachedAlpacaPngBase64() {
+  if (cachedAlpacaPngBase64 === null) {
+    cachedAlpacaPngBase64 = getAlpacaPngBase64();
   }
-  return cachedLoadingGifBase64;
+  return cachedAlpacaPngBase64;
 }
 
 function getLoadingScreenHtml(title = 'alpacabitollama', message = 'Starting...') {
-  const gifBase64 = getCachedLoadingGifBase64();
-  const gifHtml = gifBase64
-    ? `<img src="data:image/gif;base64,${gifBase64}" alt="Loading" style="width:120px;height:120px;margin-bottom:24px;" />`
+  const pngBase64 = getCachedAlpacaPngBase64();
+  const imgHtml = pngBase64
+    ? `<img src="data:image/png;base64,${pngBase64}" alt="alpacabitollama" style="width:120px;height:120px;margin-bottom:20px;object-fit:contain;" />`
     : '';
   return `<!DOCTYPE html>
 <html>
@@ -169,29 +228,74 @@ function getLoadingScreenHtml(title = 'alpacabitollama', message = 'Starting...'
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       text-align: center;
     }
-    .logo { margin-bottom: 8px; }
+    .logo { margin-bottom: 4px; }
     h1 { font-size: 1.6rem; font-weight: 600; margin-bottom: 8px; letter-spacing: 0.5px; }
-    p { font-size: 0.95rem; color: #8b949e; }
+    p { font-size: 0.95rem; color: #8b949e; margin-bottom: 24px; }
+    .progress-track {
+      width: 280px;
+      height: 4px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      width: 0%;
+      height: 100%;
+      background: #667eea;
+      border-radius: 2px;
+      transition: width 0.4s ease;
+    }
   </style>
 </head>
 <body>
-  <div class="logo">${gifHtml}</div>
+  <div class="logo">${imgHtml}</div>
   <h1>${title}</h1>
   <p>${message}</p>
+  <div class="progress-track"><div class="progress-fill" id="progress"></div></div>
+  <script>
+    (function(){
+      var p = 0;
+      var el = document.getElementById('progress');
+      function tick(){
+        p = Math.min(90, p + Math.random() * 8);
+        if(el) el.style.width = p + '%';
+        if(p < 90) setTimeout(tick, 400 + Math.random() * 400);
+      }
+      tick();
+    })();
+  </script>
 </body>
 </html>`;
 }
 
 const LOADING_DATA_URL = `data:text/html,${encodeURIComponent(getLoadingScreenHtml())}`;
 
+function showMainWindowLoading(title = 'alpacabitollama', message = 'Loading...') {
+  if (!mainWindow) return;
+  const html = getLoadingScreenHtml(title, message);
+  const tempPath = path.join(app.getPath('temp'), 'alpacabitollama-transition.html');
+  try {
+    fs.writeFileSync(tempPath, html, 'utf8');
+    mainWindow.loadFile(tempPath);
+  } catch (err) {
+    console.error('Failed to write transition HTML:', err.message);
+    mainWindow.loadURL(`data:text/html,${encodeURIComponent(html)}`);
+  }
+}
+
 function getSetupHtml(modelOptions = '') {
-  const gifBase64 = getCachedLoadingGifBase64();
-  const gifHtml = gifBase64
-    ? `<div class="logo"><img src="data:image/gif;base64,${gifBase64}" alt="alpacabitollama" style="width:120px;height:120px;" /></div>`
+  const pngBase64 = getCachedAlpacaPngBase64();
+  const logoHtml = pngBase64
+    ? `<div class="logo"><img src="data:image/png;base64,${pngBase64}" alt="alpacabitollama" style="width:120px;height:120px;object-fit:contain;" /></div>`
     : '<div class="logo" style="font-size:48px;">🦙</div>';
+  // The page below is loaded via mainWindow.loadFile() with the same preload
+  // script attached, so window.llamaAPI is available. It exposes both the
+  // curated model list and a free-form HuggingFace search/download flow so
+  // users are never trapped without a way to obtain a model.
   return `<!DOCTYPE html>
 <html>
 <head>
+  <meta charset="UTF-8">
   <title>alpacabitollama Setup</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -296,17 +400,32 @@ function getSetupHtml(modelOptions = '') {
 </head>
 <body>
   <div class="container">
-    ${gifHtml}
+    ${logoHtml}
     <h1>alpacabitollama</h1>
-    <p class="subtitle">Setup</p>
-    <p>Select the AI models you want to download. Models are large files (1-10GB each), so choose wisely based on your disk space and needs.</p>
-    ${modelOptions}
+    <p class="subtitle">Setup — choose at least one model to get started</p>
+    <p>Pick a curated model below, or paste any HuggingFace GGUF repo to download a custom one. The app will start automatically once a model is ready.</p>
+
+    <h3 style="color:#e6edf3;text-align:left;margin:8px 0 12px;font-size:1rem;">Curated models</h3>
+    ${modelOptions || '<p class="subtitle" style="text-align:left;">No models found. Please use the HuggingFace search below.</p>'}
     <div class="buttons">
       <button onclick="downloadSelected()">Download Selected</button>
       <button class="secondary" onclick="selectNone()">Deselect All</button>
       <button class="secondary" onclick="selectAll()">Select All</button>
     </div>
+
+    <div class="category hf-section" style="margin-top:24px;">
+      <div class="category-title">Or download any GGUF from HuggingFace</div>
+      <div style="display:flex;gap:8px;margin-bottom:8px;">
+        <input id="hf-repo" placeholder="author/model-name (e.g. bartowski/Llama-3.2-3B-Instruct-GGUF)"
+               style="flex:1;padding:10px;border-radius:5px;border:1px solid #30363d;background:#0d1117;color:#c9d1d9;font-size:14px;" />
+        <button onclick="searchHF()">Search</button>
+      </div>
+      <input id="hf-token" type="password" placeholder="HuggingFace token (optional, for gated models)"
+             style="width:100%;padding:10px;border-radius:5px;border:1px solid #30363d;background:#0d1117;color:#c9d1d9;font-size:13px;margin-bottom:8px;" />
+      <div id="hf-results" style="text-align:left;color:#c9d1d9;font-size:13px;"></div>
+    </div>
   </div>
+
   <script>
     function selectAll() {
       document.querySelectorAll('input[name="model"]').forEach(cb => cb.checked = true);
@@ -314,20 +433,161 @@ function getSetupHtml(modelOptions = '') {
     function selectNone() {
       document.querySelectorAll('input[name="model"]').forEach(cb => cb.checked = false);
     }
-    async function downloadSelected() {
-      const selected = Array.from(document.querySelectorAll('input[name="model"]:checked')).map(cb => cb.value);
-      if (selected.length === 0) {
-        alert('Please select at least one model to download.');
-        return;
+
+    function showProgress(msg) {
+      let el = document.getElementById('progress-area');
+      if (!el) {
+        el = document.createElement('div');
+        el.id = 'progress-area';
+        el.style.cssText = 'margin-top:24px;padding:16px;border-radius:8px;background:#0d1117;border:1px solid #30363d;color:#c9d1d9;font-family:monospace;white-space:pre-wrap;text-align:left;';
+        document.querySelector('.container').appendChild(el);
       }
-      if (window.llamaAPI && window.llamaAPI.setSelectedModels) {
+      el.textContent = msg;
+    }
+
+    function hideSelectionUI() {
+      document.querySelector('.buttons').style.display = 'none';
+      document.querySelectorAll('.category').forEach(c => { if (!c.classList.contains('hf-section')) c.style.display = 'none'; });
+    }
+
+    async function downloadSelected() {
+      try {
+        const selected = Array.from(document.querySelectorAll('input[name="model"]:checked')).map(cb => cb.value);
+        if (selected.length === 0) {
+          alert('Please select at least one model to download, or use the HuggingFace search below.');
+          return;
+        }
+        if (!window.llamaAPI || !window.llamaAPI.setSelectedModels || !window.llamaAPI.downloadModels) {
+          alert('App bridge not available. Please restart the application.');
+          return;
+        }
         await window.llamaAPI.setSelectedModels(selected);
         await window.llamaAPI.downloadModels();
-        alert('Download started! Check the system tray for progress.');
-      } else {
-        alert('Models selected! Right-click the tray icon and select "Download Models" to begin downloading.');
+        hideSelectionUI();
+        showProgress('Download started... Fetching progress...');
+        pollUntilDone();
+      } catch (err) {
+        alert('Error starting download: ' + (err && err.message ? err.message : String(err)));
+        console.error('downloadSelected error:', err);
       }
-      location.reload();
+    }
+
+    async function searchHF() {
+      const repo = document.getElementById('hf-repo').value.trim();
+      const token = document.getElementById('hf-token').value.trim();
+      const resultsEl = document.getElementById('hf-results');
+      if (!repo) { resultsEl.textContent = 'Enter a repo id like author/model-name.'; return; }
+      if (!window.llamaAPI || !window.llamaAPI.searchHuggingFace) {
+        resultsEl.textContent = 'HuggingFace search is unavailable in this build.';
+        return;
+      }
+      resultsEl.textContent = 'Searching ' + repo + '...';
+      try {
+        const r = await window.llamaAPI.searchHuggingFace(repo, token || undefined);
+        if (!r || r.error) { resultsEl.textContent = 'Error: ' + (r && r.error ? r.error : 'Unknown error'); return; }
+        const files = (r.modelFiles && r.modelFiles.length ? r.modelFiles : (r.ggufFiles || []));
+        if (files.length === 0) { resultsEl.textContent = 'No GGUF files found in ' + r.repoId + '.'; return; }
+        resultsEl.innerHTML = '';
+        const header = document.createElement('div');
+        header.style.cssText = 'margin-bottom:8px;color:#8b949e;';
+        header.textContent = r.repoId + ' — ' + files.length + ' GGUF file(s):';
+        resultsEl.appendChild(header);
+        files.forEach(f => {
+          const row = document.createElement('div');
+          row.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:6px 8px;border:1px solid #30363d;border-radius:4px;margin-bottom:6px;background:#161b22;';
+          const label = document.createElement('span');
+          label.style.cssText = 'flex:1;margin-right:8px;word-break:break-all;';
+          label.textContent = f.filename + (f.sizeFormatted ? '  (' + f.sizeFormatted + ')' : '');
+          const btn = document.createElement('button');
+          btn.textContent = 'Download';
+          btn.style.cssText = 'padding:6px 12px;font-size:13px;';
+          btn.onclick = () => downloadHF(r.repoId, f.filename, token);
+          row.appendChild(label);
+          row.appendChild(btn);
+          resultsEl.appendChild(row);
+        });
+      } catch (err) {
+        resultsEl.textContent = 'Search failed: ' + (err && err.message ? err.message : String(err));
+      }
+    }
+
+    async function downloadHF(repoId, filename, token) {
+      if (!window.llamaAPI || !window.llamaAPI.downloadHuggingFaceModel) {
+        alert('Download API unavailable.');
+        return;
+      }
+      try {
+        await window.llamaAPI.downloadHuggingFaceModel(repoId, filename, token || undefined);
+        hideSelectionUI();
+        document.querySelector('.hf-section').style.display = 'none';
+        showProgress('Downloading ' + filename + ' from ' + repoId + '...');
+        pollUntilDone();
+      } catch (err) {
+        alert('Error starting download: ' + (err && err.message ? err.message : String(err)));
+      }
+    }
+
+    async function pollUntilDone() {
+      const api = window.llamaAPI;
+      if (!api || !api.getAllDownloadProgress) {
+        showProgress('Progress API not available.');
+        return;
+      }
+      let waitedForFirstEntry = 0;
+      const poll = async () => {
+        try {
+          const list = await api.getAllDownloadProgress();
+          // Backend now returns an array; tolerate object form too just in case.
+          const entries = Array.isArray(list)
+            ? list.map(e => [e.downloadId, e])
+            : Object.entries(list || {});
+          if (entries.length === 0) {
+            // Wait up to 30s for the download to register before warning.
+            waitedForFirstEntry += 2000;
+            if (waitedForFirstEntry >= 30000) {
+              showProgress('No active downloads detected. The request may have failed silently — check console.');
+              return;
+            }
+            showProgress('Waiting for download to start...');
+            setTimeout(poll, 2000);
+            return;
+          }
+          const lines = entries.map(([id, v]) => {
+            const pct = v.total ? Math.round((v.current / v.total) * 100) : 0;
+            const mb = v.current ? (v.current / 1024 / 1024).toFixed(1) : '0';
+            const totalMb = v.total ? (v.total / 1024 / 1024).toFixed(1) : '?';
+            const status = v.status || 'pending';
+            return id + ': ' + status + ' ' + pct + '% (' + mb + ' / ' + totalMb + ' MB)' + (v.error ? ' — ' + v.error : '');
+          });
+          showProgress(lines.join('\\n'));
+          const allDone = entries.every(([_, v]) => v.status === 'completed' || v.status === 'error');
+          if (allDone) {
+            const hasSuccess = entries.some(([_, v]) => v.status === 'completed');
+            if (!hasSuccess) {
+              showProgress('All downloads failed.\\n\\n' + lines.join('\\n') + '\\n\\nPick another model above or paste a different HuggingFace repo to retry.');
+              // Re-show UI so user can try again
+              const buttons = document.querySelector('.buttons');
+              if (buttons) buttons.style.display = 'flex';
+              document.querySelectorAll('.category').forEach(c => c.style.display = '');
+              return;
+            }
+            showProgress('Downloads complete. Starting app...');
+            setTimeout(async () => {
+              if (api.goBackToMain) {
+                await api.goBackToMain();
+              } else {
+                location.reload();
+              }
+            }, 1200);
+            return;
+          }
+          setTimeout(poll, 2000);
+        } catch (err) {
+          showProgress('Error checking progress: ' + (err && err.message ? err.message : String(err)));
+          setTimeout(poll, 3000);
+        }
+      };
+      poll();
     }
   </script>
 </body>
@@ -352,13 +612,15 @@ async function createWindow() {
     height: 800,
     title: 'alpacabitollama',
     autoHideMenuBar: true,
+    backgroundColor: '#0d1117',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
-      webSecurity: true
+      webSecurity: true,
+      sandbox: false
     },
-    icon: path.join(__dirname, 'resources', 'icon.png')
+    icon: path.join(__dirname, 'resources', 'alpaca.png')
   });
 
   // Remove the default application menu (File, Edit, View, Window)
@@ -377,6 +639,12 @@ async function createWindow() {
       // Server failed to start (binary or model missing), show setup
       console.error('Failed to start llama-server, showing setup screen');
       const setupHtmlPath = getSetupHtmlPath();
+      const setupHtml = getSetupHtml(generateModelOptions());
+      try {
+        fs.writeFileSync(setupHtmlPath, setupHtml);
+      } catch (err) {
+        console.error('Failed to write setup.html to userData:', err.message);
+      }
       if (fs.existsSync(setupHtmlPath)) {
         mainWindow.loadFile(setupHtmlPath);
       }
@@ -385,6 +653,7 @@ async function createWindow() {
       waitForServerReady('http://localhost:13434/')
         .then(() => {
           console.log('Server is ready, loading webui...');
+          showMainWindowLoading('alpacabitollama', 'Launching chat...');
           mainWindow.loadURL('http://localhost:13434');
         })
         .catch((err) => {
@@ -398,10 +667,17 @@ async function createWindow() {
             throw new Error('Retry failed');
           }).then(() => {
             console.log('Server ready after retry, loading webui...');
+            showMainWindowLoading('alpacabitollama', 'Launching chat...');
             mainWindow.loadURL('http://localhost:13434');
           }).catch((retryErr) => {
             console.error('Server retry failed:', retryErr.message);
             const setupHtmlPath = getSetupHtmlPath();
+            const setupHtml = getSetupHtml(generateModelOptions());
+            try {
+              fs.writeFileSync(setupHtmlPath, setupHtml);
+            } catch (err) {
+              console.error('Failed to write setup.html to userData:', err.message);
+            }
             if (fs.existsSync(setupHtmlPath)) {
               mainWindow.loadFile(setupHtmlPath);
             }
@@ -411,21 +687,16 @@ async function createWindow() {
   } else {
     // Show setup screen with model selection
     const setupHtmlPath = getSetupHtmlPath();
+    const setupHtml = getSetupHtml(generateModelOptions());
+    try {
+      fs.writeFileSync(setupHtmlPath, setupHtml);
+    } catch (err) {
+      console.error('Failed to write setup.html to userData:', err.message);
+    }
     if (fs.existsSync(setupHtmlPath)) {
       mainWindow.loadFile(setupHtmlPath);
     } else {
-      // Create setup HTML file if it doesn't exist
-      const setupHtml = getSetupHtml();
-      try {
-        fs.writeFileSync(setupHtmlPath, setupHtml);
-      } catch (err) {
-        console.error('Failed to write setup.html to userData:', err.message);
-      }
-      if (fs.existsSync(setupHtmlPath)) {
-        mainWindow.loadFile(setupHtmlPath);
-      } else {
-        mainWindow.loadURL(LOADING_DATA_URL);
-      }
+      mainWindow.loadURL(LOADING_DATA_URL);
     }
   }
 
@@ -449,9 +720,9 @@ function createTray() {
   // Create tray icon
   let iconPath;
   if (process.platform === 'win32') {
-    iconPath = path.join(__dirname, 'resources', 'icon.ico');
+    iconPath = path.join(__dirname, 'resources', 'alpaca.ico');
   } else {
-    iconPath = path.join(__dirname, 'resources', 'icon.png');
+    iconPath = path.join(__dirname, 'resources', 'alpaca.png');
   }
 
   // If icon doesn't exist, create a simple one
@@ -506,6 +777,12 @@ function createTray() {
         }
       ]
     },
+    {
+      label: 'View Service Logs',
+      click: () => {
+        openServiceLogsWindow();
+      }
+    },
     { type: 'separator' },
     {
       label: 'Quit',
@@ -531,7 +808,7 @@ function createTray() {
 }
 
 async function startLlamaServer() {
-  // Check if the stored process reference is actually alive
+  console.log('[startLlamaServer] Called. llamaServerProcess exists:', !!llamaServerProcess);
   if (llamaServerProcess) {
     try {
       process.kill(llamaServerProcess.pid, 0);
@@ -549,9 +826,11 @@ async function startLlamaServer() {
 
   // Wait for the OS to release the port
   try {
+    console.log('[startLlamaServer] Waiting for port 13434 to be free...');
     await waitForPortFree(13434, 10000);
+    console.log('[startLlamaServer] Port 13434 is free.');
   } catch (e) {
-    console.error('Port 13434 is still in use, cannot start server:', e.message);
+    console.error('[startLlamaServer] Port 13434 did not become free in time');
     return false;
   }
 
@@ -630,11 +909,11 @@ async function startLlamaServer() {
   llamaServerProcess = spawnedProcess;
 
   spawnedProcess.stdout.on('data', (data) => {
-    console.log('llama-server stdout:', data.toString());
+    appendLog('llama-server', data);
   });
 
   spawnedProcess.stderr.on('data', (data) => {
-    console.log('llama-server stderr:', data.toString());
+    appendLog('llama-server', data);
   });
 
   spawnedProcess.on('close', (code) => {
@@ -868,8 +1147,15 @@ function waitForServerReady(url, timeoutMs = 120000) {
         }
       });
 
-      req.setTimeout(5000, () => {
+      req.on('timeout', () => {
         req.destroy();
+        const elapsed = Date.now() - startTime;
+        if (elapsed > timeoutMs) {
+          reject(new Error(`Server did not start within ${timeoutMs}ms: connection timeout`));
+        } else {
+          console.log(`Server request timed out, retrying... (${elapsed}ms elapsed)`);
+          setTimeout(check, checkInterval);
+        }
       });
     };
 
@@ -887,7 +1173,7 @@ function getModelsDirectory() {
 
 function getAppDataDirectory() {
   const appDataDir = app.getPath('userData');
-  const subdirs = ['models', 'chats', 'settings'];
+  const subdirs = ['models', 'chats', 'settings', 'logs'];
   for (const subdir of subdirs) {
     const dir = path.join(appDataDir, subdir);
     if (!fs.existsSync(dir)) {
@@ -897,12 +1183,90 @@ function getAppDataDirectory() {
   return appDataDir;
 }
 
+function getServicesLogPath() {
+  return path.join(getAppDataDirectory(), 'logs', 'services.log');
+}
+
+function appendLog(source, data) {
+  const logPath = getServicesLogPath();
+  const lines = data.toString().split(/\r?\n/).filter((l) => l.trim().length > 0);
+  const now = new Date().toISOString();
+  const entries = lines.map((l) => `[${now}] [${source}] ${l}\n`).join('');
+  try {
+    fs.appendFileSync(logPath, entries);
+  } catch (_) {
+    // Ignore write errors to avoid disrupting the main process
+  }
+  // Also mirror to console
+  console.log(`[${source}]`, data.toString().trimEnd());
+}
+
 function getChatsDirectory() {
   const chatsDir = path.join(app.getPath('userData'), 'chats');
   if (!fs.existsSync(chatsDir)) {
     fs.mkdirSync(chatsDir, { recursive: true });
   }
   return chatsDir;
+}
+
+function openServiceLogsWindow() {
+  const logPath = getServicesLogPath();
+
+  // Ensure the file exists so tail/Get-Content don't fail
+  if (!fs.existsSync(logPath)) {
+    try {
+      fs.writeFileSync(logPath, '# Service logs will appear here once a server starts.\n');
+    } catch (_) {
+      // ignore
+    }
+  }
+
+  if (process.platform === 'win32') {
+    // Use Windows PowerShell (powershell.exe) which is guaranteed on all Windows versions.
+    // PowerShell 7 (pwsh.exe) is optional and may not be installed.
+    const psCommand = `Get-Content -LiteralPath '${logPath}' -Wait`;
+    const child = spawn('powershell.exe', ['-NoExit', '-Command', psCommand], {
+      detached: true,
+      windowsHide: false,
+      stdio: 'ignore',
+    });
+    child.on('error', (err) => {
+      console.error('Failed to open PowerShell for logs:', err.message);
+      shell.openPath(logPath);
+    });
+  } else if (process.platform === 'darwin') {
+    const appleScript = `tell application "Terminal" to do script "tail -f '${logPath}'"`;
+    try {
+      spawn('osascript', ['-e', appleScript], { detached: true, stdio: 'ignore' });
+    } catch (err) {
+      console.error('Failed to open Terminal for logs:', err);
+      shell.openPath(logPath);
+    }
+  } else {
+    // Linux — try common terminal emulators
+    const terminals = [
+      { cmd: 'gnome-terminal', args: ['--', 'tail', '-f', logPath] },
+      { cmd: 'konsole', args: ['-e', 'tail', '-f', logPath] },
+      { cmd: 'xterm', args: ['-e', 'tail', '-f', logPath] },
+    ];
+    let launched = false;
+    for (const term of terminals) {
+      try {
+        const resolved = execSync(`which ${term.cmd}`, { encoding: 'utf8', timeout: 3000 }).trim();
+        if (resolved) {
+          spawn(term.cmd, term.args, { detached: true, stdio: 'ignore' });
+          launched = true;
+          break;
+        }
+      } catch (_) {
+        // try next terminal
+      }
+    }
+    if (!launched) {
+      // Fallback: open in default editor
+      shell.openPath(logPath);
+    }
+  }
 }
 
 function getSettingsDirectory() {
@@ -952,67 +1316,62 @@ async function downloadModels() {
       console.log(`Downloading ${model.name} from ${model.url}`);
 
       const file = fs.createWriteStream(modelPath);
+      // Reason: HF often performs multiple redirects (huggingface.co -> cdn-lfs.hf.co
+      // -> signed S3 url) and may 403 user-agent-less requests.
+      const requestOptions = {
+        headers: { 'User-Agent': 'alpacabitollama/1.0', 'Accept': '*/*' }
+      };
 
-      https.get(model.url, (response) => {
-        function handleSuccess(stream, totalSize) {
-          let downloadedSize = 0;
-          stream.on('data', (chunk) => {
-            downloadedSize += chunk.length;
-            if (totalSize) {
-              const progress = downloadedSize / totalSize;
-              downloadProgress.set(downloadId, { progress, total: totalSize, current: downloadedSize, status: 'downloading' });
-              console.log(`Downloading ${model.name}: ${(progress * 100).toFixed(2)}% (${(downloadedSize / 1024 / 1024).toFixed(2)} MB / ${(totalSize / 1024 / 1024).toFixed(2)} MB)`);
-            }
-          });
-          stream.pipe(file);
-          file.on('finish', () => {
-            file.close();
-            downloadProgress.set(downloadId, { progress: 1, total: totalSize, current: totalSize, status: 'completed' });
-            console.log(`\nDownloaded ${model.name} successfully`);
-            notifyDownloadComplete(model.filename, true);
-            resolve({ success: true, filename: model.filename });
-          });
-        }
+      function handleSuccess(stream, totalSize) {
+        let downloadedSize = 0;
+        stream.on('data', (chunk) => {
+          downloadedSize += chunk.length;
+          if (totalSize) {
+            const progress = downloadedSize / totalSize;
+            downloadProgress.set(downloadId, { progress, total: totalSize, current: downloadedSize, status: 'downloading' });
+          } else {
+            downloadProgress.set(downloadId, { progress: 0, total: 0, current: downloadedSize, status: 'downloading' });
+          }
+        });
+        stream.pipe(file);
+        file.on('finish', () => {
+          file.close();
+          downloadProgress.set(downloadId, { progress: 1, total: totalSize, current: totalSize, status: 'completed' });
+          console.log(`Downloaded ${model.name} successfully`);
+          notifyDownloadComplete(model.filename, true);
+          resolve({ success: true, filename: model.filename });
+        });
+      }
 
-        if (response.statusCode === 301 || response.statusCode === 302 ||
-            response.statusCode === 307 || response.statusCode === 308) {
-          const redirectUrl = response.headers.location;
-          console.log(`Following redirect to: ${redirectUrl}`);
-          https.get(redirectUrl, (redirectResponse) => {
-            if (redirectResponse.statusCode === 200) {
-              const totalSize = parseInt(redirectResponse.headers['content-length'], 10);
-              handleSuccess(redirectResponse, totalSize);
-            } else {
-              fs.unlink(modelPath, () => {});
-              downloadProgress.set(downloadId, { status: 'error', error: `HTTP ${redirectResponse.statusCode}` });
-              console.error(`\nError downloading ${model.name}: HTTP ${redirectResponse.statusCode}`);
-              notifyDownloadComplete(model.filename, false, `HTTP ${redirectResponse.statusCode}`);
-              resolve({ success: false, error: `HTTP ${redirectResponse.statusCode}` });
-            }
-          }).on('error', (err) => {
-            fs.unlink(modelPath, () => {});
-            downloadProgress.set(downloadId, { status: 'error', error: err.message });
-            console.error(`\nError downloading ${model.name}: ${err.message}`);
-            notifyDownloadComplete(model.filename, false, err.message);
-            resolve({ success: false, error: err.message });
-          });
-        } else if (response.statusCode === 200) {
-          const totalSize = parseInt(response.headers['content-length'], 10);
-          handleSuccess(response, totalSize);
-        } else {
-          fs.unlink(modelPath, () => {});
-          downloadProgress.set(downloadId, { status: 'error', error: `HTTP ${response.statusCode}` });
-          console.error(`\nError downloading ${model.name}: HTTP ${response.statusCode}`);
-          notifyDownloadComplete(model.filename, false, `HTTP ${response.statusCode}`);
-          resolve({ success: false, error: `HTTP ${response.statusCode}` });
-        }
-      }).on('error', (err) => {
+      function fail(message) {
         fs.unlink(modelPath, () => {});
-        downloadProgress.set(downloadId, { status: 'error', error: err.message });
-        console.error(`\nError downloading ${model.name}: ${err.message}`);
-        notifyDownloadComplete(model.filename, false, err.message);
-        resolve({ success: false, error: err.message });
-      });
+        downloadProgress.set(downloadId, { status: 'error', error: message });
+        console.error(`Error downloading ${model.name}: ${message}`);
+        notifyDownloadComplete(model.filename, false, message);
+        resolve({ success: false, error: message });
+      }
+
+      function fetchWithRedirects(url, hops) {
+        if (hops > 5) { fail('Too many redirects'); return; }
+        https.get(url, requestOptions, (response) => {
+          const code = response.statusCode;
+          if (code === 301 || code === 302 || code === 307 || code === 308) {
+            const next = response.headers.location;
+            if (!next) { fail(`Redirect ${code} with no Location header`); return; }
+            response.resume(); // discard body
+            fetchWithRedirects(next, hops + 1);
+            return;
+          }
+          if (code === 200) {
+            const totalSize = parseInt(response.headers['content-length'], 10) || 0;
+            handleSuccess(response, totalSize);
+            return;
+          }
+          fail(`HTTP ${code}`);
+        }).on('error', (err) => fail(err.message));
+      }
+
+      fetchWithRedirects(model.url, 0);
     });
   });
 
@@ -1268,11 +1627,13 @@ function getDownloadProgress(downloadId) {
 }
 
 function getAllDownloadProgress() {
+  // Include all statuses (downloading, completed, error) so the setup screen
+  // can detect when downloads finish and auto-transition to the webui.
+  // The webui Models tab also consumes this and was already tolerant of
+  // non-downloading entries.
   const result = [];
   for (const [downloadId, progress] of downloadProgress.entries()) {
-    if (progress.status === 'downloading') {
-      result.push({ downloadId, ...progress });
-    }
+    result.push({ downloadId, ...progress });
   }
   return result;
 }
@@ -1325,6 +1686,75 @@ function getStorageInfo() {
 
 let loadingWindow = null;
 
+function getLoadingWindowHtml(pngBase64, title = 'alpacabitollama', message = 'Preparing your model...') {
+  const imgHtml = pngBase64
+    ? `<img src="data:image/png;base64,${pngBase64}" alt="alpacabitollama" style="width:80px;height:80px;margin-bottom:16px;object-fit:contain;" />`
+    : '';
+  return `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background: #0f0f0f;
+      color: #e0e0e0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      text-align: center;
+      padding: 20px;
+    }
+    h1 { font-size: 1.2rem; font-weight: 600; margin-bottom: 6px; color: #fff; }
+    p { font-size: 0.8rem; color: #999; margin-bottom: 20px; }
+    .progress-track {
+      width: 240px;
+      height: 4px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      width: 0%;
+      height: 100%;
+      background: #10a37f;
+      border-radius: 2px;
+      transition: width 0.3s ease;
+    }
+    .status { margin-top: 12px; font-size: 0.75rem; color: #666; }
+  </style>
+</head>
+<body>
+  ${imgHtml}
+  <h1>${title}</h1>
+  <p>${message}</p>
+  <div class="progress-track"><div class="progress-fill" id="progress"></div></div>
+  <div class="status" id="status">Initializing...</div>
+  <script>
+    (function(){
+      var stages = [
+        {p: 10, msg: 'Copying model file...'},
+        {p: 30, msg: 'Verifying model...'},
+        {p: 60, msg: 'Preparing workspace...'},
+        {p: 90, msg: 'Almost ready...'}
+      ];
+      var el = document.getElementById('progress');
+      var st = document.getElementById('status');
+      stages.forEach(function(s, i){
+        setTimeout(function(){
+          if(el) el.style.width = s.p + '%';
+          if(st) st.textContent = s.msg;
+        }, i * 800);
+      });
+    })();
+  </script>
+</body>
+</html>`;
+}
+
 function createLoadingWindow() {
   loadingWindow = new BrowserWindow({
     width: 480,
@@ -1334,16 +1764,22 @@ function createLoadingWindow() {
     transparent: false,
     resizable: false,
     alwaysOnTop: true,
+    backgroundColor: '#0f0f0f',
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true
     }
   });
-  const loadingHtmlPath = path.join(__dirname, 'loading.html');
-  if (fs.existsSync(loadingHtmlPath)) {
-    loadingWindow.loadFile(loadingHtmlPath);
-  } else {
-    loadingWindow.loadURL('data:text/html,<body style="background:#0f0f0f;display:flex;align-items:center;justify-content:center;color:#fff;font-family:sans-serif;"><div>Loading...</div></body>');
+  const pngBase64 = getCachedAlpacaPngBase64();
+  const html = getLoadingWindowHtml(pngBase64);
+  // Write to a temp file to avoid data-URL size limits and encoding issues
+  const tempHtmlPath = path.join(app.getPath('temp'), 'alpacabitollama-loading.html');
+  try {
+    fs.writeFileSync(tempHtmlPath, html, 'utf8');
+    loadingWindow.loadFile(tempHtmlPath);
+  } catch (err) {
+    console.error('Failed to write loading HTML, falling back to data URL:', err.message);
+    loadingWindow.loadURL(`data:text/html,${encodeURIComponent(html)}`);
   }
   loadingWindow.once('ready-to-show', () => {
     loadingWindow.show();
@@ -1366,9 +1802,13 @@ async function copyDefaultModelIfNeeded() {
 
   if (existingModels.length === 0) {
     const bundledModelPaths = [
+      // Bundled inside asar (fs copy works on asar paths)
       path.join(__dirname, 'resources', 'models', 'Bonsai-4B.gguf'),
+      // Unpacked resources/ (if ever added to asarUnpack)
       path.join(__dirname, '..', 'app.asar.unpacked', 'resources', 'models', 'Bonsai-4B.gguf'),
-      path.join(process.resourcesPath, 'models', 'Bonsai-4B.gguf')
+      // Fallback via process.resourcesPath
+      path.join(process.resourcesPath, 'app.asar.unpacked', 'resources', 'models', 'Bonsai-4B.gguf'),
+      path.join(process.resourcesPath, 'app', 'resources', 'models', 'Bonsai-4B.gguf')
     ];
 
     for (const bundledPath of bundledModelPaths) {
@@ -1448,6 +1888,199 @@ app.on('quit', () => {
   killProcessOnPort(13434);
 });
 
+// ============================================================================
+// User Authentication
+// ============================================================================
+
+const crypto = require('crypto');
+
+function hashPassword(password) {
+  return crypto.createHash('sha256').update(password).digest('hex');
+}
+
+function registerUser(username, password, email, bio) {
+  const users = store.get('users', []);
+  if (users.find(u => u.username === username)) {
+    return { success: false, error: 'Username already exists' };
+  }
+  const newUser = {
+    id: crypto.randomUUID(),
+    username,
+    passwordHash: hashPassword(password),
+    email: email || '',
+    bio: bio || '',
+    avatar: '',
+    createdAt: Date.now()
+  };
+  users.push(newUser);
+  store.set('users', users);
+  // Auto-login after registration
+  const { passwordHash, ...safeUser } = newUser;
+  store.set('currentUser', safeUser);
+  return { success: true, user: safeUser };
+}
+
+function loginUser(username, password) {
+  const users = store.get('users', []);
+  const user = users.find(u => u.username === username);
+  if (!user) {
+    return { success: false, error: 'User not found' };
+  }
+  if (user.passwordHash !== hashPassword(password)) {
+    return { success: false, error: 'Invalid password' };
+  }
+  const { passwordHash, ...safeUser } = user;
+  store.set('currentUser', safeUser);
+  return { success: true, user: safeUser };
+}
+
+function getCurrentUser() {
+  return store.get('currentUser', null);
+}
+
+function logoutUser() {
+  store.delete('currentUser');
+  return { success: true };
+}
+
+function updateUserProfile(updates) {
+  const currentUser = store.get('currentUser', null);
+  if (!currentUser) {
+    return { success: false, error: 'Not logged in' };
+  }
+  const users = store.get('users', []);
+  const idx = users.findIndex(u => u.id === currentUser.id);
+  if (idx === -1) {
+    return { success: false, error: 'User not found' };
+  }
+  const allowed = ['email', 'bio', 'avatar'];
+  for (const key of allowed) {
+    if (updates[key] !== undefined) {
+      users[idx][key] = updates[key];
+      currentUser[key] = updates[key];
+    }
+  }
+  store.set('users', users);
+  store.set('currentUser', currentUser);
+  return { success: true, user: currentUser };
+}
+
+// ============================================================================
+// Web Search
+// ============================================================================
+
+/**
+ * Resolve DuckDuckGo redirect URLs to the actual destination.
+ * DDG wraps every result in //duckduckgo.com/l/?uddg=<encoded_url>
+ * so we decode the uddg parameter to get the real URL.
+ */
+function resolveDdgUrl(raw) {
+  if (!raw) return raw;
+  const uddg = raw.match(/[?&]uddg=([^&]+)/);
+  if (uddg) {
+    try { return decodeURIComponent(uddg[1]); } catch (_) { /* fallthrough */ }
+  }
+  if (raw.startsWith('//')) return 'https:' + raw;
+  return raw;
+}
+
+async function performWebSearch(query, maxResults = 5) {
+  return new Promise((resolve) => {
+    const searchUrl = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`;
+    https.get(searchUrl, { headers: { 'User-Agent': 'Mozilla/5.0' } }, (res) => {
+      let data = '';
+      res.on('data', chunk => data += chunk);
+      res.on('end', () => {
+        try {
+          const results = [];
+          // Simple regex extraction of DuckDuckGo results
+          const resultBlocks = data.match(/<a rel="nofollow" class="result__a" href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/g) || [];
+          const snippetBlocks = data.match(/<a class="result__snippet"[^>]*>([\s\S]*?)<\/a>/g) || [];
+          for (let i = 0; i < Math.min(resultBlocks.length, maxResults); i++) {
+            const linkMatch = resultBlocks[i].match(/href="([^"]+)"/);
+            const titleMatch = resultBlocks[i].replace(/<[^>]+>/g, ' ').trim();
+            const snippetMatch = snippetBlocks[i] ? snippetBlocks[i].replace(/<[^>]+>/g, ' ').trim() : '';
+            if (linkMatch) {
+              results.push({
+                title: titleMatch,
+                url: resolveDdgUrl(linkMatch[1]),
+                snippet: snippetMatch
+              });
+            }
+          }
+          resolve({ success: true, results });
+        } catch (err) {
+          console.error('Web search parsing error:', err);
+          resolve({ success: false, error: 'Failed to parse search results' });
+        }
+      });
+    }).on('error', (err) => {
+      console.error('Web search request error:', err);
+      resolve({ success: false, error: 'Failed to perform web search' });
+    });
+  });
+}
+
+function extractTextFromHtml(html) {
+  return html
+    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<nav[^>]*>[\s\S]*?<\/nav>/gi, ' ')
+    .replace(/<header[^>]*>[\s\S]*?<\/header>/gi, ' ')
+    .replace(/<footer[^>]*>[\s\S]*?<\/footer>/gi, ' ')
+    .replace(/<aside[^>]*>[\s\S]*?<\/aside>/gi, ' ')
+    .replace(/<noscript[^>]*>[\s\S]*?<\/noscript>/gi, ' ')
+    .replace(/<iframe[^>]*>[\s\S]*?<\/iframe>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+async function fetchWebPage(rawUrl) {
+  try {
+    // Node.js fetch cannot parse protocol-relative URLs (//host/path).
+    // Fix them up before the request.
+    let url = rawUrl;
+    if (url.startsWith('//')) {
+      url = 'https:' + url;
+    }
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.9',
+        // Accept-Encoding is intentionally omitted — Node.js undici handles
+        // automatic decompression and may skip it if the header is explicit.
+        'Cache-Control': 'no-cache',
+        'DNT': '1',
+        'Upgrade-Insecure-Requests': '1',
+        'Sec-Fetch-Dest': 'document',
+        'Sec-Fetch-Mode': 'navigate',
+        'Sec-Fetch-Site': 'none',
+        'Sec-Fetch-User': '?1',
+      },
+      redirect: 'follow',
+    });
+
+    if (!response.ok) {
+      return { success: false, error: `HTTP ${response.status}` };
+    }
+
+    const html = await response.text();
+    const text = extractTextFromHtml(html);
+    return { success: true, content: text.substring(0, 12000), url };
+  } catch (err) {
+    console.error('Fetch page error:', err);
+    return { success: false, error: err.message || 'Failed to fetch page' };
+  }
+}
+
 // IPC handlers for renderer process
 ipcMain.handle('get-server-status', () => {
   return isServerRunning;
@@ -1463,8 +2096,11 @@ ipcMain.handle('stop-server', async () => {
   return !isServerRunning;
 });
 
-ipcMain.handle('download-models', async () => {
-  await downloadModels();
+ipcMain.handle('download-models', () => {
+  // Fire-and-forget so the renderer UI stays responsive during multi-GB downloads
+  downloadModels().catch((err) => {
+    console.error('Background download error:', err);
+  });
   return true;
 });
 
@@ -1493,6 +2129,10 @@ ipcMain.handle('open-data-folder', () => {
 // Model management IPC handlers
 ipcMain.handle('get-installed-models', () => {
   return getInstalledModels();
+});
+
+ipcMain.handle('get-active-model', () => {
+  return store.get('activeModelFilename', null);
 });
 
 ipcMain.handle('delete-model', (event, filename) => {
@@ -1532,25 +2172,42 @@ ipcMain.handle('get-storage-info', () => {
   return getStorageInfo();
 });
 
+// Broadcast model-switch progress to all renderers (settings + main chat).
+function broadcastSwitchStatus(payload) {
+  const windows = BrowserWindow.getAllWindows();
+  for (const win of windows) {
+    if (!win.isDestroyed()) {
+      win.webContents.send('model-switch-status', payload);
+    }
+  }
+}
+
 // Switch active model and restart server
 ipcMain.handle('switch-model', async (event, filename) => {
+  console.log(`[switch-model] IPC called for: ${filename}`);
   const modelsDir = getModelsDirectory();
   const modelPath = path.join(modelsDir, filename);
+  console.log(`[switch-model] Checking model path: ${modelPath}`);
   if (!fs.existsSync(modelPath)) {
+    console.error(`[switch-model] Model file not found: ${modelPath}`);
     return { success: false, error: 'Model file not found' };
   }
   const stats = fs.statSync(modelPath);
   if (stats.size <= 1024 * 1024) {
+    console.error(`[switch-model] Model file too small: ${stats.size} bytes`);
     return { success: false, error: 'Model file is too small or incomplete' };
   }
 
+  console.log(`[switch-model] Setting activeModelFilename to: ${filename}`);
   store.set('activeModelFilename', filename);
 
   // Restart server if it's running
   const portBusy = await isPortInUse(13434);
+  console.log(`[switch-model] llamaServerProcess: ${!!llamaServerProcess}, portBusy: ${portBusy}`);
   if (llamaServerProcess || portBusy) {
     console.log(`Gracefully switching to model: ${filename}`);
     try {
+      broadcastSwitchStatus({ phase: 'stopping', filename });
       // 1. Stop the old server gracefully and wait for process exit
       await stopLlamaServer(15000);
 
@@ -1567,15 +2224,28 @@ ipcMain.handle('switch-model', async (event, filename) => {
       }
 
       // 3. Start new server with the new model
+      broadcastSwitchStatus({ phase: 'starting', filename });
       const started = await startLlamaServer();
       if (!started) {
+        broadcastSwitchStatus({ phase: 'error', filename, error: 'Failed to start server with new model' });
         return { success: false, error: 'Failed to start server with new model' };
       }
 
       // 4. Wait for new server to be ready before telling UI it's done
+      broadcastSwitchStatus({ phase: 'waiting-ready', filename });
       await waitForServerReady('http://localhost:13434/', 120000);
       console.log(`Server ready with model: ${filename}`);
 
+      // 5. Reload the main chat window so the SSE connection is re-established
+      // against the freshly-restarted server.
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        const currentUrl = mainWindow.webContents.getURL();
+        if (currentUrl.startsWith('http://localhost:13434')) {
+          mainWindow.webContents.reload();
+        }
+      }
+
+      broadcastSwitchStatus({ phase: 'ready', filename });
       return { success: true, restarted: true, ready: true };
     } catch (err) {
       console.error('Model switch failed:', err.message);
@@ -1583,23 +2253,450 @@ ipcMain.handle('switch-model', async (event, filename) => {
       try {
         await stopLlamaServer(5000);
       } catch (_) { /* ignore cleanup errors */ }
+      broadcastSwitchStatus({ phase: 'error', filename, error: err.message });
       return { success: false, error: err.message };
     }
   }
 
+  broadcastSwitchStatus({ phase: 'ready', filename });
   return { success: true, restarted: false };
 });
 
-// Go back to main UI (chat or setup) from settings
-ipcMain.handle('go-back-to-main', () => {
+async function transitionToMainApp() {
   if (!mainWindow) return;
   const validModel = checkModelsExist();
-  if (validModel && isServerRunning) {
+  if (validModel) {
+    if (!isServerRunning) {
+      const started = await startLlamaServer();
+      if (!started) {
+        const setupHtmlPath = getSetupHtmlPath();
+        const setupHtml = getSetupHtml(generateModelOptions());
+        try { fs.writeFileSync(setupHtmlPath, setupHtml); } catch (err) {
+          console.error('Failed to write setup.html:', err.message);
+        }
+        if (fs.existsSync(setupHtmlPath)) mainWindow.loadFile(setupHtmlPath);
+        return;
+      }
+    }
+    showMainWindowLoading('alpacabitollama', 'Launching chat...');
+    await waitForServerReady('http://localhost:13434/', 15000);
     mainWindow.loadURL('http://localhost:13434');
   } else {
     const setupHtmlPath = getSetupHtmlPath();
+    const setupHtml = getSetupHtml(generateModelOptions());
+    try { fs.writeFileSync(setupHtmlPath, setupHtml); } catch (err) {
+      console.error('Failed to write setup.html:', err.message);
+    }
     if (fs.existsSync(setupHtmlPath)) {
       mainWindow.loadFile(setupHtmlPath);
     }
   }
+}
+
+// ============================================================
+// Embedded jCodeMunch MCP Client
+// ============================================================
+// Spawns jcodemunch-mcp as a stdio subprocess and communicates
+// via JSON-RPC 2.0. Provides structured code retrieval for web
+// search results, file uploads, and local workspace folders.
+//
+// Uses a bundled standalone binary if available (no Python required),
+// otherwise falls back to system Python 3.10+ with jcodemunch-mcp.
+// Storage:  %APPDATA%/alpacabitollama/jcodemunch/
+//
+
+let jcmProcess = null;
+let jcmRequestId = 0;
+const jcmPending = new Map();
+let jcmInitialized = false;
+let jcmCapabilities = null;
+let jcmStoragePath = path.join(getAppDataDirectory(), 'jcodemunch');
+
+function ensureJcmStorage() {
+  if (!fs.existsSync(jcmStoragePath)) {
+    fs.mkdirSync(jcmStoragePath, { recursive: true });
+  }
+  return jcmStoragePath;
+}
+
+function detectPython() {
+  const candidates = ['python3', 'python', 'py'];
+  for (const bin of candidates) {
+    try {
+      const out = execSync(`${bin} --version`, { encoding: 'utf8', timeout: 5000 });
+      console.log(`[JCM] Found ${bin}: ${out.trim()}`);
+      return bin;
+    } catch (_) {
+      // continue
+    }
+  }
+  return null;
+}
+
+function detectJcmModule(pythonBin) {
+  try {
+    execSync(`${pythonBin} -c "import jcodemunch_mcp"`, { timeout: 5000 });
+    return true;
+  } catch (_) {
+    return false;
+  }
+}
+
+function getBundledJcmBinary() {
+  const isWin = process.platform === 'win32';
+  const isMac = process.platform === 'darwin';
+  const binaryName = isWin
+    ? 'jcodemunch-mcp.exe'
+    : isMac
+      ? 'jcodemunch-mcp-macos'
+      : 'jcodemunch-mcp-linux';
+
+  const possiblePaths = [
+    // Packaged app with asarUnpack
+    path.join(__dirname, '..', 'app.asar.unpacked', 'bin', binaryName),
+    // Packaged app / development
+    path.join(__dirname, 'bin', binaryName),
+  ];
+
+  for (const p of possiblePaths) {
+    if (fs.existsSync(p)) {
+      return p;
+    }
+  }
+  return null;
+}
+
+function getJcmCommand() {
+  // Prefer bundled standalone binary (no Python required)
+  const bundled = getBundledJcmBinary();
+  if (bundled) {
+    return { binary: bundled, args: [] };
+  }
+
+  // Fallback: system Python + pip-installed module
+  const python = detectPython();
+  if (!python) {
+    return { error: 'Python not found. Install Python 3.10+ or bundle jcodemunch-mcp binary to use built-in code retrieval.' };
+  }
+  if (!detectJcmModule(python)) {
+    return { error: 'jcodemunch-mcp not found. Run: pip install jcodemunch-mcp, or bundle the standalone binary.' };
+  }
+  return { binary: python, args: ['-m', 'jcodemunch_mcp.server'] };
+}
+
+async function startJcmClient() {
+  if (jcmProcess && !jcmProcess.killed) {
+    return { success: true, message: 'Already running' };
+  }
+
+  const cmd = getJcmCommand();
+  if (cmd.error) {
+    return { success: false, error: cmd.error };
+  }
+
+  ensureJcmStorage();
+
+  const env = {
+    ...process.env,
+    JCODEMUNCH_STORAGE_PATH: jcmStoragePath,
+    JCODEMUNCH_USE_AI_SUMMARIES: 'false',
+  };
+
+  try {
+    jcmProcess = spawn(cmd.binary, cmd.args, {
+      stdio: ['pipe', 'pipe', 'pipe'],
+      env,
+      windowsHide: true,
+    });
+
+    jcmProcess.stderr.on('data', (data) => {
+      appendLog('jcm', data);
+    });
+
+    jcmProcess.on('exit', (code) => {
+      console.log(`[JCM] Process exited with code ${code}`);
+      jcmInitialized = false;
+      jcmProcess = null;
+    });
+
+    jcmProcess.on('error', (err) => {
+      console.error('[JCM] Process error:', err);
+      jcmInitialized = false;
+      jcmProcess = null;
+    });
+
+    // Read JSON-RPC responses
+    let buffer = '';
+    jcmProcess.stdout.on('data', (data) => {
+      buffer += data.toString();
+      const lines = buffer.split('\n');
+      buffer = lines.pop(); // keep incomplete line in buffer
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed) continue;
+        try {
+          const msg = JSON.parse(trimmed);
+          if (msg.id !== undefined && jcmPending.has(msg.id)) {
+            const { resolve, reject } = jcmPending.get(msg.id);
+            jcmPending.delete(msg.id);
+            if (msg.error) {
+              reject(new Error(msg.error.message || JSON.stringify(msg.error)));
+            } else {
+              resolve(msg.result);
+            }
+          }
+        } catch (err) {
+          console.warn('[JCM] Failed to parse line:', trimmed.slice(0, 200), err.message);
+        }
+      }
+    });
+
+    // Wait a moment for process to start
+    await new Promise((r) => setTimeout(r, 500));
+
+    // Send initialize
+    const initResult = await jcmSendRequest('initialize', {
+      protocolVersion: '2024-11-05',
+      capabilities: {},
+      clientInfo: { name: 'alpacabitollama', version: '1.0.0' },
+    });
+
+    jcmCapabilities = initResult?.capabilities;
+    jcmInitialized = true;
+
+    // Send initialized notification
+    jcmSendNotification('notifications/initialized', {});
+
+    console.log('[JCM] Initialized successfully');
+    return { success: true };
+  } catch (err) {
+    console.error('[JCM] Failed to start:', err);
+    return { success: false, error: err.message };
+  }
+}
+
+function stopJcmClient() {
+  if (jcmProcess && !jcmProcess.killed) {
+    jcmProcess.kill();
+    jcmProcess = null;
+  }
+  jcmInitialized = false;
+  jcmCapabilities = null;
+}
+
+function jcmSendNotification(method, params) {
+  if (!jcmProcess || jcmProcess.killed) return;
+  const msg = JSON.stringify({ jsonrpc: '2.0', method, params });
+  jcmProcess.stdin.write(msg + '\n');
+}
+
+function jcmSendRequest(method, params) {
+  return new Promise((resolve, reject) => {
+    if (!jcmProcess || jcmProcess.killed) {
+      reject(new Error('jCodeMunch process not running'));
+      return;
+    }
+    const id = ++jcmRequestId;
+    jcmPending.set(id, { resolve, reject });
+    const msg = JSON.stringify({ jsonrpc: '2.0', id, method, params });
+    jcmProcess.stdin.write(msg + '\n');
+
+    // Timeout
+    setTimeout(() => {
+      if (jcmPending.has(id)) {
+        jcmPending.delete(id);
+        reject(new Error(`jCodeMunch request timeout: ${method}`));
+      }
+    }, 30000);
+  });
+}
+
+async function jcmCallTool(toolName, args) {
+  if (!jcmInitialized) {
+    const startRes = await startJcmClient();
+    if (!startRes.success) {
+      return { success: false, error: startRes.error };
+    }
+  }
+  try {
+    const result = await jcmSendRequest('tools/call', {
+      name: toolName,
+      arguments: args,
+    });
+    // Extract text content from MCP result
+    let contentText = '';
+    let isError = false;
+    if (result && result.content) {
+      for (const item of result.content) {
+        if (item.type === 'text') {
+          contentText += item.text;
+        }
+      }
+      isError = !!result.isError;
+    }
+    return { success: !isError, content: contentText, raw: result };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+}
+
+// Higher-level helpers
+async function jcmIndexRepo(repoUrl) {
+  return jcmCallTool('index_repo', { url: repoUrl });
+}
+
+async function jcmIndexFolder(folderPath) {
+  // Normalize path for Windows
+  const normalized = path.resolve(folderPath);
+  return jcmCallTool('index_folder', { path: normalized });
+}
+
+async function jcmSearchSymbols(repo, query, maxResults = 10, kind) {
+  const args = { repo, query, max_results: maxResults };
+  if (kind) args.kind = kind;
+  return jcmCallTool('search_symbols', args);
+}
+
+async function jcmGetSymbolSource(repo, symbolId) {
+  return jcmCallTool('get_symbol_source', { repo, symbol_id: symbolId });
+}
+
+async function jcmListRepos() {
+  return jcmCallTool('list_repos', {});
+}
+
+async function jcmGetRepoOutline(repo) {
+  return jcmCallTool('get_repo_outline', { repo });
+}
+
+async function jcmGetFileTree(repo, pathPrefix = '') {
+  return jcmCallTool('get_file_tree', { repo, path_prefix: pathPrefix });
+}
+
+async function jcmGetFileContent(repo, filePath) {
+  return jcmCallTool('get_file_content', { repo, file_path: filePath });
+}
+
+async function jcmGetContextBundle(repo, symbolId, includeCallers = false) {
+  return jcmCallTool('get_context_bundle', { repo, symbol_id: symbolId, include_callers: includeCallers });
+}
+
+async function jcmGetFileOutline(repo, filePath) {
+  return jcmCallTool('get_file_outline', { repo, file_path: filePath });
+}
+
+async function jcmInvalidateCache(repo) {
+  return jcmCallTool('invalidate_cache', { repo });
+}
+
+// Health check
+async function jcmHealthCheck() {
+  const cmd = getJcmCommand();
+  if (cmd.error) {
+    return { available: false, error: cmd.error };
+  }
+  if (!jcmInitialized) {
+    const startRes = await startJcmClient();
+    return { available: startRes.success, error: startRes.error };
+  }
+  return { available: true };
+}
+
+// ============================================================
+
+// Go back to main UI (chat or setup) from settings
+ipcMain.handle('go-back-to-main', () => {
+  transitionToMainApp();
+});
+
+// User authentication IPC handlers
+ipcMain.handle('register-user', (event, username, password, email, bio) => {
+  return registerUser(username, password, email, bio);
+});
+
+ipcMain.handle('login-user', (event, username, password) => {
+  return loginUser(username, password);
+});
+
+ipcMain.handle('get-current-user', () => {
+  return getCurrentUser();
+});
+
+ipcMain.handle('logout-user', () => {
+  return logoutUser();
+});
+
+ipcMain.handle('update-user-profile', (event, updates) => {
+  return updateUserProfile(updates);
+});
+
+// Web search IPC handlers
+ipcMain.handle('web-search', async (event, query, maxResults) => {
+  return performWebSearch(query, maxResults);
+});
+
+ipcMain.handle('fetch-web-page', async (event, url) => {
+  return fetchWebPage(url);
+});
+
+// Embedded jCodeMunch IPC handlers
+ipcMain.handle('jcm-health-check', async () => {
+  return jcmHealthCheck();
+});
+
+ipcMain.handle('jcm-index-repo', async (event, repoUrl) => {
+  return jcmIndexRepo(repoUrl);
+});
+
+ipcMain.handle('jcm-index-folder', async (event, folderPath) => {
+  return jcmIndexFolder(folderPath);
+});
+
+ipcMain.handle('jcm-search-symbols', async (event, repo, query, maxResults, kind) => {
+  return jcmSearchSymbols(repo, query, maxResults, kind);
+});
+
+ipcMain.handle('jcm-get-symbol-source', async (event, repo, symbolId) => {
+  return jcmGetSymbolSource(repo, symbolId);
+});
+
+ipcMain.handle('jcm-list-repos', async () => {
+  return jcmListRepos();
+});
+
+ipcMain.handle('jcm-get-repo-outline', async (event, repo) => {
+  return jcmGetRepoOutline(repo);
+});
+
+ipcMain.handle('jcm-get-file-tree', async (event, repo, pathPrefix) => {
+  return jcmGetFileTree(repo, pathPrefix);
+});
+
+ipcMain.handle('jcm-get-file-content', async (event, repo, filePath) => {
+  return jcmGetFileContent(repo, filePath);
+});
+
+ipcMain.handle('jcm-get-context-bundle', async (event, repo, symbolId, includeCallers) => {
+  return jcmGetContextBundle(repo, symbolId, includeCallers);
+});
+
+ipcMain.handle('jcm-get-file-outline', async (event, repo, filePath) => {
+  return jcmGetFileOutline(repo, filePath);
+});
+
+ipcMain.handle('jcm-invalidate-cache', async (event, repo) => {
+  return jcmInvalidateCache(repo);
+});
+
+// Local folder picker for workspace indexing
+ipcMain.handle('select-local-folder', async () => {
+  if (!mainWindow) return { canceled: true };
+  const result = await dialog.showOpenDialog(mainWindow, {
+    properties: ['openDirectory'],
+    title: 'Select a local folder to index for code context',
+  });
+  if (result.canceled || result.filePaths.length === 0) {
+    return { canceled: true };
+  }
+  return { canceled: false, folderPath: result.filePaths[0] };
 });

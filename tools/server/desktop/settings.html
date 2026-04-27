@@ -275,6 +275,108 @@
       word-break: break-all;
       margin-bottom: 10px;
     }
+    .badge-active {
+      display: inline-block;
+      background: #27ae60;
+      color: white;
+      font-size: 10px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 10px;
+      margin-left: 8px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+    .model-item.is-active {
+      background: linear-gradient(90deg, rgba(39, 174, 96, 0.08), transparent);
+    }
+    button.btn-active-state {
+      background: #27ae60 !important;
+      cursor: default;
+    }
+    button:disabled { opacity: 0.55; cursor: not-allowed; }
+    /* Switch overlay */
+    .switch-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 15, 15, 0.78);
+      backdrop-filter: blur(4px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+      animation: fadeIn 0.2s ease;
+    }
+    .switch-overlay.visible { display: flex; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    .switch-card {
+      background: white;
+      border-radius: 12px;
+      padding: 30px 36px;
+      min-width: 360px;
+      max-width: 480px;
+      text-align: center;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.3);
+    }
+    .switch-card .big-spinner {
+      width: 48px;
+      height: 48px;
+      border: 4px solid #eee;
+      border-top-color: #667eea;
+      border-radius: 50%;
+      animation: spin 0.9s linear infinite;
+      margin: 0 auto 16px;
+    }
+    .switch-card h2 {
+      margin: 0 0 6px;
+      font-size: 18px;
+      color: #333;
+    }
+    .switch-card .switch-filename {
+      font-family: monospace;
+      font-size: 13px;
+      color: #667eea;
+      word-break: break-all;
+      margin-bottom: 18px;
+    }
+    .switch-phases {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      text-align: left;
+      font-size: 13px;
+    }
+    .switch-phases li {
+      padding: 6px 0;
+      color: #999;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .switch-phases li.done { color: #27ae60; }
+    .switch-phases li.current { color: #333; font-weight: 500; }
+    .switch-phases .pip {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      border: 2px solid #ddd;
+      flex-shrink: 0;
+    }
+    .switch-phases li.done .pip { background: #27ae60; border-color: #27ae60; }
+    .switch-phases li.current .pip {
+      border-color: #667eea;
+      border-top-color: transparent;
+      animation: spin 0.9s linear infinite;
+    }
+    .switch-card .switch-error {
+      color: #e74c3c;
+      margin-top: 12px;
+      font-size: 13px;
+    }
+    .switch-card .switch-close {
+      margin-top: 16px;
+      display: none;
+    }
   </style>
 </head>
 <body>
@@ -349,6 +451,23 @@
 
   <div id="toastContainer"></div>
 
+  <!-- Model switch overlay -->
+  <div class="switch-overlay" id="switchOverlay" role="dialog" aria-modal="true" aria-labelledby="switchTitle">
+    <div class="switch-card">
+      <div class="big-spinner" id="switchSpinner"></div>
+      <h2 id="switchTitle">Switching model</h2>
+      <div class="switch-filename" id="switchFilename"></div>
+      <ul class="switch-phases" id="switchPhases" aria-live="polite">
+        <li data-phase="stopping"><span class="pip"></span><span>Stopping current server</span></li>
+        <li data-phase="starting"><span class="pip"></span><span>Starting server with new model</span></li>
+        <li data-phase="waiting-ready"><span class="pip"></span><span>Loading model into memory</span></li>
+        <li data-phase="ready"><span class="pip"></span><span>Ready</span></li>
+      </ul>
+      <div class="switch-error" id="switchError" style="display:none;"></div>
+      <button class="btn-secondary btn-small switch-close" id="switchCloseBtn">Close</button>
+    </div>
+  </div>
+
   <script>
     // --- Storage ---
     async function loadStorageInfo() {
@@ -375,56 +494,137 @@
     }
 
     // --- Installed Models ---
+    let activeModelFilename = null;
+    let switchInProgress = false;
+
+    function setActionsDisabled(disabled) {
+      document.querySelectorAll('#installedModels button[data-action]').forEach((btn) => {
+        // Active model's switch button stays disabled regardless
+        if (btn.dataset.action === 'switch' && btn.dataset.filename === activeModelFilename) {
+          btn.disabled = true;
+        } else {
+          btn.disabled = disabled;
+        }
+      });
+    }
+
+    function renderModelRow(m) {
+      const isActive = m.filename === activeModelFilename;
+      const li = document.createElement('li');
+      li.className = 'model-item' + (isActive ? ' is-active' : '');
+      li.dataset.filename = m.filename;
+
+      const info = document.createElement('div');
+      info.className = 'model-info';
+      const name = document.createElement('div');
+      name.className = 'model-name';
+      name.textContent = m.filename;
+      if (isActive) {
+        const badge = document.createElement('span');
+        badge.className = 'badge-active';
+        badge.textContent = 'Active';
+        name.appendChild(badge);
+      }
+      const meta = document.createElement('div');
+      meta.className = 'model-meta';
+      meta.textContent = `${m.sizeFormatted} \u00b7 ${new Date(m.modified).toLocaleString()}`;
+      info.appendChild(name);
+      info.appendChild(meta);
+
+      const actions = document.createElement('div');
+      actions.className = 'model-actions';
+      const switchBtn = document.createElement('button');
+      switchBtn.className = 'btn-primary btn-small' + (isActive ? ' btn-active-state' : '');
+      switchBtn.dataset.action = 'switch';
+      switchBtn.dataset.filename = m.filename;
+      switchBtn.textContent = isActive ? 'Active' : 'Switch';
+      switchBtn.disabled = isActive || switchInProgress;
+      const delBtn = document.createElement('button');
+      delBtn.className = 'btn-danger btn-small';
+      delBtn.dataset.action = 'delete';
+      delBtn.dataset.filename = m.filename;
+      delBtn.textContent = 'Delete';
+      delBtn.disabled = switchInProgress;
+      actions.appendChild(switchBtn);
+      actions.appendChild(delBtn);
+
+      li.appendChild(info);
+      li.appendChild(actions);
+      return li;
+    }
+
     async function loadInstalledModels() {
       try {
-        const models = await window.llamaAPI.getInstalledModels();
+        const [models, active] = await Promise.all([
+          window.llamaAPI.getInstalledModels(),
+          window.llamaAPI.getActiveModel ? window.llamaAPI.getActiveModel() : Promise.resolve(null),
+        ]);
+        activeModelFilename = active;
         const list = document.getElementById('installedModels');
-        if (models.length === 0) {
-          list.innerHTML = `
-            <li class="empty-state">
-              <div class="icon">📦</div>
-              <div>No models installed yet</div>
-              <div style="font-size: 12px; margin-top: 5px;">Use the HuggingFace Hub below to search and install models</div>
-            </li>`;
+        if (!models || models.length === 0) {
+          list.replaceChildren();
+          const empty = document.createElement('li');
+          empty.className = 'empty-state';
+          empty.innerHTML = `
+            <div class="icon">📦</div>
+            <div>No models installed yet</div>
+            <div style="font-size: 12px; margin-top: 5px;">Use the HuggingFace Hub below to search and install models</div>`;
+          list.appendChild(empty);
           return;
         }
-        list.innerHTML = models.map(m => `
-          <li class="model-item">
-            <div class="model-info">
-              <div class="model-name">${escapeHtml(m.filename)}</div>
-              <div class="model-meta">${m.sizeFormatted} &middot; ${new Date(m.modified).toLocaleString()}</div>
-            </div>
-            <div class="model-actions">
-              <button class="btn-primary btn-small" onclick="activateModel('${escapeHtml(m.filename)}')">Switch</button>
-              <button class="btn-danger btn-small" onclick="deleteModel('${escapeHtml(m.filename)}')">Delete</button>
-            </div>
-          </li>
-        `).join('');
+        const fragment = document.createDocumentFragment();
+        for (const m of models) fragment.appendChild(renderModelRow(m));
+        list.replaceChildren(fragment);
       } catch (e) {
         console.error('Failed to load models:', e);
       }
     }
+
+    // Delegated click handler — replaces unsafe inline onclick attributes that
+    // previously embedded user-controlled filenames into HTML strings.
+    document.getElementById('installedModels').addEventListener('click', (e) => {
+      const btn = e.target.closest('button[data-action]');
+      if (!btn || btn.disabled) return;
+      const filename = btn.dataset.filename;
+      if (btn.dataset.action === 'switch') activateModel(filename);
+      else if (btn.dataset.action === 'delete') deleteModel(filename);
+    });
 
     async function activateModel(filename) {
       if (!window.llamaAPI || !window.llamaAPI.switchModel) {
         showToast('Model switching is not available', 'error');
         return;
       }
-      showToast(`Switching to ${filename}...`, 'info');
+      if (switchInProgress) return;
+      if (filename === activeModelFilename) return;
+
+      switchInProgress = true;
+      setActionsDisabled(true);
+      openSwitchOverlay(filename);
+
       try {
         const result = await window.llamaAPI.switchModel(filename);
         if (result?.success) {
+          activeModelFilename = filename;
+          markSwitchPhase('ready');
+          finishSwitchOverlay(null);
           showToast(`Switched to ${filename}`, 'success');
-          loadInstalledModels();
         } else {
+          finishSwitchOverlay(result?.error || 'Unknown error');
           showToast(`Switch failed: ${result?.error || 'Unknown error'}`, 'error');
         }
       } catch (e) {
+        finishSwitchOverlay(e.message || 'Unknown error');
         showToast(`Switch failed: ${e.message || 'Unknown error'}`, 'error');
+      } finally {
+        switchInProgress = false;
+        // Re-render to update Active badge / button states
+        loadInstalledModels();
       }
     }
 
     async function deleteModel(filename) {
+      if (switchInProgress) return;
       if (!confirm(`Delete ${filename}? This cannot be undone.`)) return;
       try {
         await window.llamaAPI.deleteModel(filename);
@@ -435,6 +635,55 @@
         showToast('Failed to delete model', 'error');
       }
     }
+
+    // --- Switch overlay control ---
+    const PHASE_ORDER = ['stopping', 'starting', 'waiting-ready', 'ready'];
+
+    function openSwitchOverlay(filename) {
+      const overlay = document.getElementById('switchOverlay');
+      document.getElementById('switchFilename').textContent = filename;
+      document.getElementById('switchError').style.display = 'none';
+      document.getElementById('switchCloseBtn').style.display = 'none';
+      document.getElementById('switchSpinner').style.display = 'block';
+      document.getElementById('switchTitle').textContent = 'Switching model';
+      // Reset phase pips
+      document.querySelectorAll('#switchPhases li').forEach((li) => {
+        li.classList.remove('done', 'current');
+      });
+      overlay.classList.add('visible');
+    }
+
+    function markSwitchPhase(phase) {
+      const idx = PHASE_ORDER.indexOf(phase);
+      if (idx === -1) return;
+      document.querySelectorAll('#switchPhases li').forEach((li) => {
+        const liIdx = PHASE_ORDER.indexOf(li.dataset.phase);
+        li.classList.remove('done', 'current');
+        if (liIdx < idx) li.classList.add('done');
+        else if (liIdx === idx) li.classList.add(phase === 'ready' ? 'done' : 'current');
+      });
+    }
+
+    function finishSwitchOverlay(errorMessage) {
+      document.getElementById('switchSpinner').style.display = 'none';
+      document.getElementById('switchCloseBtn').style.display = 'inline-block';
+      if (errorMessage) {
+        document.getElementById('switchTitle').textContent = 'Switch failed';
+        const errEl = document.getElementById('switchError');
+        errEl.textContent = errorMessage;
+        errEl.style.display = 'block';
+      } else {
+        document.getElementById('switchTitle').textContent = 'Model ready';
+        // Auto-dismiss after a short delay on success
+        setTimeout(() => {
+          document.getElementById('switchOverlay').classList.remove('visible');
+        }, 900);
+      }
+    }
+
+    document.getElementById('switchCloseBtn').addEventListener('click', () => {
+      document.getElementById('switchOverlay').classList.remove('visible');
+    });
 
     // --- HuggingFace Search ---
     let currentSearch = null;
@@ -473,32 +722,7 @@
           return;
         }
 
-        results.innerHTML = `
-          <div class="repo-result">
-            <div class="repo-header">
-              <div>
-                <div class="repo-title">${escapeHtml(data.repoId)}</div>
-                <div style="font-size: 12px; color: #888;">${data.downloads || 0} downloads</div>
-                <div class="repo-tags">${(data.tags || []).map(t => `<span class="tag">${escapeHtml(t)}</span>`).join('')}</div>
-              </div>
-            </div>
-            <div class="gguf-files">
-              <div style="font-size: 13px; font-weight: 500; margin-bottom: 8px;">Available GGUF Files:</div>
-              ${data.ggufFiles.map(f => `
-                <div class="gguf-file" id="file-${escapeHtml(f.filename).replace(/[^a-zA-Z0-9]/g, '-')}">
-                  <div class="gguf-file-info">
-                    <div class="gguf-file-name">${escapeHtml(f.filename)}</div>
-                    <div class="gguf-file-size">${f.sizeFormatted}</div>
-                    <div class="progress-bar" style="display:none;" id="progress-${escapeHtml(f.filename).replace(/[^a-zA-Z0-9]/g, '-')}">
-                      <div class="progress-fill" style="width: 0%;"></div>
-                    </div>
-                    <div class="progress-text" style="display:none;" id="text-${escapeHtml(f.filename).replace(/[^a-zA-Z0-9]/g, '-')}"></div>
-                  </div>
-                  <button class="btn-primary btn-small" onclick="downloadModel('${escapeHtml(data.repoId)}', '${escapeHtml(f.filename)}')">Download</button>
-                </div>
-              `).join('')}
-            </div>
-          </div>`;
+        renderHfSearchResults(data);
       } catch (e) {
         showToast('Search failed: ' + e.message, 'error');
       } finally {
@@ -507,10 +731,108 @@
       }
     }
 
-    async function downloadModel(repoId, filename) {
+    // Build the HF search results panel using DOM APIs so user-controlled
+    // filenames/repoIds can never break out of attribute context.
+    function renderHfSearchResults(data) {
+      const results = document.getElementById('searchResults');
+      results.replaceChildren();
+
+      const repo = document.createElement('div');
+      repo.className = 'repo-result';
+
+      const header = document.createElement('div');
+      header.className = 'repo-header';
+      const headerInner = document.createElement('div');
+      const title = document.createElement('div');
+      title.className = 'repo-title';
+      title.textContent = data.repoId;
+      const downloads = document.createElement('div');
+      downloads.style.cssText = 'font-size: 12px; color: #888;';
+      downloads.textContent = `${data.downloads || 0} downloads`;
+      const tags = document.createElement('div');
+      tags.className = 'repo-tags';
+      for (const t of data.tags || []) {
+        const tag = document.createElement('span');
+        tag.className = 'tag';
+        tag.textContent = t;
+        tags.appendChild(tag);
+      }
+      headerInner.appendChild(title);
+      headerInner.appendChild(downloads);
+      headerInner.appendChild(tags);
+      header.appendChild(headerInner);
+      repo.appendChild(header);
+
+      const filesWrap = document.createElement('div');
+      filesWrap.className = 'gguf-files';
+      const filesLabel = document.createElement('div');
+      filesLabel.style.cssText = 'font-size: 13px; font-weight: 500; margin-bottom: 8px;';
+      filesLabel.textContent = 'Available GGUF Files:';
+      filesWrap.appendChild(filesLabel);
+
+      for (const f of data.ggufFiles) {
+        const row = document.createElement('div');
+        row.className = 'gguf-file';
+        row.dataset.filename = f.filename;
+
+        const info = document.createElement('div');
+        info.className = 'gguf-file-info';
+        const name = document.createElement('div');
+        name.className = 'gguf-file-name';
+        name.textContent = f.filename;
+        const size = document.createElement('div');
+        size.className = 'gguf-file-size';
+        size.textContent = f.sizeFormatted || '';
+
+        const progressBar = document.createElement('div');
+        progressBar.className = 'progress-bar';
+        progressBar.style.display = 'none';
+        progressBar.dataset.role = 'progress-bar';
+        const progressFill = document.createElement('div');
+        progressFill.className = 'progress-fill';
+        progressFill.style.width = '0%';
+        progressBar.appendChild(progressFill);
+
+        const progressText = document.createElement('div');
+        progressText.className = 'progress-text';
+        progressText.style.display = 'none';
+        progressText.dataset.role = 'progress-text';
+
+        info.appendChild(name);
+        info.appendChild(size);
+        info.appendChild(progressBar);
+        info.appendChild(progressText);
+
+        const btn = document.createElement('button');
+        btn.className = 'btn-primary btn-small';
+        btn.dataset.action = 'download';
+        btn.dataset.repo = data.repoId;
+        btn.dataset.filename = f.filename;
+        btn.textContent = 'Download';
+
+        row.appendChild(info);
+        row.appendChild(btn);
+        filesWrap.appendChild(row);
+      }
+
+      repo.appendChild(filesWrap);
+      results.appendChild(repo);
+    }
+
+    // Delegated click handler for download buttons (replaces inline onclick).
+    document.getElementById('searchResults').addEventListener('click', (e) => {
+      const btn = e.target.closest('button[data-action="download"]');
+      if (!btn || btn.disabled) return;
+      downloadModel(btn.dataset.repo, btn.dataset.filename, btn);
+    });
+
+    async function downloadModel(repoId, filename, btn) {
       const hfToken = document.getElementById('hfToken').value.trim();
-      const safeId = filename.replace(/[^a-zA-Z0-9]/g, '-');
-      const btn = document.querySelector(`#file-${safeId} button`);
+      if (!btn) {
+        const row = document.querySelector(`#searchResults .gguf-file[data-filename="${CSS.escape(filename)}"]`);
+        btn = row ? row.querySelector('button[data-action="download"]') : null;
+      }
+      if (!btn) return;
 
       btn.disabled = true;
       btn.textContent = 'Starting...';
@@ -527,7 +849,7 @@
 
         // Poll progress
         const downloadId = `${repoId}/${filename}`;
-        pollDownloadProgress(downloadId, safeId, filename, btn);
+        pollDownloadProgress(downloadId, filename, btn);
       } catch (e) {
         showToast(`Download failed: ${e.message || 'Unknown error'}`, 'error');
         btn.disabled = false;
@@ -535,9 +857,10 @@
       }
     }
 
-    async function pollDownloadProgress(downloadId, safeId, filename, btn) {
-      const progressBar = document.getElementById(`progress-${safeId}`);
-      const progressText = document.getElementById(`text-${safeId}`);
+    async function pollDownloadProgress(downloadId, filename, btn) {
+      const row = btn.closest('.gguf-file');
+      const progressBar = row ? row.querySelector('[data-role="progress-bar"]') : null;
+      const progressText = row ? row.querySelector('[data-role="progress-text"]') : null;
       if (progressBar) progressBar.style.display = 'block';
       if (progressText) progressText.style.display = 'block';
 
@@ -635,6 +958,19 @@
           } else {
             showToast(`Download failed: ${data.error || data.filename}`, 'error');
           }
+        });
+      }
+
+      // Listen for model-switch phase events from main process so the overlay
+      // updates in real time as the server stops, restarts, and warms up.
+      if (window.llamaAPI && window.llamaAPI.onModelSwitchStatus) {
+        window.llamaAPI.onModelSwitchStatus((data) => {
+          if (!data || !data.phase) return;
+          if (data.phase === 'error') {
+            finishSwitchOverlay(data.error || 'Unknown error');
+            return;
+          }
+          markSwitchPhase(data.phase);
         });
       }
 

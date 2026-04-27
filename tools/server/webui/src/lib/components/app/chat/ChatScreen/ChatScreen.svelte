@@ -8,11 +8,13 @@
 		DialogEmptyFileAlert,
 		DialogChatError,
 		ServerLoadingSplash,
-		DialogConfirmation
+		DialogConfirmation,
+		DialogUserAuth,
+		DialogWebSearch
 	} from '$lib/components/app';
 	import * as Alert from '$lib/components/ui/alert';
 	import * as AlertDialog from '$lib/components/ui/alert-dialog';
-	import { KeyboardKey } from '$lib/enums';
+	import { KeyboardKey, MessageRole, MessageType } from '$lib/enums';
 	import { createAutoScrollController } from '$lib/hooks/use-auto-scroll.svelte';
 	import {
 		chatStore,
@@ -35,8 +37,12 @@
 	import { ErrorDialogType } from '$lib/enums';
 	import { onMount } from 'svelte';
 	import { fade, fly, slide } from 'svelte/transition';
+	import { toast } from 'svelte-sonner';
 	import { Trash2, AlertTriangle, RefreshCw } from '@lucide/svelte';
 	import ChatScreenDragOverlay from './ChatScreenDragOverlay.svelte';
+
+	/** Regex to detect URLs in user messages for auto-fetching page content */
+	const URL_REGEX = /https?:\/\/[^\s<>"{}|\\^`\[\]]+/g;
 
 	let { showCenteredEmpty = false } = $props();
 
@@ -62,6 +68,12 @@
 	});
 
 	let showDeleteDialog = $state(false);
+	let userAuthDialog: DialogUserAuth | undefined = $state(undefined);
+	let webSearchDialog: DialogWebSearch | undefined = $state(undefined);
+
+	async function handleAddWebSearchContext(content: string) {
+		await chatStore.addMessage(MessageRole.USER, content, MessageType.TEXT);
+	}
 
 	let showEmptyFileDialog = $state(false);
 
@@ -254,6 +266,31 @@
 
 		const extras = result?.extras;
 
+		// Auto-fetch content from URLs detected in the message
+		const urls = message.match(URL_REGEX) || [];
+		if (urls.length > 0) {
+			const api = window.llamaAPI;
+			if (api?.fetchWebPage) {
+				const fetchedParts: string[] = [];
+				for (const url of urls) {
+					try {
+						const res = await api.fetchWebPage(url);
+						if (res.success && res.content) {
+							fetchedParts.push(`--- Content from ${url} ---\n${res.content}`);
+						} else {
+							fetchedParts.push(`--- Could not fetch ${url}: ${res.error || 'Unknown error'} ---`);
+						}
+					} catch (e) {
+						fetchedParts.push(`--- Could not fetch ${url}: ${(e as Error).message} ---`);
+					}
+				}
+				if (fetchedParts.length > 0) {
+					message = `${fetchedParts.join('\n\n')}\n\n${message}`;
+					toast.info(`Fetched content from ${urls.length} URL(s) for context`);
+				}
+			}
+		}
+
 		// Enable autoscroll for user-initiated message sending
 		autoScroll.enable();
 		await chatStore.sendMessage(message, extras);
@@ -342,7 +379,7 @@
 
 <svelte:window onkeydown={handleKeydown} />
 
-<ChatScreenHeader />
+<ChatScreenHeader onUserClick={() => userAuthDialog?.triggerOpen()} />
 
 {#if !isEmpty}
 	<div
@@ -405,6 +442,7 @@
 						onSend={handleSendMessage}
 						onStop={() => chatStore.stopGeneration()}
 						onSystemPromptAdd={handleSystemPromptAdd}
+						onWebSearchClick={() => webSearchDialog?.triggerOpen()}
 						showHelperText={false}
 						bind:uploadedFiles
 					/>
@@ -469,6 +507,7 @@
 					onSend={handleSendMessage}
 					onStop={() => chatStore.stopGeneration()}
 					onSystemPromptAdd={handleSystemPromptAdd}
+					onWebSearchClick={() => webSearchDialog?.triggerOpen()}
 					showHelperText
 					bind:uploadedFiles
 				/>
@@ -575,6 +614,10 @@
 	open={Boolean(activeErrorDialog)}
 	type={activeErrorDialog?.type ?? ErrorDialogType.SERVER}
 />
+
+<DialogUserAuth bind:this={userAuthDialog as any} />
+
+<DialogWebSearch bind:this={webSearchDialog as any} onAddContext={handleAddWebSearchContext} />
 
 <style>
 	.conversation-chat-form {

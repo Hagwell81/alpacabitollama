@@ -1,11 +1,18 @@
 <script lang="ts">
-	import { Settings } from '@lucide/svelte';
+	import { Settings, UserCircle } from '@lucide/svelte';
 	import { Button } from '$lib/components/ui/button';
 	import { useSidebar } from '$lib/components/ui/sidebar';
 	import { getChatSettingsDialogContext } from '$lib/contexts';
+	import { userStore } from '$lib/stores/user.svelte';
 
 	const sidebar = useSidebar();
 	const chatSettingsDialog = getChatSettingsDialogContext();
+
+	interface Props {
+		onUserClick?: () => void;
+	}
+
+	let { onUserClick }: Props = $props();
 </script>
 
 <header
@@ -14,6 +21,15 @@
 		: ''}"
 >
 	<div class="pointer-events-auto flex items-center space-x-2">
+		<Button
+			variant="ghost"
+			size="icon-lg"
+			onclick={() => onUserClick?.()}
+			class="rounded-full backdrop-blur-lg"
+			title={userStore.isLoggedIn ? userStore.currentUser?.username : 'User Account'}
+		>
+			<UserCircle class="h-4 w-4" />
+		</Button>
 		<Button
 			variant="ghost"
 			size="icon-lg"

@@ -5,16 +5,17 @@
   "main": "main.js",
   "scripts": {
     "copy-webui": "node build-webui.js",
+    "build:jcm": "node scripts/build-jcm.js",
     "start": "electron .",
-    "build": "npm run copy-webui && electron-builder --win",
-    "build:portable": "npm run copy-webui && electron-builder --win portable",
-    "build:installer": "npm run copy-webui && electron-builder --win nsis"
+    "build": "npm run build:jcm && npm run copy-webui && electron-builder --win",
+    "build:portable": "npm run build:jcm && npm run copy-webui && electron-builder --win portable",
+    "build:installer": "npm run build:jcm && npm run copy-webui && electron-builder --win nsis"
   },
   "build": {
     "appId": "com.ggml.llamacpp",
     "productName": "alpacabitollama",
     "directories": {
-      "output": "release",
+      "output": "release3",
       "buildResources": "resources"
     },
     "files": [
@@ -47,7 +48,7 @@
           ]
         }
       ],
-      "icon": "resources/icon.ico"
+      "icon": "resources/alpaca.ico"
     },
     "nsis": {
       "oneClick": false,
@@ -56,10 +57,10 @@
       "createStartMenuShortcut": true,
       "runAfterFinish": true,
       "deleteAppDataOnUninstall": true,
-      "artifactName": "alpacabitollama-Setup-${version}.exe"
+      "artifactName": "Alpacabitollama-Setup.exe"
     },
     "portable": {
-      "artifactName": "alpacabitollama-${version}-portable.exe"
+      "artifactName": "Alpacabitollama-Portable-Setup.exe"
     }
   },
   "dependencies": {

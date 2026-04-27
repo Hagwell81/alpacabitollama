@@ -112,11 +112,18 @@
 	}
 
 	async function switchToModel(filename: string) {
+		console.log('[ModelsSelector] switchToModel called for:', filename);
 		const api = getApi();
-		if (!api?.switchModel) return;
+		console.log('[ModelsSelector] api available:', !!api, 'switchModel available:', !!api?.switchModel);
+		if (!api?.switchModel) {
+			console.error('[ModelsSelector] switchModel not available on llamaAPI');
+			alert('Unable to switch models: llamaAPI is not available. Please check the console for details.');
+			return;
+		}
 		switchingModel = true;
 		try {
 			const result = await api.switchModel(filename);
+			console.log('[ModelsSelector] switchModel result:', result);
 			if (result?.success) {
 				// Refresh server model info after switch
 				await modelsStore.fetch(true);

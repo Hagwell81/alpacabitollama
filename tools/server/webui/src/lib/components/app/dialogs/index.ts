@@ -468,3 +468,30 @@ export { default as DialogMcpResources } from './DialogMcpResources.svelte';
  * ```
  */
 export { default as DialogMcpResourcePreview } from './DialogMcpResourcePreview.svelte';
+
+/**
+ * **DialogWebSearch** - Web search and page fetch dialog
+ *
+ * Dialog for searching the web via DuckDuckGo and fetching page content.
+ * Results can be copied as context for the chat.
+ *
+ * @example
+ * ```svelte
+ * <DialogWebSearch bind:this={webSearchDialog} />
+ * ```
+ */
+export { default as DialogWebSearch } from './DialogWebSearch.svelte';
+
+/**
+ * **DialogUserAuth** - User login and registration dialog
+ *
+ * Dialog for logging in, registering, and managing user accounts.
+ * Stores username/password in the main process and associates
+ * conversations with the logged-in user for per-user isolation.
+ *
+ * @example
+ * ```svelte
+ * <DialogUserAuth bind:this={userAuthDialog} />
+ * ```
+ */
+export { default as DialogUserAuth } from './DialogUserAuth.svelte';

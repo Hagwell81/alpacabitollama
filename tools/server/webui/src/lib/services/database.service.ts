@@ -13,6 +13,19 @@ class LlamacppDatabase extends Dexie {
 			conversations: 'id, lastModified, currNode, name',
 			messages: 'id, convId, type, role, timestamp, parent, children'
 		});
+
+		this.version(2).stores({
+			conversations: 'id, lastModified, currNode, name, userId',
+			messages: 'id, convId, type, role, timestamp, parent, children'
+		}).upgrade(async (tx) => {
+			// Migrate existing conversations to have null userId (shared / default)
+			const convs = await tx.table('conversations').toArray();
+			for (const conv of convs) {
+				if (conv.userId === undefined) {
+					await tx.table('conversations').update(conv.id, { userId: null });
+				}
+			}
+		});
 	}
 }
 
@@ -32,14 +45,16 @@ export class DatabaseService {
 	 * Creates a new conversation.
 	 *
 	 * @param name - Name of the conversation
+	 * @param userId - Optional user ID for per-user isolation
 	 * @returns The created conversation
 	 */
-	static async createConversation(name: string): Promise<DatabaseConversation> {
+	static async createConversation(name: string, userId?: string | null): Promise<DatabaseConversation> {
 		const conversation: DatabaseConversation = {
 			id: uuid(),
 			name,
 			lastModified: Date.now(),
-			currNode: ''
+			currNode: '',
+			userId: userId ?? null
 		};
 
 		await db.conversations.add(conversation);
@@ -283,11 +298,27 @@ export class DatabaseService {
 
 	/**
 	 * Gets all conversations, sorted by last modified time (newest first).
+	 * If userId is provided, only returns conversations for that user.
 	 *
+	 * @param userId - Optional user ID to filter by
 	 * @returns Array of conversations
 	 */
-	static async getAllConversations(): Promise<DatabaseConversation[]> {
-		return await db.conversations.orderBy('lastModified').reverse().toArray();
+	static async getAllConversations(userId?: string | null): Promise<DatabaseConversation[]> {
+		let collection = db.conversations.orderBy('lastModified').reverse();
+		if (userId !== undefined) {
+			collection = db.conversations.where('userId').equals(userId ?? '').reverse();
+		}
+		return await collection.toArray();
+	}
+
+	/**
+	 * Gets all conversations for a specific user.
+	 *
+	 * @param userId - User ID to filter by
+	 * @returns Array of conversations belonging to the user
+	 */
+	static async getAllConversationsForUser(userId: string): Promise<DatabaseConversation[]> {
+		return await db.conversations.where('userId').equals(userId).reverse().sortBy('lastModified');
 	}
 
 	/**

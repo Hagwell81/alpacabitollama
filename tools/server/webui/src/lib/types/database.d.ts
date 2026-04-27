@@ -13,6 +13,8 @@ export interface DatabaseConversation {
 	name: string;
 	mcpServerOverrides?: McpServerOverride[];
 	forkedFromConversationId?: string;
+	/** User ID for per-user chat session isolation */
+	userId?: string | null;
 }
 
 export interface DatabaseMessageExtraAudioFile {

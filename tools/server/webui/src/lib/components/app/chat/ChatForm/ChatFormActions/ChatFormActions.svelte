@@ -1,6 +1,7 @@
 <script lang="ts">
-	import { Square } from '@lucide/svelte';
+	import { Square, Globe } from '@lucide/svelte';
 	import { Button } from '$lib/components/ui/button';
+	import * as Tooltip from '$lib/components/ui/tooltip';
 	import {
 		ChatFormActionAttachmentsDropdown,
 		ChatFormActionAttachmentsSheet,
@@ -36,6 +37,7 @@
 		onSystemPromptClick?: () => void;
 		onMcpPromptClick?: () => void;
 		onMcpResourcesClick?: () => void;
+		onWebSearchClick?: () => void;
 	}
 
 	let {
@@ -51,7 +53,8 @@
 		onStop,
 		onSystemPromptClick,
 		onMcpPromptClick,
-		onMcpResourcesClick
+		onMcpResourcesClick,
+		onWebSearchClick
 	}: Props = $props();
 
 	let currentConfig = $derived(config());
@@ -222,6 +225,24 @@
 			{disabled}
 			onSettingsClick={() => chatSettingsDialog.open(SETTINGS_SECTION_TITLES.MCP)}
 		/>
+
+		<Tooltip.Root>
+			<Tooltip.Trigger>
+				<Button
+					class="h-8 w-8 rounded-full p-0"
+					{disabled}
+					variant="secondary"
+					type="button"
+					onclick={() => onWebSearchClick?.()}
+				>
+					<span class="sr-only">Web Search</span>
+					<Globe class="h-4 w-4" />
+				</Button>
+			</Tooltip.Trigger>
+			<Tooltip.Content>
+				<p>Web Search</p>
+			</Tooltip.Content>
+		</Tooltip.Root>
 	</div>
 
 	<div class="ml-auto flex items-center gap-1.5">

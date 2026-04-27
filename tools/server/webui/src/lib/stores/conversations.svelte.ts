@@ -23,6 +23,7 @@ import { browser } from '$app/environment';
 import { toast } from 'svelte-sonner';
 import { DatabaseService } from '$lib/services/database.service';
 import { config } from '$lib/stores/settings.svelte';
+import { userStore } from '$lib/stores/user.svelte';
 import {
 	filterByLeafNodeId,
 	findLeafNode,
@@ -133,6 +134,9 @@ class ConversationsStore {
 		if (this.isInitialized) return;
 
 		try {
+			// Initialize user session first so conversations load per-user
+			await userStore.init();
+
 			// @deprecated Legacy migration for old marker-based messages.
 			// Remove once all users have migrated to the structured format.
 			await runLegacyMigration();
@@ -227,10 +231,11 @@ class ConversationsStore {
 	 */
 
 	/**
-	 * Loads all conversations from the database
+	 * Loads all conversations from the database for the current user.
 	 */
 	async loadConversations(): Promise<void> {
-		const conversations = await DatabaseService.getAllConversations();
+		const userId = userStore.getUserId();
+		const conversations = await DatabaseService.getAllConversations(userId);
 		this.conversations = conversations;
 	}
 
@@ -241,7 +246,8 @@ class ConversationsStore {
 	 */
 	async createConversation(name?: string): Promise<string> {
 		const conversationName = name || `Chat ${new Date().toLocaleString()}`;
-		const conversation = await DatabaseService.createConversation(conversationName);
+		const userId = userStore.getUserId();
+		const conversation = await DatabaseService.createConversation(conversationName, userId);
 
 		if (this.pendingMcpServerOverrides.length > 0) {
 			// Deep clone to plain objects (Svelte 5 $state uses Proxies which can't be cloned to IndexedDB)
@@ -361,11 +367,12 @@ class ConversationsStore {
 	}
 
 	/**
-	 * Deletes all conversations and their messages
+	 * Deletes all conversations and their messages for the current user
 	 */
 	async deleteAll(): Promise<void> {
 		try {
-			const allConversations = await DatabaseService.getAllConversations();
+			const userId = userStore.getUserId();
+			const allConversations = await DatabaseService.getAllConversations(userId);
 
 			for (const conv of allConversations) {
 				await DatabaseService.deleteConversation(conv.id);
@@ -381,6 +388,14 @@ class ConversationsStore {
 			console.error('Failed to delete all conversations:', error);
 			toast.error('Failed to delete conversations');
 		}
+	}
+
+	/**
+	 * Reload conversations when the user changes (login/logout).
+	 */
+	async reloadForUser(): Promise<void> {
+		this.clearActiveConversation();
+		await this.loadConversations();
 	}
 
 	/**

@@ -74,3 +74,28 @@ if (fs.existsSync(buildReleaseDir)) {
 }
 
 console.log('Server binary copy complete!');
+
+// Copy alpaca media assets from llama.cpp/media into desktop/resources
+const mediaSourceDir = path.join(__dirname, '..', '..', '..', 'media');
+const resourcesTargetDir = path.join(__dirname, 'resources');
+
+console.log('Copying alpaca media from', mediaSourceDir, 'to', resourcesTargetDir);
+
+if (!fs.existsSync(resourcesTargetDir)) {
+  fs.mkdirSync(resourcesTargetDir, { recursive: true });
+}
+
+if (fs.existsSync(mediaSourceDir)) {
+  const mediaFiles = fs.readdirSync(mediaSourceDir).filter(f =>
+    f.endsWith('.png') || f.endsWith('.ico') || f.endsWith('.svg') || f.endsWith('.gif')
+  );
+  mediaFiles.forEach(file => {
+    const src = path.join(mediaSourceDir, file);
+    const dest = path.join(resourcesTargetDir, file);
+    fs.copyFileSync(src, dest);
+    console.log('Copied media', file);
+  });
+  console.log('Media copy complete!');
+} else {
+  console.log('Media directory not found, skipping media copy');
+}

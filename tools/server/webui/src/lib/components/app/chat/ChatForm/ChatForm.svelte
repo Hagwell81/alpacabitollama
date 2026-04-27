@@ -64,6 +64,7 @@
 		onUploadedFileRemove?: (fileId: string) => void;
 		onUploadedFilesChange?: (files: ChatUploadedFile[]) => void;
 		onValueChange?: (value: string) => void;
+		onWebSearchClick?: () => void;
 	}
 
 	let {
@@ -82,7 +83,8 @@
 		onSystemPromptClick,
 		onUploadedFileRemove,
 		onUploadedFilesChange,
-		onValueChange
+		onValueChange,
+		onWebSearchClick
 	}: Props = $props();
 
 	/**
@@ -636,6 +638,7 @@
 				onSystemPromptClick={() => onSystemPromptClick?.({ message: value, files: uploadedFiles })}
 				onMcpPromptClick={showMcpPromptButton ? () => (isPromptPickerOpen = true) : undefined}
 				onMcpResourcesClick={() => (isResourceDialogOpen = true)}
+				{onWebSearchClick}
 			/>
 		</div>
 	</div>

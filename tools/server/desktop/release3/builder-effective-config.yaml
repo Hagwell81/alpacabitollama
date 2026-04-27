@@ -1,0 +1,39 @@
+directories:
+  output: release3
+  buildResources: resources
+appId: com.ggml.llamacpp
+productName: alpacabitollama
+files:
+  - filter:
+      - main.js
+      - preload.js
+      - build-webui.js
+      - public/**/*
+      - bin/**/*
+      - resources/**/*
+      - '*.html'
+      - node_modules/**/*
+      - package.json
+asarUnpack:
+  - public/**/*
+  - bin/**/*
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+    - target: portable
+      arch:
+        - x64
+  icon: resources/alpaca.ico
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  runAfterFinish: true
+  deleteAppDataOnUninstall: true
+  artifactName: Alpacabitollama-Setup.exe
+portable:
+  artifactName: Alpacabitollama-Portable-Setup.exe
+electronVersion: 41.2.2
