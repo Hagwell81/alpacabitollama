@@ -103,26 +103,57 @@ const MODELS_TO_DOWNLOAD = [
 
 function checkModelsExist() {
   const modelsDir = getModelsDirectory();
-  const modelsToCheck = getSelectedModels();
-  
   console.log('Checking for models in:', modelsDir);
-  
-  // Check if any model exists and is valid
-  for (const model of modelsToCheck) {
-    const modelPath = path.join(modelsDir, model.filename);
-    console.log(`Checking ${model.filename}:`, fs.existsSync(modelPath));
-    
-    if (fs.existsSync(modelPath)) {
-      const stats = fs.statSync(modelPath);
-      console.log(`File size: ${stats.size} bytes`);
-      // Check if file is larger than 1MB (to avoid corrupted files)
+
+  // 1. Prefer the explicitly active model (set via switch-model) if it is valid.
+  const activeModelFilename = store.get('activeModelFilename', null);
+  if (activeModelFilename) {
+    const activePath = path.join(modelsDir, activeModelFilename);
+    if (fs.existsSync(activePath)) {
+      const stats = fs.statSync(activePath);
       if (stats.size > 1024 * 1024) {
-        console.log(`Valid model found: ${model.filename}`);
-        return model.filename; // Return the filename of the valid model
+        console.log(`Valid active model found: ${activeModelFilename}`);
+        return activeModelFilename;
       }
     }
   }
-  
+
+  // 2. Check curated/selected list next.
+  const modelsToCheck = getSelectedModels();
+  for (const model of modelsToCheck) {
+    const modelPath = path.join(modelsDir, model.filename);
+    if (fs.existsSync(modelPath)) {
+      const stats = fs.statSync(modelPath);
+      if (stats.size > 1024 * 1024) {
+        console.log(`Valid curated model found: ${model.filename}`);
+        return model.filename;
+      }
+    }
+  }
+
+  // 3. Fallback: scan the whole models directory for ANY valid .gguf file.
+  // This is required so that models downloaded via the HuggingFace search
+  // (which are not in MODELS_TO_DOWNLOAD) are also detected — without this
+  // step the setup UI is shown again immediately after a successful HF
+  // download, because the file is invisible to the curated check above.
+  if (fs.existsSync(modelsDir)) {
+    try {
+      const files = fs.readdirSync(modelsDir);
+      for (const f of files) {
+        if (!f.toLowerCase().endsWith('.gguf')) continue;
+        if (f.toLowerCase().startsWith('mmproj-')) continue; // vision projector, not a base model
+        const fp = path.join(modelsDir, f);
+        const stats = fs.statSync(fp);
+        if (stats.size > 1024 * 1024) {
+          console.log(`Valid model found via directory scan: ${f}`);
+          return f;
+        }
+      }
+    } catch (err) {
+      console.error('Error scanning models directory:', err.message);
+    }
+  }
+
   console.log('No valid models found');
   return null;
 }
@@ -856,7 +887,7 @@ async function startLlamaServer() {
     }
   }
 
-  // Fall back to scanning all available models
+  // Fall back to scanning the curated/selected list
   if (!modelPath) {
     const modelsToCheck = getSelectedModels();
     for (const model of modelsToCheck) {
@@ -869,6 +900,28 @@ async function startLlamaServer() {
           break;
         }
       }
+    }
+  }
+
+  // Final fallback: scan the whole models directory for ANY valid .gguf file.
+  // This catches models downloaded via the HuggingFace search flow that are
+  // not present in the curated MODELS_TO_DOWNLOAD list.
+  if (!modelPath && fs.existsSync(modelsDir)) {
+    try {
+      const files = fs.readdirSync(modelsDir);
+      for (const f of files) {
+        if (!f.toLowerCase().endsWith('.gguf')) continue;
+        if (f.toLowerCase().startsWith('mmproj-')) continue;
+        const fp = path.join(modelsDir, f);
+        const stats = fs.statSync(fp);
+        if (stats.size > 1024 * 1024) {
+          modelPath = fp;
+          console.log(`Using model via directory scan: ${f}`);
+          break;
+        }
+      }
+    } catch (err) {
+      console.error('Error scanning models directory:', err.message);
     }
   }
 
@@ -905,7 +958,16 @@ async function startLlamaServer() {
     console.log('Serving webui from:', publicDir);
   }
 
-  const spawnedProcess = spawn(llamaServerBinary, args);
+  // Prepend bin directory to PATH so sibling DLLs (ggml.dll, llama.dll, etc.)
+  // are always resolvable even if the inherited PATH differs between environments.
+  // Windows DLL loader also searches the EXE's own directory, so this is an
+  // additional safety net.
+  const binDir = path.dirname(llamaServerBinary);
+  const spawnEnv = {
+    ...process.env,
+    PATH: `${binDir}${path.delimiter}${process.env.PATH || ''}`,
+  };
+  const spawnedProcess = spawn(llamaServerBinary, args, { env: spawnEnv });
   llamaServerProcess = spawnedProcess;
 
   spawnedProcess.stdout.on('data', (data) => {
@@ -924,6 +986,38 @@ async function startLlamaServer() {
       isServerRunning = false;
     }
   });
+
+  // Wait up to 3 s for an immediate crash.  A crash from a missing VC++ runtime
+  // or an illegal CPU instruction always produces a non-zero exit code (e.g.
+  // 0xC000007B / 0xC0000135 on Windows).  Only flag a non-zero exit as a crash
+  // so that a normal code-0 exit in any unusual edge case doesn't cause a false
+  // positive and an unnecessary 120-second wait is avoided.
+  const crashedEarly = await new Promise((resolve) => {
+    let settled = false;
+    const guardTimer = setTimeout(() => {
+      if (!settled) { settled = true; resolve(false); }
+    }, 3000);
+    spawnedProcess.once('close', (code) => {
+      if (!settled) {
+        settled = true;
+        clearTimeout(guardTimer);
+        if (code !== 0 && code !== null) {
+          console.error(`[startLlamaServer] Process exited early with code ${code} — binary crash or missing dependency`);
+          resolve(true);
+        } else {
+          // Code 0 within 3 s is unexpected but not a DLL/CPU crash; don't block.
+          console.warn(`[startLlamaServer] Process exited with code ${code} within 3 s`);
+          resolve(false);
+        }
+      }
+    });
+  });
+
+  if (crashedEarly) {
+    llamaServerProcess = null;
+    isServerRunning = false;
+    return false;
+  }
 
   isServerRunning = true;
   return true;

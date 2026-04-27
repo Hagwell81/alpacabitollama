@@ -432,20 +432,61 @@
 		}
 	}
 
+	// HTML-attribute escaping for the <web_context> wrapper attributes.
+	// Body content is left as-is so the model sees the original text.
+	function escAttr(s: string): string {
+		return String(s ?? '')
+			.replace(/&/g, '&amp;')
+			.replace(/"/g, '&quot;')
+			.replace(/</g, '&lt;')
+			.replace(/>/g, '&gt;');
+	}
+
+	// Wraps fetched context in a sentinel tag the chat UI can recognise and
+	// render as an expandable block (similar to reasoning blocks for the
+	// assistant). The model still receives the full body as plain text inside
+	// the tag, so context is preserved.
+	function wrapContext(opts: {
+		kind: 'web-page' | 'web-search' | 'code';
+		title: string;
+		url?: string;
+		body: string;
+	}): string {
+		const attrs = [
+			`kind="${escAttr(opts.kind)}"`,
+			`title="${escAttr(opts.title)}"`,
+			opts.url ? `url="${escAttr(opts.url)}"` : ''
+		]
+			.filter(Boolean)
+			.join(' ');
+		return `<web_context ${attrs}>\n${opts.body}\n</web_context>\n\n`;
+	}
+
 	function formatForContext(): string {
 		if (symbolSource && currentRepo) {
 			const sym = codeResults[selectedSymbolIndex!];
-			return `Code context from ${currentRepo}:\nSymbol: ${sym?.name ?? ''} (${sym?.kind ?? ''})\nFile: ${sym?.file_path ?? ''}\n\n${symbolSource}\n\n`;
+			const title = `${sym?.name ?? 'Symbol'} — ${currentRepo}`;
+			const body = `Symbol: ${sym?.name ?? ''} (${sym?.kind ?? ''})\nFile: ${sym?.file_path ?? ''}\n\n${symbolSource}`;
+			return wrapContext({ kind: 'code', title, body });
 		}
 		if (localSymbolSource && selectedLocalRepo) {
 			const sym = localCodeResults[selectedLocalSymbolIndex!];
-			return `Code context from ${selectedLocalRepo}:\nSymbol: ${sym?.name ?? ''} (${sym?.kind ?? ''})\nFile: ${sym?.file_path ?? ''}\n\n${localSymbolSource}\n\n`;
+			const title = `${sym?.name ?? 'Symbol'} — ${selectedLocalRepo}`;
+			const body = `Symbol: ${sym?.name ?? ''} (${sym?.kind ?? ''})\nFile: ${sym?.file_path ?? ''}\n\n${localSymbolSource}`;
+			return wrapContext({ kind: 'code', title, body });
 		}
 		if (fetchedContent) {
-			return `Web search result:\nTitle: ${results[selectedResultIndex!]?.title || ''}\nURL: ${results[selectedResultIndex!]?.url || ''}\nContent:\n${fetchedContent}\n\n`;
+			const r = results[selectedResultIndex!];
+			const title = r?.title || 'Web page';
+			const url = r?.url || '';
+			const body = `Title: ${title}\nURL: ${url}\n\n${fetchedContent}`;
+			return wrapContext({ kind: 'web-page', title, url, body });
 		}
 		if (results.length > 0) {
-			return `Web search results for "${query}":\n\n${results.map((r, i) => `${i + 1}. ${r.title}\n${r.url}\n${r.snippet}`).join('\n\n')}\n\n`;
+			const body = `Web search results for "${query}":\n\n${results
+				.map((r, i) => `${i + 1}. ${r.title}\n${r.url}\n${r.snippet}`)
+				.join('\n\n')}`;
+			return wrapContext({ kind: 'web-search', title: `Search: ${query}`, body });
 		}
 		return '';
 	}

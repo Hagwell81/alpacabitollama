@@ -1,11 +1,77 @@
 <script lang="ts">
 	import { Card } from '$lib/components/ui/card';
-	import { ChatAttachmentsList, MarkdownContent } from '$lib/components/app';
+	import {
+		ChatAttachmentsList,
+		MarkdownContent,
+		CollapsibleContentBlock
+	} from '$lib/components/app';
 	import { getMessageEditContext } from '$lib/contexts';
 	import { config } from '$lib/stores/settings.svelte';
 	import ChatMessageActions from './ChatMessageActions.svelte';
 	import ChatMessageEditForm from './ChatMessageEditForm.svelte';
 	import { MessageRole } from '$lib/enums';
+	import { Globe, Search, Code as CodeIcon } from '@lucide/svelte';
+
+	// Sentinel block injected by DialogWebSearch.formatForContext().
+	// Recognised here so fetched web/code context renders as an expandable
+	// card (matching the reasoning block UX) instead of a wall of text.
+	type UserSegment =
+		| { type: 'text'; content: string }
+		| {
+				type: 'web_context';
+				kind: 'web-page' | 'web-search' | 'code' | string;
+				title: string;
+				url: string;
+				body: string;
+		  };
+
+	const WEB_CONTEXT_RE = /<web_context\s+([^>]*?)>\n?([\s\S]*?)\n?<\/web_context>/g;
+
+	function decodeAttr(v: string): string {
+		return v
+			.replace(/&quot;/g, '"')
+			.replace(/&lt;/g, '<')
+			.replace(/&gt;/g, '>')
+			.replace(/&amp;/g, '&');
+	}
+
+	function readAttr(attrs: string, name: string): string {
+		const m = attrs.match(new RegExp(`${name}="([^"]*)"`));
+		return m ? decodeAttr(m[1]) : '';
+	}
+
+	function parseUserContent(content: string): UserSegment[] {
+		const segs: UserSegment[] = [];
+		let last = 0;
+		let m: RegExpExecArray | null;
+		const re = new RegExp(WEB_CONTEXT_RE.source, 'g');
+		while ((m = re.exec(content)) !== null) {
+			if (m.index > last) {
+				const text = content.slice(last, m.index).trim();
+				if (text) segs.push({ type: 'text', content: text });
+			}
+			const attrs = m[1] || '';
+			segs.push({
+				type: 'web_context',
+				kind: readAttr(attrs, 'kind') || 'web-page',
+				title: readAttr(attrs, 'title'),
+				url: readAttr(attrs, 'url'),
+				body: m[2] || ''
+			});
+			last = m.index + m[0].length;
+		}
+		if (last < content.length) {
+			const text = content.slice(last).trim();
+			if (text) segs.push({ type: 'text', content: text });
+		}
+		return segs;
+	}
+
+	function iconFor(kind: string) {
+		if (kind === 'code') return CodeIcon;
+		if (kind === 'web-search') return Search;
+		return Globe;
+	}
 
 	interface Props {
 		class?: string;
@@ -49,6 +115,9 @@
 	let messageElement: HTMLElement | undefined = $state();
 	const currentConfig = config();
 
+	const segments = $derived(parseUserContent(message.content || ''));
+	const hasWebContext = $derived(segments.some((s) => s.type === 'web_context'));
+
 	$effect(() => {
 		if (!messageElement || !message.content.trim()) return;
 
@@ -88,7 +157,42 @@
 			</div>
 		{/if}
 
-		{#if message.content.trim()}
+		{#if hasWebContext}
+			<!-- Mixed rendering: web_context blocks become collapsible cards
+			     (matching the reasoning UX), surrounding text stays in the
+			     normal user-message Card. -->
+			<div class="flex w-full max-w-[80%] flex-col items-end gap-2">
+				{#each segments as seg, i (i)}
+					{#if seg.type === 'text'}
+						<Card
+							class="w-full overflow-y-auto rounded-[1.125rem] border-none bg-primary/5 px-3.75 py-1.5 text-foreground backdrop-blur-md dark:bg-primary/15"
+							style="max-height: var(--max-message-height); overflow-wrap: anywhere; word-break: break-word;"
+						>
+							{#if currentConfig.renderUserContentAsMarkdown}
+								<div>
+									<MarkdownContent class="markdown-user-content -my-4" content={seg.content} />
+								</div>
+							{:else}
+								<span class="text-md whitespace-pre-wrap">{seg.content}</span>
+							{/if}
+						</Card>
+					{:else}
+						<CollapsibleContentBlock
+							class="w-full"
+							icon={iconFor(seg.kind)}
+							title={seg.title || (seg.kind === 'code' ? 'Code context' : 'Web context')}
+							subtitle={seg.url}
+						>
+							<div
+								class="pt-3 text-xs leading-relaxed break-words whitespace-pre-wrap"
+							>
+								{seg.body}
+							</div>
+						</CollapsibleContentBlock>
+					{/if}
+				{/each}
+			</div>
+		{:else if message.content.trim()}
 			<Card
 				class="max-w-[80%] overflow-y-auto rounded-[1.125rem] border-none bg-primary/5 px-3.75 py-1.5 text-foreground backdrop-blur-md data-[multiline]:py-2.5 dark:bg-primary/15"
 				data-multiline={isMultiline ? '' : undefined}

@@ -50,6 +50,12 @@
       ],
       "icon": "resources/alpaca.ico"
     },
+    "extraFiles": [
+      {
+        "from": "resources/vc_redist.x64.exe",
+        "to": "vc_redist.x64.exe"
+      }
+    ],
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
@@ -57,7 +63,8 @@
       "createStartMenuShortcut": true,
       "runAfterFinish": true,
       "deleteAppDataOnUninstall": true,
-      "artifactName": "Alpacabitollama-Setup.exe"
+      "artifactName": "Alpacabitollama-Setup.exe",
+      "include": "installer.nsh"
     },
     "portable": {
       "artifactName": "Alpacabitollama-Portable-Setup.exe"
