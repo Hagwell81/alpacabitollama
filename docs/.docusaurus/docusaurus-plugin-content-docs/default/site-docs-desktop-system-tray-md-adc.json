@@ -1,0 +1,24 @@
+{
+  "id": "desktop/system-tray",
+  "title": "System Tray",
+  "description": "Alpacabitollama runs in the system tray for quick access.",
+  "source": "@site/docs/desktop/system-tray.md",
+  "sourceDirName": "desktop",
+  "slug": "/desktop/system-tray",
+  "permalink": "/docs/desktop/system-tray",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/Hagwell81/alpacabitollama/tree/main/docs/docs/desktop/system-tray.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {},
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "Keyboard Shortcuts",
+    "permalink": "/docs/desktop/keyboard-shortcuts"
+  },
+  "next": {
+    "title": "Auto Updater",
+    "permalink": "/docs/desktop/updater"
+  }
+}

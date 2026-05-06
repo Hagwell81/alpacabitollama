@@ -1,0 +1,24 @@
+{
+  "id": "desktop/app-menu",
+  "title": "Application Menu",
+  "description": "Overview of the Alpacabitollama application menu.",
+  "source": "@site/docs/desktop/app-menu.md",
+  "sourceDirName": "desktop",
+  "slug": "/desktop/app-menu",
+  "permalink": "/docs/desktop/app-menu",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/Hagwell81/alpacabitollama/tree/main/docs/docs/desktop/app-menu.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {},
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "Memory System",
+    "permalink": "/docs/workspace/memory-system"
+  },
+  "next": {
+    "title": "Documentation Viewer",
+    "permalink": "/docs/desktop/documentation-viewer"
+  }
+}

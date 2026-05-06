@@ -1,0 +1,24 @@
+{
+  "id": "api-management/open-router",
+  "title": "OpenRouter",
+  "description": "Access multiple models through a unified API.",
+  "source": "@site/docs/api-management/open-router.md",
+  "sourceDirName": "api-management",
+  "slug": "/api-management/open-router",
+  "permalink": "/docs/api-management/open-router",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/Hagwell81/alpacabitollama/tree/main/docs/docs/api-management/open-router.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {},
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "Mistral AI",
+    "permalink": "/docs/api-management/mistral"
+  },
+  "next": {
+    "title": "Ollama",
+    "permalink": "/docs/api-management/ollama"
+  }
+}

@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>alpacabitollama</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #0d1117;
+      color: #e6edf3;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      overflow: hidden;
+    }
+    .container {
+      text-align: center;
+      padding: 2rem;
+      max-width: 400px;
+    }
+    .logo {
+      width: 120px;
+      height: 120px;
+      margin-bottom: 20px;
+      object-fit: contain;
+      opacity: 0;
+      animation: fadeIn 0.4s ease forwards;
+    }
+    .logo-placeholder {
+      width: 120px;
+      height: 120px;
+      margin-bottom: 20px;
+      font-size: 64px;
+      line-height: 120px;
+      opacity: 0;
+      animation: fadeIn 0.4s ease forwards;
+    }
+    h1 {
+      font-size: 1.6rem;
+      font-weight: 600;
+      margin-bottom: 8px;
+      letter-spacing: 0.5px;
+      color: #fff;
+      opacity: 0;
+      animation: fadeIn 0.4s ease 0.1s forwards;
+    }
+    p {
+      font-size: 0.95rem;
+      color: #8b949e;
+      margin-bottom: 24px;
+      min-height: 1.4em;
+      opacity: 0;
+      animation: fadeIn 0.4s ease 0.2s forwards;
+    }
+    .spinner {
+      width: 48px;
+      height: 48px;
+      border: 3px solid rgba(255, 255, 255, 0.1);
+      border-top-color: #10a37f;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 1.5rem;
+      opacity: 0;
+      animation: fadeIn 0.4s ease 0.15s forwards, spin 1s linear infinite 0.4s;
+    }
+    .progress-bar {
+      width: 280px;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 2px;
+      overflow: hidden;
+      margin: 0 auto;
+      opacity: 0;
+      animation: fadeIn 0.4s ease 0.25s forwards;
+    }
+    .progress-fill {
+      height: 100%;
+      background: #10a37f;
+      width: 0%;
+      border-radius: 2px;
+      transition: width 0.4s ease;
+    }
+    .status {
+      margin-top: 1rem;
+      font-size: 0.75rem;
+      color: #666;
+      min-height: 1.2em;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    @keyframes fadeIn {
+      to { opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="logo-placeholder" id="logo">🦙</div>
+    <h1 id="title">alpacabitollama</h1>
+    <p id="message">Starting up...</p>
+    <div class="spinner" id="spinner"></div>
+    <div class="progress-bar">
+      <div class="progress-fill" id="progress"></div>
+    </div>
+    <div class="status" id="status"></div>
+  </div>
+  <script>
+    (function() {
+      const titleEl = document.getElementById('title');
+      const messageEl = document.getElementById('message');
+      const progressEl = document.getElementById('progress');
+      const statusEl = document.getElementById('status');
+      const logoEl = document.getElementById('logo');
+
+      let autoTickInterval = null;
+
+      function setText(el, text) {
+        if (el && text !== undefined) el.textContent = text;
+      }
+
+      function setProgress(pct) {
+        const safe = Math.min(100, Math.max(0, pct));
+        if (progressEl) progressEl.style.width = safe + '%';
+      }
+
+      function startAutoTick() {
+        if (autoTickInterval) return;
+        let p = 0;
+        autoTickInterval = setInterval(function() {
+          p = Math.min(90, p + Math.random() * 4);
+          setProgress(p);
+        }, 600);
+      }
+
+      function stopAutoTick() {
+        if (autoTickInterval) {
+          clearInterval(autoTickInterval);
+          autoTickInterval = null;
+        }
+      }
+
+      // Listen for updates from the main process
+      if (window.llamaAPI && window.llamaAPI.onSplashUpdate) {
+        window.llamaAPI.onSplashUpdate(function(data) {
+          if (data.title !== undefined) setText(titleEl, data.title);
+          if (data.message !== undefined) setText(messageEl, data.message);
+          if (data.percent !== undefined) {
+            setProgress(data.percent);
+            if (data.percent >= 100) stopAutoTick();
+          }
+          if (data.status !== undefined) setText(statusEl, data.status);
+          if (data.logo !== undefined) {
+            logoEl.innerHTML = '<img src="' + data.logo + '" alt="alpacabitollama" style="width:120px;height:120px;object-fit:contain;" />';
+            logoEl.className = 'logo';
+          }
+          if (data.autoTick === true) startAutoTick();
+          if (data.autoTick === false) stopAutoTick();
+        });
+      } else {
+        // Fallback if IPC bridge isn't available yet
+        startAutoTick();
+      }
+    })();
+  </script>
+</body>
+</html>

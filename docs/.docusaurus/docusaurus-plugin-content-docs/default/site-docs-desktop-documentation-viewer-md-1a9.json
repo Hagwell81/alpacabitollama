@@ -1,0 +1,29 @@
+{
+  "id": "desktop/documentation-viewer",
+  "title": "Documentation Viewer",
+  "description": "Access documentation from within the desktop app",
+  "source": "@site/docs/desktop/documentation-viewer.md",
+  "sourceDirName": "desktop",
+  "slug": "/desktop/documentation-viewer",
+  "permalink": "/docs/desktop/documentation-viewer",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/Hagwell81/alpacabitollama/tree/main/docs/docs/desktop/documentation-viewer.md",
+  "tags": [],
+  "version": "current",
+  "sidebarPosition": 5,
+  "frontMatter": {
+    "sidebar_position": 5,
+    "title": "Documentation Viewer",
+    "description": "Access documentation from within the desktop app"
+  },
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "Application Menu",
+    "permalink": "/docs/desktop/app-menu"
+  },
+  "next": {
+    "title": "Keyboard Shortcuts",
+    "permalink": "/docs/desktop/keyboard-shortcuts"
+  }
+}

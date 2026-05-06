@@ -1,0 +1,24 @@
+{
+  "id": "user-guide/settings",
+  "title": "Settings Guide",
+  "description": "Configure Alpacabitollama preferences.",
+  "source": "@site/docs/user-guide/settings.md",
+  "sourceDirName": "user-guide",
+  "slug": "/user-guide/settings",
+  "permalink": "/docs/user-guide/settings",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/Hagwell81/alpacabitollama/tree/main/docs/docs/user-guide/settings.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {},
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "Model Management",
+    "permalink": "/docs/user-guide/model-management"
+  },
+  "next": {
+    "title": "API Management Overview",
+    "permalink": "/docs/api-management/overview"
+  }
+}

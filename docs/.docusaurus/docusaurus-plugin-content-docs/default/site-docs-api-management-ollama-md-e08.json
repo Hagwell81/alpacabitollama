@@ -1,0 +1,24 @@
+{
+  "id": "api-management/ollama",
+  "title": "Ollama",
+  "description": "Run and manage local models with Ollama integration.",
+  "source": "@site/docs/api-management/ollama.md",
+  "sourceDirName": "api-management",
+  "slug": "/api-management/ollama",
+  "permalink": "/docs/api-management/ollama",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/Hagwell81/alpacabitollama/tree/main/docs/docs/api-management/ollama.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {},
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "OpenRouter",
+    "permalink": "/docs/api-management/open-router"
+  },
+  "next": {
+    "title": "LM Studio",
+    "permalink": "/docs/api-management/lm-studio"
+  }
+}

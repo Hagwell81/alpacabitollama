@@ -1,0 +1,93 @@
+{
+  "name": "alpacabitollama",
+  "version": "1.1.0",
+  "description": "Desktop application for llama.cpp with system tray, auto model downloads, and integrated documentation",
+  "main": "main.js",
+  "scripts": {
+    "copy-webui": "node build-webui.js",
+    "copy-docs": "node build-docs.js",
+    "build:jcm": "node scripts/build-jcm.js",
+    "start": "electron .",
+    "clean": "node clean-dist.js",
+    "build": "npm run clean && npm run build:jcm && npm run copy-webui && npm run copy-docs && electron-builder --win",
+    "build:win": "npm run clean && npm run build:jcm && npm run copy-webui && npm run copy-docs && electron-builder --win",
+    "build:linux": "npm run clean && npm run build:jcm && npm run copy-webui && npm run copy-docs && electron-builder --linux",
+    "build:portable": "npm run clean && npm run build:jcm && npm run copy-webui && npm run copy-docs && electron-builder --win portable",
+    "build:installer": "npm run clean && npm run build:jcm && npm run copy-webui && npm run copy-docs && electron-builder --win nsis"
+  },
+  "build": {
+    "appId": "com.ggml.llamacpp",
+    "productName": "alpacabitollama",
+    "directories": {
+      "output": "dist",
+      "buildResources": "resources"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "binary-manager.js",
+      "api-server.js",
+      "request-manager.js",
+      "splash-manager.js",
+      "lazy-start-manager.js",
+      "logs-viewer.js",
+      "public/**/*",
+      "docs/**/*",
+      "bin/**/*",
+      "resources/**/*",
+      "*.html",
+      "node_modules/**/*",
+      "package.json"
+    ],
+    "asarUnpack": [
+      "public/**/*",
+      "bin/**/*"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "resources/alpaca.ico"
+    },
+    "extraFiles": [
+      {
+        "from": "resources/vc_redist.x64.exe",
+        "to": "vc_redist.x64.exe"
+      }
+    ],
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "runAfterFinish": true,
+      "deleteAppDataOnUninstall": true,
+      "artifactName": "Alpacabitollama-Setup.exe",
+      "include": "installer.nsh"
+    },
+    "portable": {
+      "artifactName": "Alpacabitollama-Portable-Setup.exe"
+    }
+  },
+  "dependencies": {
+    "electron-store": "^8.1.0"
+  },
+  "optionalDependencies": {
+    "adm-zip": "^0.5.16"
+  },
+  "devDependencies": {
+    "electron": "^41.2.2",
+    "electron-builder": "^26.8.1"
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "id": "advanced/performance-tuning",
+  "title": "Performance Tuning",
+  "description": "This guide covers optimizing Alpacabitollama for maximum performance.",
+  "source": "@site/docs/advanced/performance-tuning.md",
+  "sourceDirName": "advanced",
+  "slug": "/advanced/performance-tuning",
+  "permalink": "/docs/advanced/performance-tuning",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/Hagwell81/alpacabitollama/tree/main/docs/docs/advanced/performance-tuning.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {},
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "Rate Limiting",
+    "permalink": "/docs/api/rate-limiting"
+  },
+  "next": {
+    "title": "Security Guide",
+    "permalink": "/docs/advanced/security"
+  }
+}

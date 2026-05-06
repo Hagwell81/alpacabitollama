@@ -1,0 +1,24 @@
+{
+  "id": "development/build-system",
+  "title": "Build System",
+  "description": "How the Alpacabitollama build system works.",
+  "source": "@site/docs/development/build-system.md",
+  "sourceDirName": "development",
+  "slug": "/development/build-system",
+  "permalink": "/docs/development/build-system",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/Hagwell81/alpacabitollama/tree/main/docs/docs/development/build-system.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {},
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "Architecture Overview",
+    "permalink": "/docs/development/architecture"
+  },
+  "next": {
+    "title": "Contributing Guide",
+    "permalink": "/docs/development/contributing"
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "id": "api-management/google",
+  "title": "Google AI (Gemini)",
+  "description": "Use Google's Gemini models through the Gemini API.",
+  "source": "@site/docs/api-management/google.md",
+  "sourceDirName": "api-management",
+  "slug": "/api-management/google",
+  "permalink": "/docs/api-management/google",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/Hagwell81/alpacabitollama/tree/main/docs/docs/api-management/google.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {},
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "OpenAI API",
+    "permalink": "/docs/api-management/openai"
+  },
+  "next": {
+    "title": "Anthropic API",
+    "permalink": "/docs/api-management/anthropic"
+  }
+}

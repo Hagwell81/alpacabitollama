@@ -1,0 +1,24 @@
+{
+  "id": "getting-started/configuration",
+  "title": "Configuration Guide",
+  "description": "Configure Alpacabitollama to your preferences.",
+  "source": "@site/docs/getting-started/configuration.md",
+  "sourceDirName": "getting-started",
+  "slug": "/getting-started/configuration",
+  "permalink": "/docs/getting-started/configuration",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/Hagwell81/alpacabitollama/tree/main/docs/docs/getting-started/configuration.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {},
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "Quick Start",
+    "permalink": "/docs/getting-started/quickstart"
+  },
+  "next": {
+    "title": "Chat Interface",
+    "permalink": "/docs/user-guide/chat-interface"
+  }
+}

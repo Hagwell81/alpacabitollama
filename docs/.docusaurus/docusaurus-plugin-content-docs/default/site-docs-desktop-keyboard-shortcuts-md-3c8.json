@@ -1,0 +1,24 @@
+{
+  "id": "desktop/keyboard-shortcuts",
+  "title": "Keyboard Shortcuts",
+  "description": "Quick reference for Alpacabitollama keyboard shortcuts.",
+  "source": "@site/docs/desktop/keyboard-shortcuts.md",
+  "sourceDirName": "desktop",
+  "slug": "/desktop/keyboard-shortcuts",
+  "permalink": "/docs/desktop/keyboard-shortcuts",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/Hagwell81/alpacabitollama/tree/main/docs/docs/desktop/keyboard-shortcuts.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {},
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "Documentation Viewer",
+    "permalink": "/docs/desktop/documentation-viewer"
+  },
+  "next": {
+    "title": "System Tray",
+    "permalink": "/docs/desktop/system-tray"
+  }
+}

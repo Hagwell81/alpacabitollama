@@ -1,0 +1,24 @@
+{
+  "id": "ide/cursor-integration",
+  "title": "Cursor IDE Integration",
+  "description": "Use Alpacabitollama with Cursor editor.",
+  "source": "@site/docs/ide/cursor-integration.md",
+  "sourceDirName": "ide",
+  "slug": "/ide/cursor-integration",
+  "permalink": "/docs/ide/cursor-integration",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/Hagwell81/alpacabitollama/tree/main/docs/docs/ide/cursor-integration.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {},
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "Auto Updater",
+    "permalink": "/docs/desktop/updater"
+  },
+  "next": {
+    "title": "IDE Keyboard Shortcuts",
+    "permalink": "/docs/ide/keyboard-shortcuts"
+  }
+}

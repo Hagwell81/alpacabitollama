@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkalpacabitollama_docs=self.webpackChunkalpacabitollama_docs||[]).push([[7472],{5513(a){a.exports=JSON.parse('{"title":"Recent posts","items":[{"title":"Welcome to Alpacabitollama \u2014 The Road Ahead","permalink":"/blog/welcome-to-alpacabitollama","unlisted":false,"date":"2026-05-04T00:00:00.000Z"}]}')}}]);

@@ -1,0 +1,29 @@
+{
+  "id": "getting-started/installation",
+  "title": "Installation Guide",
+  "description": "Install Alpacabitollama on your system",
+  "source": "@site/docs/getting-started/installation.md",
+  "sourceDirName": "getting-started",
+  "slug": "/getting-started/installation",
+  "permalink": "/docs/getting-started/installation",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/Hagwell81/alpacabitollama/tree/main/docs/docs/getting-started/installation.md",
+  "tags": [],
+  "version": "current",
+  "sidebarPosition": 2,
+  "frontMatter": {
+    "sidebar_position": 2,
+    "title": "Installation Guide",
+    "description": "Install Alpacabitollama on your system"
+  },
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "Welcome to Alpacabitollama",
+    "permalink": "/docs/getting-started/"
+  },
+  "next": {
+    "title": "Quick Start",
+    "permalink": "/docs/getting-started/quickstart"
+  }
+}

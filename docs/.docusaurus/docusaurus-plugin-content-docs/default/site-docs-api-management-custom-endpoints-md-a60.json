@@ -1,0 +1,24 @@
+{
+  "id": "api-management/custom-endpoints",
+  "title": "Custom Endpoints",
+  "description": "Connect to any OpenAI-compatible API endpoint.",
+  "source": "@site/docs/api-management/custom-endpoints.md",
+  "sourceDirName": "api-management",
+  "slug": "/api-management/custom-endpoints",
+  "permalink": "/docs/api-management/custom-endpoints",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/Hagwell81/alpacabitollama/tree/main/docs/docs/api-management/custom-endpoints.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {},
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "Azure Foundry",
+    "permalink": "/docs/api-management/azure-foundry"
+  },
+  "next": {
+    "title": "API Key Management",
+    "permalink": "/docs/api-management/key-management"
+  }
+}

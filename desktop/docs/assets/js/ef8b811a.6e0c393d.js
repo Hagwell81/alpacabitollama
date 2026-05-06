@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkalpacabitollama_docs=self.webpackChunkalpacabitollama_docs||[]).push([[8947],{6600(a){a.exports=JSON.parse('{"authors":[{"name":"Tom","title":"Alpacabitollama Developer","url":"https://github.com/alpacabitollama","imageURL":"/img/logo.svg","key":"tom","page":null,"count":1}]}')}}]);

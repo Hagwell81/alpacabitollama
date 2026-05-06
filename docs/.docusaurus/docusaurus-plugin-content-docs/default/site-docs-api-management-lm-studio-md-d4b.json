@@ -1,0 +1,24 @@
+{
+  "id": "api-management/lm-studio",
+  "title": "LM Studio",
+  "description": "Connect to LM Studio's local server for easy model management.",
+  "source": "@site/docs/api-management/lm-studio.md",
+  "sourceDirName": "api-management",
+  "slug": "/api-management/lm-studio",
+  "permalink": "/docs/api-management/lm-studio",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/Hagwell81/alpacabitollama/tree/main/docs/docs/api-management/lm-studio.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {},
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "Ollama",
+    "permalink": "/docs/api-management/ollama"
+  },
+  "next": {
+    "title": "Azure Foundry",
+    "permalink": "/docs/api-management/azure-foundry"
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "id": "agentic/creating-tools",
+  "title": "Creating Tools",
+  "description": "Tools are the building blocks that agents use to interact with the world.",
+  "source": "@site/docs/agentic/creating-tools.md",
+  "sourceDirName": "agentic",
+  "slug": "/agentic/creating-tools",
+  "permalink": "/docs/agentic/creating-tools",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/Hagwell81/alpacabitollama/tree/main/docs/docs/agentic/creating-tools.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {},
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "Creating Agents",
+    "permalink": "/docs/agentic/creating-agents"
+  },
+  "next": {
+    "title": "Creating Skills",
+    "permalink": "/docs/agentic/creating-skills"
+  }
+}

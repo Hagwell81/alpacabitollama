@@ -1,0 +1,24 @@
+{
+  "id": "api/rest-api",
+  "title": "REST API Reference",
+  "description": "Complete reference for the Alpacabitollama API.",
+  "source": "@site/docs/api/rest-api.md",
+  "sourceDirName": "api",
+  "slug": "/api/rest-api",
+  "permalink": "/docs/api/rest-api",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/Hagwell81/alpacabitollama/tree/main/docs/docs/api/rest-api.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {},
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "Testing Guide",
+    "permalink": "/docs/development/testing"
+  },
+  "next": {
+    "title": "IPC Channels",
+    "permalink": "/docs/api/ipc-channels"
+  }
+}

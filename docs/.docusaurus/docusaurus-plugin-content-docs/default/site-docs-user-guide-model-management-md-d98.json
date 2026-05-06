@@ -1,0 +1,24 @@
+{
+  "id": "user-guide/model-management",
+  "title": "Model Management",
+  "description": "Manage AI models in Alpacabitollama.",
+  "source": "@site/docs/user-guide/model-management.md",
+  "sourceDirName": "user-guide",
+  "slug": "/user-guide/model-management",
+  "permalink": "/docs/user-guide/model-management",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/Hagwell81/alpacabitollama/tree/main/docs/docs/user-guide/model-management.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {},
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "Chat Interface",
+    "permalink": "/docs/user-guide/chat-interface"
+  },
+  "next": {
+    "title": "Settings Guide",
+    "permalink": "/docs/user-guide/settings"
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "id": "user-guide/chat-interface",
+  "title": "Chat Interface",
+  "description": "Using the Alpacabitollama chat UI.",
+  "source": "@site/docs/user-guide/chat-interface.md",
+  "sourceDirName": "user-guide",
+  "slug": "/user-guide/chat-interface",
+  "permalink": "/docs/user-guide/chat-interface",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/Hagwell81/alpacabitollama/tree/main/docs/docs/user-guide/chat-interface.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {},
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "Configuration Guide",
+    "permalink": "/docs/getting-started/configuration"
+  },
+  "next": {
+    "title": "Model Management",
+    "permalink": "/docs/user-guide/model-management"
+  }
+}

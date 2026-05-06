@@ -1,0 +1,24 @@
+{
+  "id": "ide/keyboard-shortcuts",
+  "title": "IDE Keyboard Shortcuts",
+  "description": "Quick reference for IDE integration shortcuts.",
+  "source": "@site/docs/ide/keyboard-shortcuts.md",
+  "sourceDirName": "ide",
+  "slug": "/ide/keyboard-shortcuts",
+  "permalink": "/docs/ide/keyboard-shortcuts",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/Hagwell81/alpacabitollama/tree/main/docs/docs/ide/keyboard-shortcuts.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {},
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "Cursor IDE Integration",
+    "permalink": "/docs/ide/cursor-integration"
+  },
+  "next": {
+    "title": "Project Awareness",
+    "permalink": "/docs/ide/project-awareness"
+  }
+}

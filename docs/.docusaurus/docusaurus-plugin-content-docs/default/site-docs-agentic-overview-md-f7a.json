@@ -1,0 +1,29 @@
+{
+  "id": "agentic/overview",
+  "title": "Agentic Services Overview",
+  "description": "Build intelligent multi-agent systems",
+  "source": "@site/docs/agentic/overview.md",
+  "sourceDirName": "agentic",
+  "slug": "/agentic/overview",
+  "permalink": "/docs/agentic/overview",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/Hagwell81/alpacabitollama/tree/main/docs/docs/agentic/overview.md",
+  "tags": [],
+  "version": "current",
+  "sidebarPosition": 1,
+  "frontMatter": {
+    "sidebar_position": 1,
+    "title": "Agentic Services Overview",
+    "description": "Build intelligent multi-agent systems"
+  },
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "API Key Management",
+    "permalink": "/docs/api-management/key-management"
+  },
+  "next": {
+    "title": "Multi-Agent Architecture",
+    "permalink": "/docs/agentic/multi-agent-architecture"
+  }
+}

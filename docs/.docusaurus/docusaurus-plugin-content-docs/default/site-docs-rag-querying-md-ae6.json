@@ -1,0 +1,24 @@
+{
+  "id": "rag/querying",
+  "title": "Querying the Knowledge Base",
+  "description": "Search and retrieve information from your documents.",
+  "source": "@site/docs/rag/querying.md",
+  "sourceDirName": "rag",
+  "slug": "/rag/querying",
+  "permalink": "/docs/rag/querying",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/Hagwell81/alpacabitollama/tree/main/docs/docs/rag/querying.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {},
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "Adding Documents",
+    "permalink": "/docs/rag/adding-documents"
+  },
+  "next": {
+    "title": "Vector Stores",
+    "permalink": "/docs/rag/vector-stores"
+  }
+}

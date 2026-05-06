@@ -1,0 +1,24 @@
+{
+  "id": "api-management/key-management",
+  "title": "API Key Management",
+  "description": "Manage API keys for all providers securely.",
+  "source": "@site/docs/api-management/key-management.md",
+  "sourceDirName": "api-management",
+  "slug": "/api-management/key-management",
+  "permalink": "/docs/api-management/key-management",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/Hagwell81/alpacabitollama/tree/main/docs/docs/api-management/key-management.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {},
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "Custom Endpoints",
+    "permalink": "/docs/api-management/custom-endpoints"
+  },
+  "next": {
+    "title": "Agentic Services Overview",
+    "permalink": "/docs/agentic/overview"
+  }
+}

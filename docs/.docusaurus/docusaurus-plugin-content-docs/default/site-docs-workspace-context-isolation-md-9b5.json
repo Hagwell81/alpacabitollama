@@ -1,0 +1,24 @@
+{
+  "id": "workspace/context-isolation",
+  "title": "Context Isolation",
+  "description": "How workspace context isolation works.",
+  "source": "@site/docs/workspace/context-isolation.md",
+  "sourceDirName": "workspace",
+  "slug": "/workspace/context-isolation",
+  "permalink": "/docs/workspace/context-isolation",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/Hagwell81/alpacabitollama/tree/main/docs/docs/workspace/context-isolation.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {},
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "Project Structure",
+    "permalink": "/docs/workspace/project-structure"
+  },
+  "next": {
+    "title": "File Operations",
+    "permalink": "/docs/workspace/file-operations"
+  }
+}

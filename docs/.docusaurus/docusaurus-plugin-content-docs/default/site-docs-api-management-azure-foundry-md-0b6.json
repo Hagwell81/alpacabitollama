@@ -1,0 +1,24 @@
+{
+  "id": "api-management/azure-foundry",
+  "title": "Azure Foundry",
+  "description": "Use Microsoft's Azure AI Foundry for enterprise-grade AI.",
+  "source": "@site/docs/api-management/azure-foundry.md",
+  "sourceDirName": "api-management",
+  "slug": "/api-management/azure-foundry",
+  "permalink": "/docs/api-management/azure-foundry",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/Hagwell81/alpacabitollama/tree/main/docs/docs/api-management/azure-foundry.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {},
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "LM Studio",
+    "permalink": "/docs/api-management/lm-studio"
+  },
+  "next": {
+    "title": "Custom Endpoints",
+    "permalink": "/docs/api-management/custom-endpoints"
+  }
+}

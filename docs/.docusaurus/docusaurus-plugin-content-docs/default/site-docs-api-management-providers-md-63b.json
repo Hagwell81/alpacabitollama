@@ -1,0 +1,24 @@
+{
+  "id": "api-management/providers",
+  "title": "API Providers Overview",
+  "description": "Alpacabitollama supports multiple AI providers for maximum flexibility.",
+  "source": "@site/docs/api-management/providers.md",
+  "sourceDirName": "api-management",
+  "slug": "/api-management/providers",
+  "permalink": "/docs/api-management/providers",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/Hagwell81/alpacabitollama/tree/main/docs/docs/api-management/providers.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {},
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "API Management Overview",
+    "permalink": "/docs/api-management/overview"
+  },
+  "next": {
+    "title": "OpenAI API",
+    "permalink": "/docs/api-management/openai"
+  }
+}

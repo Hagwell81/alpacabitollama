@@ -1,0 +1,29 @@
+{
+  "id": "development/architecture",
+  "title": "Architecture Overview",
+  "description": "System architecture and component design",
+  "source": "@site/docs/development/architecture.md",
+  "sourceDirName": "development",
+  "slug": "/development/architecture",
+  "permalink": "/docs/development/architecture",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/Hagwell81/alpacabitollama/tree/main/docs/docs/development/architecture.md",
+  "tags": [],
+  "version": "current",
+  "sidebarPosition": 1,
+  "frontMatter": {
+    "sidebar_position": 1,
+    "title": "Architecture Overview",
+    "description": "System architecture and component design"
+  },
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "VS Code Integration",
+    "permalink": "/docs/ide/vscode-integration"
+  },
+  "next": {
+    "title": "Build System",
+    "permalink": "/docs/development/build-system"
+  }
+}

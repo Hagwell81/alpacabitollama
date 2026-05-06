@@ -1,0 +1,24 @@
+{
+  "id": "advanced/deployment",
+  "title": "Deployment",
+  "description": "This guide covers deploying Alpacabitollama in various environments.",
+  "source": "@site/docs/advanced/deployment.md",
+  "sourceDirName": "advanced",
+  "slug": "/advanced/deployment",
+  "permalink": "/docs/advanced/deployment",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/Hagwell81/alpacabitollama/tree/main/docs/docs/advanced/deployment.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {},
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "Security Guide",
+    "permalink": "/docs/advanced/security"
+  },
+  "next": {
+    "title": "Troubleshooting Guide",
+    "permalink": "/docs/advanced/troubleshooting"
+  }
+}

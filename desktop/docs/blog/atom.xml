@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+    <id>https://alpacabitollama.local/blog</id>
+    <title>Alpacabitollama Blog</title>
+    <updated>2026-05-04T00:00:00.000Z</updated>
+    <generator>https://github.com/jpmonette/feed</generator>
+    <link rel="alternate" href="https://alpacabitollama.local/blog"/>
+    <subtitle>Alpacabitollama Blog</subtitle>
+    <icon>https://alpacabitollama.local/img/logo.svg</icon>
+    <entry>
+        <title type="html"><![CDATA[Welcome to Alpacabitollama — The Road Ahead]]></title>
+        <id>https://alpacabitollama.local/blog/welcome-to-alpacabitollama</id>
+        <link href="https://alpacabitollama.local/blog/welcome-to-alpacabitollama"/>
+        <updated>2026-05-04T00:00:00.000Z</updated>
+        <summary type="html"><![CDATA[We are excited to introduce Alpacabitollama, a comprehensive open-source local AI platform that brings together chat, development tools, and agentic services in a unified desktop application. This post outlines where we are today and the ambitious roadmap that will take us from a local chat application to a full-featured AI development platform over the next nine to ten months.]]></summary>
+        <content type="html"><![CDATA[<p>We are excited to introduce <strong>Alpacabitollama</strong>, a comprehensive open-source local AI platform that brings together chat, development tools, and agentic services in a unified desktop application. This post outlines where we are today and the ambitious roadmap that will take us from a local chat application to a full-featured AI development platform over the next nine to ten months.</p>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="what-is-alpacabitollama">What is Alpacabitollama?<a href="https://alpacabitollama.local/blog/welcome-to-alpacabitollama#what-is-alpacabitollama" class="hash-link" aria-label="Direct link to What is Alpacabitollama?" title="Direct link to What is Alpacabitollama?" translate="no">​</a></h2>
+<p>Alpacabitollama is designed for developers and AI enthusiasts who want to run large language models locally without compromising on features. Built on top of <strong>llama.cpp</strong>, it provides a modern, intuitive interface for interacting with LLMs while keeping your data on your own hardware.</p>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="current-capabilities">Current Capabilities<a href="https://alpacabitollama.local/blog/welcome-to-alpacabitollama#current-capabilities" class="hash-link" aria-label="Direct link to Current Capabilities" title="Direct link to Current Capabilities" translate="no">​</a></h3>
+<ul>
+<li class=""><strong>Local Model Execution</strong> — Run models directly on your hardware with automatic backend selection (CUDA, ROCm, Vulkan, or CPU)</li>
+<li class=""><strong>Multi-Provider Support</strong> — Seamlessly switch between local inference and cloud providers including OpenAI, Google Gemini, Anthropic Claude, Mistral, and Open Router</li>
+<li class=""><strong>Privacy-First Design</strong> — Your conversations and data never leave your machine unless you explicitly choose a cloud provider</li>
+<li class=""><strong>Desktop-Native Experience</strong> — System tray integration, offline documentation, keyboard shortcuts, and a responsive web-based UI</li>
+<li class=""><strong>Cross-Platform</strong> — Native support for Windows, macOS, and Linux with automatic hardware capability detection</li>
+</ul>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="the-road-ahead-eight-phases-to-a-full-ai-platform">The Road Ahead: Eight Phases to a Full AI Platform<a href="https://alpacabitollama.local/blog/welcome-to-alpacabitollama#the-road-ahead-eight-phases-to-a-full-ai-platform" class="hash-link" aria-label="Direct link to The Road Ahead: Eight Phases to a Full AI Platform" title="Direct link to The Road Ahead: Eight Phases to a Full AI Platform" translate="no">​</a></h2>
+<p>Our roadmap is structured in eight phases, each delivering incremental value while building toward a comprehensive AI development environment.</p>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="phase-1-documentation-site-">Phase 1: Documentation Site ✅<a href="https://alpacabitollama.local/blog/welcome-to-alpacabitollama#phase-1-documentation-site-" class="hash-link" aria-label="Direct link to Phase 1: Documentation Site ✅" title="Direct link to Phase 1: Documentation Site ✅" translate="no">​</a></h3>
+<p>The foundation of any great project is great documentation. We have built a Docusaurus-powered documentation site with offline access, full-text search, dark mode support, and keyboard shortcuts — all integrated directly into the desktop application.</p>
+<p><strong>Status:</strong> Complete and shipping with the current release.</p>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="phase-2-api-management-service-weeks-36">Phase 2: API Management Service (Weeks 3–6)<a href="https://alpacabitollama.local/blog/welcome-to-alpacabitollama#phase-2-api-management-service-weeks-36" class="hash-link" aria-label="Direct link to Phase 2: API Management Service (Weeks 3–6)" title="Direct link to Phase 2: API Management Service (Weeks 3–6)" translate="no">​</a></h3>
+<p>A unified credential management system for multiple AI providers is next. This phase will deliver:</p>
+<ul>
+<li class=""><strong>Provider Registry</strong> — Structured definitions for every supported provider with capability metadata and model information</li>
+<li class=""><strong>Credential Manager</strong> — Encrypted API key storage with key rotation and access logging</li>
+<li class=""><strong>Model Selector</strong> — Automatic model discovery, capability matching, and performance optimization</li>
+<li class=""><strong>Request Router</strong> — Intelligent provider selection with fallback handling and load balancing</li>
+</ul>
+<p>Supported providers will include OpenAI, Google, Anthropic, Mistral, Open Router, Ollama, LM Studio, Azure Foundry, and custom OpenAI-compatible endpoints.</p>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="phase-3-knowledge-base--rag-integration-weeks-711">Phase 3: Knowledge Base &amp; RAG Integration (Weeks 7–11)<a href="https://alpacabitollama.local/blog/welcome-to-alpacabitollama#phase-3-knowledge-base--rag-integration-weeks-711" class="hash-link" aria-label="Direct link to Phase 3: Knowledge Base &amp; RAG Integration (Weeks 7–11)" title="Direct link to Phase 3: Knowledge Base &amp; RAG Integration (Weeks 7–11)" translate="no">​</a></h3>
+<p>Transforming Alpacabitollama into a research and knowledge platform:</p>
+<ul>
+<li class=""><strong>Web Scraper (Archon)</strong> — Advanced web and GitHub scraping with link extraction and content parsing</li>
+<li class=""><strong>Document Processor</strong> — PDF extraction, Markdown parsing, code block extraction, and metadata preservation</li>
+<li class=""><strong>Image Processor</strong> — OCR integration with Tesseract, image analysis, and diagram extraction</li>
+<li class=""><strong>Vector Store</strong> — Local embeddings with sentence-transformers, stored in Chroma or Weaviate, with semantic similarity search</li>
+<li class=""><strong>MCP Service</strong> — Model Context Protocol implementation for exposing knowledge base tools to agents</li>
+</ul>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="phase-4-multi-agentic-service-weeks-1219">Phase 4: Multi-Agentic Service (Weeks 12–19)<a href="https://alpacabitollama.local/blog/welcome-to-alpacabitollama#phase-4-multi-agentic-service-weeks-1219" class="hash-link" aria-label="Direct link to Phase 4: Multi-Agentic Service (Weeks 12–19)" title="Direct link to Phase 4: Multi-Agentic Service (Weeks 12–19)" translate="no">​</a></h3>
+<p>The heart of the platform: multi-agent orchestration with subagent delegation.</p>
+<ul>
+<li class=""><strong>Hermes Agent</strong> — Full reasoning capabilities, multi-step planning, tool orchestration, and context management</li>
+<li class=""><strong>Code Subagents</strong> — Specialized agents for code generation, review, bug detection, performance optimization, and documentation generation</li>
+<li class=""><strong>Tool System</strong> — A registry of 100+ tools across web, code, file, database, API, and system categories</li>
+<li class=""><strong>Skill System</strong> — Composable, versioned, and discoverable skills that agents can combine dynamically</li>
+<li class=""><strong>Spec System</strong> — Specification-driven development with compliance checking and validation</li>
+</ul>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="phase-5-workspace--collaboration-weeks-2023">Phase 5: Workspace &amp; Collaboration (Weeks 20–23)<a href="https://alpacabitollama.local/blog/welcome-to-alpacabitollama#phase-5-workspace--collaboration-weeks-2023" class="hash-link" aria-label="Direct link to Phase 5: Workspace &amp; Collaboration (Weeks 20–23)" title="Direct link to Phase 5: Workspace &amp; Collaboration (Weeks 20–23)" translate="no">​</a></h3>
+<p>Organizing your AI work into structured workspaces:</p>
+<ul>
+<li class=""><strong>User Workspace</strong> — Project creation, file organization, settings persistence, and history tracking</li>
+<li class=""><strong>App Workspace</strong> — Agent libraries, tool configurations, skill libraries, and specification templates</li>
+<li class=""><strong>Collaboration</strong> — Real-time file synchronization, conflict resolution, access control, and activity tracking</li>
+<li class=""><strong>Storage Management</strong> — Local filesystem storage with optional cloud sync, version control integration, and backup management</li>
+</ul>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="phase-6-desktop-app-enhancements-weeks-2427">Phase 6: Desktop App Enhancements (Weeks 24–27)<a href="https://alpacabitollama.local/blog/welcome-to-alpacabitollama#phase-6-desktop-app-enhancements-weeks-2427" class="hash-link" aria-label="Direct link to Phase 6: Desktop App Enhancements (Weeks 24–27)" title="Direct link to Phase 6: Desktop App Enhancements (Weeks 24–27)" translate="no">​</a></h3>
+<p>Polishing the user experience with a modern design system inspired by Claude Code, open-codesign, and kuse_cowork:</p>
+<ul>
+<li class="">Modern responsive layout with dark and light mode</li>
+<li class="">Enhanced tray menu with quick settings and status indicators</li>
+<li class="">Improved documentation viewer with full-text search</li>
+<li class="">Project management with templates and recent project tracking</li>
+</ul>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="phase-7-ide-integration-weeks-2835">Phase 7: IDE Integration (Weeks 28–35)<a href="https://alpacabitollama.local/blog/welcome-to-alpacabitollama#phase-7-ide-integration-weeks-2835" class="hash-link" aria-label="Direct link to Phase 7: IDE Integration (Weeks 28–35)" title="Direct link to Phase 7: IDE Integration (Weeks 28–35)" translate="no">​</a></h3>
+<p>Bringing a fully-featured IDE into the platform:</p>
+<ul>
+<li class=""><strong>Monaco Editor</strong> — VS Code-like editing with syntax highlighting, code completion, and refactoring</li>
+<li class=""><strong>Copilot Integration</strong> — AI-powered code suggestions, explanations, debugging assistance, and documentation generation</li>
+<li class=""><strong>Terminal Emulation</strong> — xterm.js-powered terminal with shell integration and command history</li>
+<li class=""><strong>Project Explorer</strong> — File tree, search, symbol navigation, and outline view</li>
+<li class=""><strong>Debugger</strong> — Breakpoint management, step execution, variable inspection, and call stack view</li>
+</ul>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="phase-8-testing--optimization-weeks-3641">Phase 8: Testing &amp; Optimization (Weeks 36–41)<a href="https://alpacabitollama.local/blog/welcome-to-alpacabitollama#phase-8-testing--optimization-weeks-3641" class="hash-link" aria-label="Direct link to Phase 8: Testing &amp; Optimization (Weeks 36–41)" title="Direct link to Phase 8: Testing &amp; Optimization (Weeks 36–41)" translate="no">​</a></h3>
+<p>The final phase focuses on quality, performance, and security:</p>
+<ul>
+<li class="">Comprehensive unit, integration, end-to-end, and performance testing</li>
+<li class="">Request caching, database indexing, code splitting, and asset optimization</li>
+<li class="">Input validation, output sanitization, API key protection, and access control</li>
+<li class="">Error handling, retry logic, fallback mechanisms, and health monitoring</li>
+</ul>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="why-alpacabitollama">Why Alpacabitollama?<a href="https://alpacabitollama.local/blog/welcome-to-alpacabitollama#why-alpacabitollama" class="hash-link" aria-label="Direct link to Why Alpacabitollama?" title="Direct link to Why Alpacabitollama?" translate="no">​</a></h2>
+<p>The AI tooling landscape is fragmented. You have chat interfaces, code assistants, knowledge bases, and agent frameworks — each requiring separate accounts, separate data handling policies, and separate workflows. Alpacabitollama unifies these into a single, local-first platform where <strong>you own your data</strong> and <strong>you control your tools</strong>.</p>
+<p>Whether you are a researcher building knowledge bases, a developer writing code with AI assistance, or a power user orchestrating multi-agent workflows, Alpacabitollama is designed to adapt to your needs while keeping everything under your control.</p>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="get-involved">Get Involved<a href="https://alpacabitollama.local/blog/welcome-to-alpacabitollama#get-involved" class="hash-link" aria-label="Direct link to Get Involved" title="Direct link to Get Involved" translate="no">​</a></h2>
+<p>We are building Alpacabitollama in the open and welcome community contributions:</p>
+<ul>
+<li class=""><a href="https://github.com/Hagwell81/alpacabitollama" target="_blank" rel="noopener noreferrer" class="">GitHub Repository</a></li>
+<li class=""><a href="https://github.com/Hagwell81/alpacabitollama/discussions" target="_blank" rel="noopener noreferrer" class="">GitHub Discussions</a></li>
+<li class=""><a href="https://github.com/Hagwell81/alpacabitollama/issues" target="_blank" rel="noopener noreferrer" class="">Issue Tracker</a></li>
+</ul>
+<p>Download the latest release, try it out, and let us know what you think. The journey from a local chat app to a full AI development platform starts with a single conversation.</p>
+<hr>
+<p><em>Alpacabitollama is open-source software licensed under the MIT License. Built with llama.cpp, Docusaurus, Electron, and a lot of enthusiasm for local AI.</em></p>]]></content>
+        <author>
+            <name>Tom</name>
+            <uri>https://github.com/alpacabitollama</uri>
+        </author>
+        <category label="announcement" term="announcement"/>
+        <category label="roadmap" term="roadmap"/>
+        <category label="getting-started" term="getting-started"/>
+    </entry>
+</feed>

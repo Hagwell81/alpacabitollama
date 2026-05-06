@@ -1,0 +1,24 @@
+{
+  "id": "agentic/multi-agent-architecture",
+  "title": "Multi-Agent Architecture",
+  "description": "Alpacabitollama supports sophisticated multi-agent systems.",
+  "source": "@site/docs/agentic/multi-agent-architecture.md",
+  "sourceDirName": "agentic",
+  "slug": "/agentic/multi-agent-architecture",
+  "permalink": "/docs/agentic/multi-agent-architecture",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/Hagwell81/alpacabitollama/tree/main/docs/docs/agentic/multi-agent-architecture.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {},
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "Agentic Services Overview",
+    "permalink": "/docs/agentic/overview"
+  },
+  "next": {
+    "title": "Creating Agents",
+    "permalink": "/docs/agentic/creating-agents"
+  }
+}

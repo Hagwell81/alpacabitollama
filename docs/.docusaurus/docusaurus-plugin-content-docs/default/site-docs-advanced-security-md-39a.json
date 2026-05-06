@@ -1,0 +1,24 @@
+{
+  "id": "advanced/security",
+  "title": "Security Guide",
+  "description": "This guide covers security best practices for Alpacabitollama.",
+  "source": "@site/docs/advanced/security.md",
+  "sourceDirName": "advanced",
+  "slug": "/advanced/security",
+  "permalink": "/docs/advanced/security",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/Hagwell81/alpacabitollama/tree/main/docs/docs/advanced/security.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {},
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "Performance Tuning",
+    "permalink": "/docs/advanced/performance-tuning"
+  },
+  "next": {
+    "title": "Deployment",
+    "permalink": "/docs/advanced/deployment"
+  }
+}

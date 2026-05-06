@@ -1,0 +1,313 @@
+{
+  "docusaurus-plugin-content-docs": {
+    "default": {
+      "path": "/docs",
+      "versions": [
+        {
+          "name": "current",
+          "label": "Next",
+          "isLast": true,
+          "path": "/docs",
+          "mainDocId": "getting-started/index",
+          "docs": [
+            {
+              "id": "advanced/deployment",
+              "path": "/docs/advanced/deployment",
+              "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "advanced/faq",
+              "path": "/docs/advanced/faq",
+              "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "advanced/performance-tuning",
+              "path": "/docs/advanced/performance-tuning",
+              "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "advanced/security",
+              "path": "/docs/advanced/security",
+              "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "advanced/troubleshooting",
+              "path": "/docs/advanced/troubleshooting",
+              "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "agentic/creating-agents",
+              "path": "/docs/agentic/creating-agents",
+              "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "agentic/creating-skills",
+              "path": "/docs/agentic/creating-skills",
+              "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "agentic/creating-tools",
+              "path": "/docs/agentic/creating-tools",
+              "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "agentic/multi-agent-architecture",
+              "path": "/docs/agentic/multi-agent-architecture",
+              "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "agentic/overview",
+              "path": "/docs/agentic/overview",
+              "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "agentic/spec-driven-development",
+              "path": "/docs/agentic/spec-driven-development",
+              "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "agentic/subagent-delegation",
+              "path": "/docs/agentic/subagent-delegation",
+              "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "api-management/anthropic",
+              "path": "/docs/api-management/anthropic",
+              "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "api-management/azure-foundry",
+              "path": "/docs/api-management/azure-foundry",
+              "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "api-management/custom-endpoints",
+              "path": "/docs/api-management/custom-endpoints",
+              "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "api-management/google",
+              "path": "/docs/api-management/google",
+              "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "api-management/key-management",
+              "path": "/docs/api-management/key-management",
+              "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "api-management/lm-studio",
+              "path": "/docs/api-management/lm-studio",
+              "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "api-management/mistral",
+              "path": "/docs/api-management/mistral",
+              "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "api-management/ollama",
+              "path": "/docs/api-management/ollama",
+              "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "api-management/open-router",
+              "path": "/docs/api-management/open-router",
+              "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "api-management/openai",
+              "path": "/docs/api-management/openai",
+              "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "api-management/overview",
+              "path": "/docs/api-management/overview",
+              "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "api-management/providers",
+              "path": "/docs/api-management/providers",
+              "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "api/authentication",
+              "path": "/docs/api/authentication",
+              "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "api/ipc-channels",
+              "path": "/docs/api/ipc-channels",
+              "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "api/rate-limiting",
+              "path": "/docs/api/rate-limiting",
+              "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "api/rest-api",
+              "path": "/docs/api/rest-api",
+              "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "api/websocket",
+              "path": "/docs/api/websocket",
+              "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "desktop/app-menu",
+              "path": "/docs/desktop/app-menu",
+              "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "desktop/documentation-viewer",
+              "path": "/docs/desktop/documentation-viewer",
+              "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "desktop/keyboard-shortcuts",
+              "path": "/docs/desktop/keyboard-shortcuts",
+              "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "desktop/system-tray",
+              "path": "/docs/desktop/system-tray",
+              "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "desktop/updater",
+              "path": "/docs/desktop/updater",
+              "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "development/architecture",
+              "path": "/docs/development/architecture",
+              "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "development/build-system",
+              "path": "/docs/development/build-system",
+              "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "development/contributing",
+              "path": "/docs/development/contributing",
+              "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "development/debugging",
+              "path": "/docs/development/debugging",
+              "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "development/testing",
+              "path": "/docs/development/testing",
+              "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "getting-started/configuration",
+              "path": "/docs/getting-started/configuration",
+              "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "getting-started/index",
+              "path": "/docs/getting-started/",
+              "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "getting-started/installation",
+              "path": "/docs/getting-started/installation",
+              "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "getting-started/quickstart",
+              "path": "/docs/getting-started/quickstart",
+              "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "ide/cursor-integration",
+              "path": "/docs/ide/cursor-integration",
+              "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "ide/keyboard-shortcuts",
+              "path": "/docs/ide/keyboard-shortcuts",
+              "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "ide/project-awareness",
+              "path": "/docs/ide/project-awareness",
+              "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "ide/vscode-integration",
+              "path": "/docs/ide/vscode-integration",
+              "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "rag/adding-documents",
+              "path": "/docs/rag/adding-documents",
+              "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "rag/querying",
+              "path": "/docs/rag/querying",
+              "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "rag/vector-stores",
+              "path": "/docs/rag/vector-stores",
+              "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "user-guide/chat-interface",
+              "path": "/docs/user-guide/chat-interface",
+              "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "user-guide/model-management",
+              "path": "/docs/user-guide/model-management",
+              "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "user-guide/settings",
+              "path": "/docs/user-guide/settings",
+              "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "workspace/context-isolation",
+              "path": "/docs/workspace/context-isolation",
+              "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "workspace/file-operations",
+              "path": "/docs/workspace/file-operations",
+              "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "workspace/memory-system",
+              "path": "/docs/workspace/memory-system",
+              "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "workspace/project-structure",
+              "path": "/docs/workspace/project-structure",
+              "sidebar": "tutorialSidebar"
+            }
+          ],
+          "draftIds": [],
+          "sidebars": {
+            "tutorialSidebar": {
+              "link": {
+                "path": "/docs/getting-started/",
+                "label": "getting-started/index"
+              }
+            }
+          }
+        }
+      ],
+      "breadcrumbs": true
+    }
+  }
+}

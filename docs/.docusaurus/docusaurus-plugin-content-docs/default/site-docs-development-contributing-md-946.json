@@ -1,0 +1,24 @@
+{
+  "id": "development/contributing",
+  "title": "Contributing Guide",
+  "description": "How to contribute to Alpacabitollama.",
+  "source": "@site/docs/development/contributing.md",
+  "sourceDirName": "development",
+  "slug": "/development/contributing",
+  "permalink": "/docs/development/contributing",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/Hagwell81/alpacabitollama/tree/main/docs/docs/development/contributing.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {},
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "Build System",
+    "permalink": "/docs/development/build-system"
+  },
+  "next": {
+    "title": "Debugging Guide",
+    "permalink": "/docs/development/debugging"
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "id": "development/testing",
+  "title": "Testing Guide",
+  "description": "Testing strategy and practices for Alpacabitollama.",
+  "source": "@site/docs/development/testing.md",
+  "sourceDirName": "development",
+  "slug": "/development/testing",
+  "permalink": "/docs/development/testing",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/Hagwell81/alpacabitollama/tree/main/docs/docs/development/testing.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {},
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "Debugging Guide",
+    "permalink": "/docs/development/debugging"
+  },
+  "next": {
+    "title": "REST API Reference",
+    "permalink": "/docs/api/rest-api"
+  }
+}

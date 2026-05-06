@@ -1,0 +1,24 @@
+{
+  "id": "advanced/troubleshooting",
+  "title": "Troubleshooting Guide",
+  "description": "This guide helps you resolve common issues.",
+  "source": "@site/docs/advanced/troubleshooting.md",
+  "sourceDirName": "advanced",
+  "slug": "/advanced/troubleshooting",
+  "permalink": "/docs/advanced/troubleshooting",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/Hagwell81/alpacabitollama/tree/main/docs/docs/advanced/troubleshooting.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {},
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "Deployment",
+    "permalink": "/docs/advanced/deployment"
+  },
+  "next": {
+    "title": "Frequently Asked Questions",
+    "permalink": "/docs/advanced/faq"
+  }
+}

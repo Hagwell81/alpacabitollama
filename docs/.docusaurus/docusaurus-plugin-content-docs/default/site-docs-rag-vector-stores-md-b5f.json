@@ -1,0 +1,24 @@
+{
+  "id": "rag/vector-stores",
+  "title": "Vector Stores",
+  "description": "Understanding vector storage for RAG.",
+  "source": "@site/docs/rag/vector-stores.md",
+  "sourceDirName": "rag",
+  "slug": "/rag/vector-stores",
+  "permalink": "/docs/rag/vector-stores",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/Hagwell81/alpacabitollama/tree/main/docs/docs/rag/vector-stores.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {},
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "Querying the Knowledge Base",
+    "permalink": "/docs/rag/querying"
+  },
+  "next": {
+    "title": "Project Structure",
+    "permalink": "/docs/workspace/project-structure"
+  }
+}

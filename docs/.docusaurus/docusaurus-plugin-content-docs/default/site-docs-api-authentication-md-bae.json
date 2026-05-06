@@ -1,0 +1,24 @@
+{
+  "id": "api/authentication",
+  "title": "API Authentication",
+  "description": "Secure your API with authentication and access control.",
+  "source": "@site/docs/api/authentication.md",
+  "sourceDirName": "api",
+  "slug": "/api/authentication",
+  "permalink": "/docs/api/authentication",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/Hagwell81/alpacabitollama/tree/main/docs/docs/api/authentication.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {},
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "WebSocket API",
+    "permalink": "/docs/api/websocket"
+  },
+  "next": {
+    "title": "Rate Limiting",
+    "permalink": "/docs/api/rate-limiting"
+  }
+}

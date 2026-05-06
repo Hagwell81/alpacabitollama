@@ -1,0 +1,24 @@
+{
+  "id": "api-management/mistral",
+  "title": "Mistral AI",
+  "description": "Use Mistral's powerful open models and API.",
+  "source": "@site/docs/api-management/mistral.md",
+  "sourceDirName": "api-management",
+  "slug": "/api-management/mistral",
+  "permalink": "/docs/api-management/mistral",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/Hagwell81/alpacabitollama/tree/main/docs/docs/api-management/mistral.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {},
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "Anthropic API",
+    "permalink": "/docs/api-management/anthropic"
+  },
+  "next": {
+    "title": "OpenRouter",
+    "permalink": "/docs/api-management/open-router"
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "id": "api/rate-limiting",
+  "title": "Rate Limiting",
+  "description": "Control API usage to prevent abuse and manage resources.",
+  "source": "@site/docs/api/rate-limiting.md",
+  "sourceDirName": "api",
+  "slug": "/api/rate-limiting",
+  "permalink": "/docs/api/rate-limiting",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/Hagwell81/alpacabitollama/tree/main/docs/docs/api/rate-limiting.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {},
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "API Authentication",
+    "permalink": "/docs/api/authentication"
+  },
+  "next": {
+    "title": "Performance Tuning",
+    "permalink": "/docs/advanced/performance-tuning"
+  }
+}

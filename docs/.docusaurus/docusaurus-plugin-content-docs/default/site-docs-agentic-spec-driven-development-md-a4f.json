@@ -1,0 +1,24 @@
+{
+  "id": "agentic/spec-driven-development",
+  "title": "Spec-Driven Development",
+  "description": "Use specifications to drive agent behavior and code generation.",
+  "source": "@site/docs/agentic/spec-driven-development.md",
+  "sourceDirName": "agentic",
+  "slug": "/agentic/spec-driven-development",
+  "permalink": "/docs/agentic/spec-driven-development",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/Hagwell81/alpacabitollama/tree/main/docs/docs/agentic/spec-driven-development.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {},
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "Subagent Delegation",
+    "permalink": "/docs/agentic/subagent-delegation"
+  },
+  "next": {
+    "title": "Adding Documents",
+    "permalink": "/docs/rag/adding-documents"
+  }
+}

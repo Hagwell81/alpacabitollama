@@ -1,0 +1,24 @@
+{
+  "id": "agentic/creating-agents",
+  "title": "Creating Agents",
+  "description": "Learn how to create custom agents in Alpacabitollama.",
+  "source": "@site/docs/agentic/creating-agents.md",
+  "sourceDirName": "agentic",
+  "slug": "/agentic/creating-agents",
+  "permalink": "/docs/agentic/creating-agents",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/Hagwell81/alpacabitollama/tree/main/docs/docs/agentic/creating-agents.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {},
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "Multi-Agent Architecture",
+    "permalink": "/docs/agentic/multi-agent-architecture"
+  },
+  "next": {
+    "title": "Creating Tools",
+    "permalink": "/docs/agentic/creating-tools"
+  }
+}

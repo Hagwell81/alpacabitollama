@@ -1,0 +1,24 @@
+{
+  "id": "api/websocket",
+  "title": "WebSocket API",
+  "description": "Real-time communication with the Alpacabitollama server.",
+  "source": "@site/docs/api/websocket.md",
+  "sourceDirName": "api",
+  "slug": "/api/websocket",
+  "permalink": "/docs/api/websocket",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/Hagwell81/alpacabitollama/tree/main/docs/docs/api/websocket.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {},
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "IPC Channels",
+    "permalink": "/docs/api/ipc-channels"
+  },
+  "next": {
+    "title": "API Authentication",
+    "permalink": "/docs/api/authentication"
+  }
+}

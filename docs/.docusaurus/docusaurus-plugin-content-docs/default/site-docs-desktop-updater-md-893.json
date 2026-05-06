@@ -1,0 +1,24 @@
+{
+  "id": "desktop/updater",
+  "title": "Auto Updater",
+  "description": "Keep Alpacabitollama up to date automatically.",
+  "source": "@site/docs/desktop/updater.md",
+  "sourceDirName": "desktop",
+  "slug": "/desktop/updater",
+  "permalink": "/docs/desktop/updater",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/Hagwell81/alpacabitollama/tree/main/docs/docs/desktop/updater.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {},
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "System Tray",
+    "permalink": "/docs/desktop/system-tray"
+  },
+  "next": {
+    "title": "Cursor IDE Integration",
+    "permalink": "/docs/ide/cursor-integration"
+  }
+}

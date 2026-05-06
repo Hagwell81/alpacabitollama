@@ -1,0 +1,24 @@
+{
+  "id": "development/debugging",
+  "title": "Debugging Guide",
+  "description": "Tips and techniques for debugging Alpacabitollama.",
+  "source": "@site/docs/development/debugging.md",
+  "sourceDirName": "development",
+  "slug": "/development/debugging",
+  "permalink": "/docs/development/debugging",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/Hagwell81/alpacabitollama/tree/main/docs/docs/development/debugging.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {},
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "Contributing Guide",
+    "permalink": "/docs/development/contributing"
+  },
+  "next": {
+    "title": "Testing Guide",
+    "permalink": "/docs/development/testing"
+  }
+}

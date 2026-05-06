@@ -1,0 +1,29 @@
+{
+  "id": "api-management/overview",
+  "title": "API Management Overview",
+  "description": "Manage multiple AI provider APIs",
+  "source": "@site/docs/api-management/overview.md",
+  "sourceDirName": "api-management",
+  "slug": "/api-management/overview",
+  "permalink": "/docs/api-management/overview",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/Hagwell81/alpacabitollama/tree/main/docs/docs/api-management/overview.md",
+  "tags": [],
+  "version": "current",
+  "sidebarPosition": 1,
+  "frontMatter": {
+    "sidebar_position": 1,
+    "title": "API Management Overview",
+    "description": "Manage multiple AI provider APIs"
+  },
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "Settings Guide",
+    "permalink": "/docs/user-guide/settings"
+  },
+  "next": {
+    "title": "API Providers Overview",
+    "permalink": "/docs/api-management/providers"
+  }
+}

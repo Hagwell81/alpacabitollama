@@ -1,0 +1,24 @@
+{
+  "id": "api/ipc-channels",
+  "title": "IPC Channels",
+  "description": "Communication between the main process and renderer.",
+  "source": "@site/docs/api/ipc-channels.md",
+  "sourceDirName": "api",
+  "slug": "/api/ipc-channels",
+  "permalink": "/docs/api/ipc-channels",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/Hagwell81/alpacabitollama/tree/main/docs/docs/api/ipc-channels.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {},
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "REST API Reference",
+    "permalink": "/docs/api/rest-api"
+  },
+  "next": {
+    "title": "WebSocket API",
+    "permalink": "/docs/api/websocket"
+  }
+}

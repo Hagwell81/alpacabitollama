@@ -1,0 +1,24 @@
+{
+  "id": "workspace/project-structure",
+  "title": "Project Structure",
+  "description": "Understanding the Alpacabitollama codebase layout.",
+  "source": "@site/docs/workspace/project-structure.md",
+  "sourceDirName": "workspace",
+  "slug": "/workspace/project-structure",
+  "permalink": "/docs/workspace/project-structure",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/Hagwell81/alpacabitollama/tree/main/docs/docs/workspace/project-structure.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {},
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "Vector Stores",
+    "permalink": "/docs/rag/vector-stores"
+  },
+  "next": {
+    "title": "Context Isolation",
+    "permalink": "/docs/workspace/context-isolation"
+  }
+}

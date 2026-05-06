@@ -1,0 +1,24 @@
+{
+  "id": "api-management/openai",
+  "title": "OpenAI API",
+  "description": "Use OpenAI's GPT models for powerful AI capabilities.",
+  "source": "@site/docs/api-management/openai.md",
+  "sourceDirName": "api-management",
+  "slug": "/api-management/openai",
+  "permalink": "/docs/api-management/openai",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/Hagwell81/alpacabitollama/tree/main/docs/docs/api-management/openai.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {},
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "API Providers Overview",
+    "permalink": "/docs/api-management/providers"
+  },
+  "next": {
+    "title": "Google AI (Gemini)",
+    "permalink": "/docs/api-management/google"
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "id": "rag/adding-documents",
+  "title": "Adding Documents",
+  "description": "Add documents to the RAG knowledge base.",
+  "source": "@site/docs/rag/adding-documents.md",
+  "sourceDirName": "rag",
+  "slug": "/rag/adding-documents",
+  "permalink": "/docs/rag/adding-documents",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/Hagwell81/alpacabitollama/tree/main/docs/docs/rag/adding-documents.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {},
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "Spec-Driven Development",
+    "permalink": "/docs/agentic/spec-driven-development"
+  },
+  "next": {
+    "title": "Querying the Knowledge Base",
+    "permalink": "/docs/rag/querying"
+  }
+}

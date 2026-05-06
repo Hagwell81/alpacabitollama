@@ -1,0 +1,24 @@
+{
+  "id": "api-management/anthropic",
+  "title": "Anthropic API",
+  "description": "Configure and use Anthropic's Claude models.",
+  "source": "@site/docs/api-management/anthropic.md",
+  "sourceDirName": "api-management",
+  "slug": "/api-management/anthropic",
+  "permalink": "/docs/api-management/anthropic",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/Hagwell81/alpacabitollama/tree/main/docs/docs/api-management/anthropic.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {},
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "Google AI (Gemini)",
+    "permalink": "/docs/api-management/google"
+  },
+  "next": {
+    "title": "Mistral AI",
+    "permalink": "/docs/api-management/mistral"
+  }
+}

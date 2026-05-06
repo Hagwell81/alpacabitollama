@@ -1,0 +1,24 @@
+{
+  "id": "agentic/creating-skills",
+  "title": "Creating Skills",
+  "description": "Skills are reusable capabilities that agents can use.",
+  "source": "@site/docs/agentic/creating-skills.md",
+  "sourceDirName": "agentic",
+  "slug": "/agentic/creating-skills",
+  "permalink": "/docs/agentic/creating-skills",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/Hagwell81/alpacabitollama/tree/main/docs/docs/agentic/creating-skills.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {},
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "Creating Tools",
+    "permalink": "/docs/agentic/creating-tools"
+  },
+  "next": {
+    "title": "Subagent Delegation",
+    "permalink": "/docs/agentic/subagent-delegation"
+  }
+}

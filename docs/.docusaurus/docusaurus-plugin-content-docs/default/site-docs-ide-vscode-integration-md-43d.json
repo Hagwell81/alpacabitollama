@@ -1,0 +1,24 @@
+{
+  "id": "ide/vscode-integration",
+  "title": "VS Code Integration",
+  "description": "Connect Alpacabitollama to Visual Studio Code.",
+  "source": "@site/docs/ide/vscode-integration.md",
+  "sourceDirName": "ide",
+  "slug": "/ide/vscode-integration",
+  "permalink": "/docs/ide/vscode-integration",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/Hagwell81/alpacabitollama/tree/main/docs/docs/ide/vscode-integration.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {},
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "Project Awareness",
+    "permalink": "/docs/ide/project-awareness"
+  },
+  "next": {
+    "title": "Architecture Overview",
+    "permalink": "/docs/development/architecture"
+  }
+}

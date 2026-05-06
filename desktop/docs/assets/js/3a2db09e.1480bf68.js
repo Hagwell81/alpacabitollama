@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkalpacabitollama_docs=self.webpackChunkalpacabitollama_docs||[]).push([[8121],{68070(a){a.exports=JSON.parse('{"tags":[{"label":"announcement","permalink":"/blog/tags/announcement","count":1},{"label":"roadmap","permalink":"/blog/tags/roadmap","count":1},{"label":"getting-started","permalink":"/blog/tags/getting-started","count":1}]}')}}]);

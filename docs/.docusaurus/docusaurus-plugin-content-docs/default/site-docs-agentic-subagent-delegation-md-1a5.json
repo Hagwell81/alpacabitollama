@@ -1,0 +1,24 @@
+{
+  "id": "agentic/subagent-delegation",
+  "title": "Subagent Delegation",
+  "description": "Learn how agents can delegate tasks to specialized subagents.",
+  "source": "@site/docs/agentic/subagent-delegation.md",
+  "sourceDirName": "agentic",
+  "slug": "/agentic/subagent-delegation",
+  "permalink": "/docs/agentic/subagent-delegation",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/Hagwell81/alpacabitollama/tree/main/docs/docs/agentic/subagent-delegation.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {},
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "Creating Skills",
+    "permalink": "/docs/agentic/creating-skills"
+  },
+  "next": {
+    "title": "Spec-Driven Development",
+    "permalink": "/docs/agentic/spec-driven-development"
+  }
+}

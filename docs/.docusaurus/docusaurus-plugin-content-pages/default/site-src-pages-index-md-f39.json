@@ -1,0 +1,13 @@
+{
+  "type": "mdx",
+  "permalink": "/",
+  "source": "@site/src/pages/index.md",
+  "title": "Welcome to Alpacabitollama",
+  "description": "Local AI Chat & Development Platform with Multi-Provider Support",
+  "frontMatter": {
+    "title": "Welcome to Alpacabitollama",
+    "slug": "/",
+    "description": "Local AI Chat & Development Platform with Multi-Provider Support"
+  },
+  "unlisted": false
+}

@@ -1,0 +1,24 @@
+{
+  "id": "ide/project-awareness",
+  "title": "Project Awareness",
+  "description": "Alpacabitollama provides project-level context to IDEs.",
+  "source": "@site/docs/ide/project-awareness.md",
+  "sourceDirName": "ide",
+  "slug": "/ide/project-awareness",
+  "permalink": "/docs/ide/project-awareness",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/Hagwell81/alpacabitollama/tree/main/docs/docs/ide/project-awareness.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {},
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "IDE Keyboard Shortcuts",
+    "permalink": "/docs/ide/keyboard-shortcuts"
+  },
+  "next": {
+    "title": "VS Code Integration",
+    "permalink": "/docs/ide/vscode-integration"
+  }
+}
