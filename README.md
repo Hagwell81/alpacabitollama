@@ -1,6 +1,14 @@
 # Alpacabitollama
 
-A standalone desktop application for running local LLMs via llama.cpp, packaged with a modern SvelteKit WebUI, system tray integration, automatic backend downloads, and an OpenAI-compatible API server.
+![llama](https://raw.githubusercontent.com/Hagwell81/alpacabitollama/refs/heads/master/media/alpaca.png)
+
+**Alpacabitollama** is a user-friendly desktop application and web chat interface built on top of [llama.cpp](https://github.com/ggml-org/llama.cpp), bringing the power of local LLM inference to everyday users through an intuitive, Ollama-like experience.
+
+## What is Alpacabitollama?
+
+This project expands `llama.cpp` beyond its server and command-line roots into a **complete desktop application** with a modern chat interface, model management, and extensible tooling — all running **fully locally** on your hardware.
+
+No cloud APIs. No data leaving your machine. Just download a model and start chatting.
 
 ## Overview
 
@@ -13,7 +21,6 @@ Alpacabitollama brings together:
 - **Interactive API Explorer** — Built-in Swagger UI for exploring the REST API.
 - **Bundled Documentation** — Docusaurus docs site with guides, API reference, and troubleshooting.
 - **HuggingFace model service** — Curated model list + search any GGUF repo.
-- **jCodeMunch code retrieval** — Structured code context from GitHub repos and local workspaces.
 - **Web search** — DuckDuckGo search with result fetching.
 - **User registration & authentication** — Local user accounts stored securely.
 
@@ -267,11 +274,6 @@ Browse and test the API interactively via the built-in Swagger UI:
 
 The OpenAPI spec lives at `docs/static/openapi.json` and covers all endpoints: chat completions, embeddings, model listing, and health checks.
 
-### IDE Integration
-
-Configure host/port in **Settings → API Server** inside the app, or via the tray menu:
-- **Copy OpenAI Endpoint** — copies the base URL to your clipboard for use in IDEs (VS Code, Cursor, etc.)
-
 ## Feature Highlights
 
 ### Model Management
@@ -280,7 +282,7 @@ Configure host/port in **Settings → API Server** inside the app, or via the tr
 - Active model switching without restarting the app.
 - Vision/multimodal support via `mmproj-*.gguf` projector files.
 
-### jCodeMunch Code Retrieval
+### Code Retrieval
 - Index GitHub repositories directly from web search results.
 - Browse local workspace folders via folder picker.
 - Search symbols (functions, classes, methods) with natural language.
@@ -312,7 +314,7 @@ Right-click the tray icon to:
 
 ```
 ┌─────────────────┐     ┌──────────────────┐     ┌─────────────────┐
-│  Electron Main  │────▶│  llama-server    │────▶│  SvelteKit UI   │
+│  Electron Main  │───▶│  llama-server    │────▶│  SvelteKit UI   │
 │   (main.js)     │     │  (auto-download) │     │ (localhost:13434│
 └─────────────────┘     └──────────────────┘     └─────────────────┘
         │
@@ -322,15 +324,6 @@ Right-click the tray icon to:
 │  (DLL verify)   │
 └─────────────────┘
 ```
-
-## Performance & Enterprise Integration
-
-For detailed information on performance optimization and agentic IDE integration (Copilot, Cursor, etc.), see:
-
-- **[PERFORMANCE_AND_API_ROBUSTNESS.md](./PERFORMANCE_AND_API_ROBUSTNESS.md)** — Strategic analysis of performance improvements and API robustness for enterprise deployments
-- **[IMPLEMENTATION_GUIDE.md](./IMPLEMENTATION_GUIDE.md)** — Step-by-step implementation instructions for Phase 1-4 improvements
-- **[AGENTIC_IDE_INTEGRATION.md](./AGENTIC_IDE_INTEGRATION.md)** — Complete guide for integrating with Copilot, Cursor, and similar agentic IDEs
-- **[PERFORMANCE_IMPROVEMENTS_SUMMARY.md](./PERFORMANCE_IMPROVEMENTS_SUMMARY.md)** — Quick reference and summary of all improvements
 
 ### Key Improvements Planned
 
@@ -356,11 +349,6 @@ If llama-server crashes immediately with code `0xC000007B` or `0xC0000135`, inst
 ### CUDA backend missing DLLs
 The binary manager verifies `ggml-cuda.dll`, `ggml.dll`, `llama.dll`, etc. If any are missing after extraction, it will log a warning and the server may fall back to CPU inference. Ensure the CUDA runtime ZIP was also downloaded.
 
-### Connection Issues with IDE Integration
-See [AGENTIC_IDE_INTEGRATION.md](./AGENTIC_IDE_INTEGRATION.md#troubleshooting) for detailed troubleshooting of IDE integration issues.
-
 ## Credits
 
 - [llama.cpp](https://github.com/ggml-org/llama.cpp) — Inference engine
-- [ggml-org](https://github.com/ggml-org) — Release binaries
-- [Jan](https://github.com/janhq/jan) — Inspiration for backend download architecture

@@ -268,62 +268,114 @@ function generateHardwareBanner() {
 const MODELS_TO_DOWNLOAD = [
   // Qwen
   {
-    name: 'Qwen2.5-7B-Instruct (Q4_K_M, ~4.7 GB)',
-    url: 'https://huggingface.co/bartowski/Qwen2.5-7B-Instruct-GGUF/resolve/main/Qwen2.5-7B-Instruct-Q4_K_M.gguf',
-    filename: 'Qwen2.5-7B-Instruct-Q4_K_M.gguf',
-    category: 'Qwen'
+    name: 'Qwen3.6-35B-A3B (Q4_K_M, ~22.5 GB)',
+    url: 'https://huggingface.co/unsloth/Qwen3.6-35B-A3B-GGUF/resolve/main/Qwen3.6-35B-A3B-UD-Q4_K_M.gguf',
+    filename: 'Qwen3.6-35B-A3B-Q4_K_M.gguf',
+    category: 'Qwen',
+    mmprojUrl: 'https://huggingface.co/unsloth/Qwen3.6-35B-A3B-GGUF/resolve/main/mmproj-BF16.gguf',
+    mmprojFilename: 'mmproj-Qwen3.6-35B-A3B-BF16.gguf',
+    hasVision: true,
   },
   {
-    name: 'Qwen2.5-3B-Instruct (Q4_K_M, ~2.0 GB)',
-    url: 'https://huggingface.co/bartowski/Qwen2.5-3B-Instruct-GGUF/resolve/main/Qwen2.5-3B-Instruct-Q4_K_M.gguf',
-    filename: 'Qwen2.5-3B-Instruct-Q4_K_M.gguf',
-    category: 'Qwen'
-  },
-  // Llama
-  {
-    name: 'Llama-3.2-3B-Instruct (Q4_K_M, ~2.0 GB)',
-    url: 'https://huggingface.co/bartowski/Llama-3.2-3B-Instruct-GGUF/resolve/main/Llama-3.2-3B-Instruct-Q4_K_M.gguf',
-    filename: 'Llama-3.2-3B-Instruct-Q4_K_M.gguf',
-    category: 'Llama'
+    name: 'Qwen3.5-9B (Q4_K_M, ~5.7 GB)',
+    url: 'https://huggingface.co/unsloth/Qwen3.5-9B-GGUF/resolve/main/Qwen3.5-9B-Q4_K_M.gguf',
+    filename: 'Qwen3.5-9B-Q4_K_M.gguf',
+    category: 'Qwen',
+    mmprojUrl: 'https://huggingface.co/unsloth/Qwen3.5-9B-GGUF/resolve/main/mmproj-BF16.gguf',
+    mmprojFilename: 'mmproj-Qwen3.5-9B-BF16.gguf',
+    hasVision: true,
   },
   {
-    name: 'Llama-3.2-1B-Instruct (Q4_K_M, ~0.8 GB)',
-    url: 'https://huggingface.co/bartowski/Llama-3.2-1B-Instruct-GGUF/resolve/main/Llama-3.2-1B-Instruct-Q4_K_M.gguf',
-    filename: 'Llama-3.2-1B-Instruct-Q4_K_M.gguf',
-    category: 'Llama'
+    name: 'Qwen3.5-4B (Q4_K_M, ~2.9 GB)',
+    url: 'https://huggingface.co/unsloth/Qwen3.5-4B-GGUF/resolve/main/Qwen3.5-4B-Q4_K_M.gguf',
+    filename: 'Qwen3.5-4B-Q4_K_M.gguf',
+    category: 'Qwen',
+    mmprojUrl: 'https://huggingface.co/unsloth/Qwen3.5-4B-GGUF/resolve/main/mmproj-BF16.gguf',
+    mmprojFilename: 'mmproj-Qwen3.5-4B-BF16.gguf',
+    hasVision: true,
   },
+  // Open AI
+  {
+    name: 'gpt-oss-20b (Q4_K_M, ~14.0 GB)',
+    url: 'https://huggingface.co/unsloth/gpt-oss-20b-GGUF/resolve/main/gpt-oss-20b-F16.gguf',
+    filename: 'gpt-oss-20b-Q4_K_M.gguf',
+    category: 'gpt-oss'
+  },
+
   // Gemma
   {
-    name: 'gemma-2-2b-it (Q4_K_M, ~1.7 GB)',
-    url: 'https://huggingface.co/bartowski/gemma-2-2b-it-GGUF/resolve/main/gemma-2-2b-it-Q4_K_M.gguf',
-    filename: 'gemma-2-2b-it-Q4_K_M.gguf',
-    category: 'Gemma'
+    name: 'gemma-4-26B-A4B-it (Q4_K_M, ~17.0 GB)',
+    url: 'https://huggingface.co/unsloth/gemma-4-26B-A4B-it-GGUF/resolve/main/gemma-4-26B-A4B-it-UD-Q4_K_M.gguf',
+    filename: 'gemma-4-26B-A4B-it-Q4_K_M.gguf',
+    category: 'Gemma',
+    mmprojUrl: 'https://huggingface.co/unsloth/gemma-4-26B-A4B-it-GGUF/resolve/main/mmproj-BF16.gguf',
+    mmprojFilename: 'mmproj-gemma-4-26B-A4B-it-BF16.gguf',
+    hasVision: true,
   },
-  // Mistral
   {
-    name: 'Mistral-7B-Instruct-v0.3 (Q4_K_M, ~4.4 GB)',
-    url: 'https://huggingface.co/bartowski/Mistral-7B-Instruct-v0.3-GGUF/resolve/main/Mistral-7B-Instruct-v0.3-Q4_K_M.gguf',
-    filename: 'Mistral-7B-Instruct-v0.3-Q4_K_M.gguf',
-    category: 'Mistral'
+    name: 'gemma-4-E4b-it (Q4_K_M, ~6.0 GB)',
+    url: 'https://huggingface.co/unsloth/gemma-4-E4B-it-GGUF/resolve/main/gemma-4-E4B-it-Q4_K_M.gguf',
+    filename: 'gemma-4-E4b-it-Q4_K_M.gguf',
+    category: 'Gemma',
+    mmprojUrl: 'https://huggingface.co/unsloth/gemma-4-E4B-it-GGUF/resolve/main/mmproj-BF16.gguf',
+    mmprojFilename: 'mmproj-gemma-4-E4B-it-BF16.gguf',
+    hasVision: true,
+  },
+  {
+    name: 'gemma-4-E2b-it (Q4_K_M, ~3.2 GB)',
+    url: 'https://huggingface.co/unsloth/gemma-4-E2B-it-GGUF/resolve/main/gemma-4-E2B-it-Q4_K_M.gguf',
+    filename: 'gemma-4-E2b-it-Q4_K_M.gguf',
+    category: 'Gemma',
+    mmprojUrl: 'https://huggingface.co/unsloth/gemma-4-E2B-it-GGUF/resolve/main/mmproj-BF16.gguf',
+    mmprojFilename: 'mmproj-gemma-4-E2B-it-BF16.gguf',
+    hasVision: true,
+  },
+  // Ministral
+  {
+    name: 'Ministral-3-14B-Reasoning-2512 (Q4_K_M, ~8.4 GB)',
+    url: 'https://huggingface.co/unsloth/Ministral-3-14B-Reasoning-2512-GGUF/resolve/main/Ministral-3-14B-Reasoning-2512-Q4_K_M.gguf',
+    filename: 'Ministral-3-14B-Reasoning-2512-Q4_K_M.gguf',
+    category: 'Ministral',
+    mmprojUrl: 'https://huggingface.co/unsloth/Ministral-3-14B-Reasoning-2512-GGUF/resolve/main/mmproj-BF16.gguf',
+    mmprojFilename: 'mmproj-Ministral-3-14B-Reasoning-2512-BF16.gguf',
+    hasVision: true,
+  },
+  {
+    name: 'Ministral-3-8B-Reasoning-2512 (Q4_K_M, ~5.4 GB)',
+    url: 'https://huggingface.co/unsloth/Ministral-3-8B-Reasoning-2512-GGUF/resolve/main/Ministral-3-8B-Reasoning-2512-Q4_K_M.gguf',
+    filename: 'Ministral-3-8B-Reasoning-2512-Q4_K_M.gguf',
+    category: 'Ministral',
+    mmprojUrl: 'https://huggingface.co/unsloth/Ministral-3-8B-Reasoning-2512-GGUF/resolve/main/mmproj-BF16.gguf',
+    mmprojFilename: 'mmproj-Ministral-3-8B-Reasoning-2512-BF16.gguf',
+    hasVision: true,
+  },
+  {
+    name: 'Ministral-3-3B-Reasoning-2512 (Q4_K_M, ~2.4 GB)',
+    url: 'https://huggingface.co/unsloth/Ministral-3-3B-Reasoning-2512-GGUF/resolve/main/Ministral-3-3B-Reasoning-2512-Q4_K_M.gguf',
+    filename: 'Ministral-3-3B-Reasoning-2512-Q4_K_M.gguf',
+    category: 'Ministral',
+    mmprojUrl: 'https://huggingface.co/unsloth/Ministral-3-3B-Reasoning-2512-GGUF/resolve/main/mmproj-BF16.gguf',
+    mmprojFilename: 'mmproj-Ministral-3-3B-Reasoning-2512-BF16.gguf',
+    hasVision: true,
   },
   // Phi
   {
-    name: 'Phi-3.5-mini-instruct (Q4_K_M, ~2.4 GB)',
-    url: 'https://huggingface.co/bartowski/Phi-3.5-mini-instruct-GGUF/resolve/main/Phi-3.5-mini-instruct-Q4_K_M.gguf',
-    filename: 'Phi-3.5-mini-instruct-Q4_K_M.gguf',
+    name: 'Phi-4-reasoning-plus (Q4_K_M, ~10.0 GB)',
+    url: 'https://huggingface.co/unsloth/Phi-4-reasoning-plus-GGUF/resolve/main/Phi-4-reasoning-plus-Q4_K_M.gguf',
+    filename: 'Phi-4-reasoning-plus-Q4_K_M.gguf',
+    category: 'Phi'
+  },
+  {
+    name: 'Phi-4-mini-reasoning (Q4_K_M, ~2.4 GB)',
+    url: 'https://huggingface.co/unsloth/Phi-4-mini-reasoning-GGUF/resolve/main/Phi-4-mini-reasoning-Q4_K_M.gguf',
+    filename: 'Phi-4-mini-reasoning-Q4_K_M.gguf',
     category: 'Phi'
   },
   // Small (recommended for first-time users)
   {
-    name: 'SmolLM2-1.7B-Instruct (Q4_K_M, ~1.0 GB) — recommended starter',
-    url: 'https://huggingface.co/bartowski/SmolLM2-1.7B-Instruct-GGUF/resolve/main/SmolLM2-1.7B-Instruct-Q4_K_M.gguf',
-    filename: 'SmolLM2-1.7B-Instruct-Q4_K_M.gguf',
-    category: 'Small'
-  },
-  {
-    name: 'SmolLM2-360M-Instruct (Q4_K_M, ~270 MB) — fastest',
-    url: 'https://huggingface.co/bartowski/SmolLM2-360M-Instruct-GGUF/resolve/main/SmolLM2-360M-Instruct-Q4_K_M.gguf',
-    filename: 'SmolLM2-360M-Instruct-Q4_K_M.gguf',
+    name: 'SmolLM3-3B (Q4_K_M, ~2.5 MB) — fastest',
+    url: 'https://huggingface.co/ggml-org/SmolLM3-3B-GGUF/resolve/main/SmolLM3-Q4_K_M.gguf',
+    filename: 'SmolLM3-3B-Q4_K_M.gguf',
     category: 'Small'
   },
   // Bonsai 1-bit (Q1_0) — runs on any PC, very low RAM/VRAM
@@ -435,7 +487,11 @@ function generateModelOptions() {
     models.forEach(model => {
       html += `<div class="model-item">`;
       html += `<input type="checkbox" id="${model.name}" name="model" value="${model.name}">`;
-      html += `<label for="${model.name}">${model.name}</label>`;
+      html += `<label for="${model.name}">${model.name}`;
+      if (model.hasVision) {
+        html += ` <span class="vision-badge" title="Supports vision / image input">👁</span>`;
+      }
+      html += `</label>`;
       html += `</div>`;
     });
     html += `</div>`;
@@ -641,6 +697,11 @@ function getSetupHtml(modelOptions = '') {
       flex: 1;
       color: #c9d1d9;
       text-align: left;
+    }
+    .vision-badge {
+      font-size: 12px;
+      margin-left: 4px;
+      vertical-align: middle;
     }
     .buttons {
       display: flex;
@@ -1316,6 +1377,78 @@ function createTray() {
           label: 'Stop Server',
           click: async () => { await stopLlamaServer(); },
           enabled: isServerRunning
+        },
+        { type: 'separator' },
+        {
+          label: 'Check for Server Update',
+          click: async () => {
+            try {
+              const info = getCurrentBackendInfo();
+              const release = await binaryManager.getLatestReleaseInfo();
+              const currentNum = parseInt(String(info.tag || '').replace(/\D/g, ''), 10) || 0;
+              const latestNum = parseInt(String(release.tag).replace(/\D/g, ''), 10) || 0;
+
+              if (info.tag && latestNum <= currentNum) {
+                dialog.showMessageBox({
+                  type: 'info',
+                  title: 'alpacabitollama',
+                  message: 'No update available',
+                  detail: `You are already running the latest llama.cpp backend (${info.tag}).`
+                });
+                return;
+              }
+
+              const confirm = await dialog.showMessageBox({
+                type: 'question',
+                buttons: ['Download & Install', 'Cancel'],
+                defaultId: 0,
+                title: 'alpacabitollama',
+                message: `llama.cpp ${release.tag} is available`,
+                detail: `Current: ${info.tag || 'not installed'}\nLatest: ${release.tag}\n\nInstall the update and restart the server?`
+              });
+
+              if (confirm.response !== 0) return;
+
+              // Perform the update
+              const result = await binaryManager.ensureBackend(app, getCachedHardwareCapabilities(), (currentBytes, total) => {
+                const pct = total ? Math.round((currentBytes / total) * 100) : 0;
+                console.log(`[binary-manager] Update download progress: ${pct}%`);
+              });
+
+              const wasRunning = isServerRunning && !!llamaServerProcess;
+              if (wasRunning) {
+                const apiCfg = apiServer.getApiConfig();
+                const serverPort = apiCfg.port || 13434;
+                const apiUrl = apiServer.getApiUrl();
+                await stopLlamaServer(15000);
+                killProcessOnPort(serverPort);
+                try { await waitForPortFree(serverPort, 10000); } catch (e) {
+                  killProcessOnPort(serverPort);
+                  await waitForPortFree(serverPort, 10000);
+                }
+                const started = await startLlamaServer();
+                if (started) {
+                  await waitForServerReady(`${apiUrl}/`, 120000);
+                  if (mainWindow && !mainWindow.isDestroyed()) {
+                    const currentUrl = mainWindow.webContents.getURL();
+                    if (currentUrl.startsWith(apiUrl)) mainWindow.webContents.reload();
+                  }
+                }
+              }
+
+              dialog.showMessageBox({
+                type: 'info',
+                title: 'alpacabitollama',
+                message: 'Update installed',
+                detail: wasRunning
+                  ? `Updated to ${result.tag} and restarted the server.`
+                  : `Updated to ${result.tag}. The new version will be used on next server start.`
+              });
+            } catch (err) {
+              console.error('[tray] Update check failed:', err.message);
+              dialog.showErrorBox('Update failed', err.message);
+            }
+          }
         }
       ]
     },
@@ -1568,13 +1701,52 @@ async function startLlamaServer(forceCpuBackend = false) {
     ...apiServer.getServerArgs(),
   ];
 
-  // Check for mmproj (vision/multimodal projector) file
-  const mmprojFiles = fs.readdirSync(modelsDir)
-    .filter((f) => f.toLowerCase().startsWith('mmproj-') && f.toLowerCase().endsWith('.gguf'))
-    .map((f) => path.join(modelsDir, f));
-  if (mmprojFiles.length > 0) {
-    args.push('--mmproj', mmprojFiles[0]);
-    console.log('Using mmproj (vision projector):', mmprojFiles[0]);
+  // Check for mmproj (vision/multimodal projector) file matched to the active model
+  let mmprojPath = null;
+
+  // 1. Prefer the mmproj explicitly paired with this model in MODELS_TO_DOWNLOAD
+  const activeModelEntry = MODELS_TO_DOWNLOAD.find((m) => m.filename === activeModelFilename);
+  if (activeModelEntry && activeModelEntry.mmprojFilename) {
+    const pairedMmprojPath = path.join(modelsDir, activeModelEntry.mmprojFilename);
+    if (fs.existsSync(pairedMmprojPath)) {
+      mmprojPath = pairedMmprojPath;
+      console.log('Using paired mmproj for active model:', mmprojPath);
+    }
+  }
+
+  // 2. Check store for a previously-set mmproj (e.g. from HF download)
+  if (!mmprojPath) {
+    const storedMmprojFilename = store.get('activeModelMmprojFilename', null);
+    if (storedMmprojFilename) {
+      const storedMmprojPath = path.join(modelsDir, storedMmprojFilename);
+      if (fs.existsSync(storedMmprojPath)) {
+        mmprojPath = storedMmprojPath;
+        console.log('Using stored mmproj for active model:', mmprojPath);
+      }
+    }
+  }
+
+  // 3. Fall back: scan directory and try to match by model base name
+  if (!mmprojPath) {
+    const modelBaseName = path.basename(modelPath, '.gguf');
+    const allMmprojFiles = fs.readdirSync(modelsDir)
+      .filter((f) => f.toLowerCase().startsWith('mmproj-') && f.toLowerCase().endsWith('.gguf'));
+    // Look for an mmproj whose filename contains the model base name
+    const matchedMmproj = allMmprojFiles.find((f) =>
+      f.toLowerCase().includes(modelBaseName.toLowerCase())
+    );
+    if (matchedMmproj) {
+      mmprojPath = path.join(modelsDir, matchedMmproj);
+      console.log('Using matched mmproj for active model:', mmprojPath);
+    } else if (allMmprojFiles.length > 0) {
+      // Last resort: use the only mmproj available (single-model setup)
+      mmprojPath = path.join(modelsDir, allMmprojFiles[0]);
+      console.warn('No specific mmproj matched for', modelBaseName, '- using first available:', mmprojPath);
+    }
+  }
+
+  if (mmprojPath) {
+    args.push('--mmproj', mmprojPath);
   }
 
   // Only add --path if public directory exists
@@ -1737,11 +1909,21 @@ async function startLlamaServer(forceCpuBackend = false) {
   }
 }
 
+/**
+ * Kill any process listening on the given port, and all llama-server instances.
+ * Uses non-blocking exec so the main thread never stalls during shutdown.
+ */
 function killProcessOnPort(port) {
   if (process.platform === 'win32') {
-    try {
-      const output = execSync('netstat -ano').toString();
-      const lines = output.split('\n');
+    const { exec } = require('child_process');
+
+    // Non-blocking: kill by image name first (fastest, catches all instances)
+    exec('taskkill /F /IM llama-server.exe', { windowsHide: true }, () => {});
+
+    // Also try port-based kill (belt-and-suspenders)
+    exec('netstat -ano', { windowsHide: true }, (err, stdout) => {
+      if (err || !stdout) return;
+      const lines = stdout.split('\n');
       for (const line of lines) {
         const trimmed = line.trim();
         if (!trimmed.startsWith('TCP')) continue;
@@ -1752,73 +1934,36 @@ function killProcessOnPort(port) {
         if (!portMatch || parseInt(portMatch[1]) !== port) continue;
         const pid = parts[parts.length - 1];
         if (!pid || isNaN(parseInt(pid))) continue;
-        try {
-          execSync(`taskkill /F /T /PID ${pid}`);
-          console.log(`Killed zombie process ${pid} on port ${port}`);
-        } catch (e) {
-          // Process may have already exited
-        }
+        exec(`taskkill /F /T /PID ${pid}`, { windowsHide: true }, () => {});
       }
-    } catch (e) {
-      // no process on port
-    }
-    // Nuclear option: kill all llama-server.exe instances regardless of port
-    try {
-      execSync('taskkill /F /IM llama-server.exe');
-      console.log('Killed all llama-server.exe instances');
-    } catch (e) {
-      // No llama-server.exe processes found
-    }
+    });
     return;
   }
 
-  // macOS / Linux: use lsof or fuser to find and kill the process
-  try {
-    let pids = '';
-    try {
-      pids = execSync(`lsof -ti:${port}`, { encoding: 'utf8', timeout: 3000 }).trim();
-    } catch (_) {
-      // lsof not available or no process found
-    }
-    if (!pids) {
-      try {
-        pids = execSync(`fuser ${port}/tcp 2>/dev/null`, { encoding: 'utf8', timeout: 3000, shell: true }).trim();
-      } catch (_) {
-        // fuser not available or no process found
-      }
-    }
-    if (pids) {
-      for (const pid of pids.split(/\s+/)) {
-        const cleanPid = pid.trim();
-        if (!cleanPid || isNaN(parseInt(cleanPid))) continue;
-        try {
-          process.kill(parseInt(cleanPid), 'SIGKILL');
-          console.log(`Killed zombie process ${cleanPid} on port ${port}`);
-        } catch (e) {
-          // Process may have already exited
-        }
-      }
-    }
-  } catch (e) {
-    // no process on port
-  }
-
-  // Nuclear option: kill all llama-server instances by name
-  try {
-    if (process.platform === 'darwin') {
-      execSync('pkill -9 -f llama-server', { timeout: 3000 });
-    } else {
-      execSync('killall -9 llama-server 2>/dev/null || pkill -9 -f llama-server', { timeout: 3000, shell: true });
-    }
-    console.log('Killed all llama-server instances');
-  } catch (e) {
-    // No llama-server processes found
-  }
+  // macOS / Linux: non-blocking kill
+  const { exec } = require('child_process');
+  exec(`lsof -ti:${port} | xargs kill -9 2>/dev/null`, { shell: true }, () => {});
+  exec('pkill -9 -f llama-server', () => {});
 }
 
-async function stopLlamaServer(timeoutMs = 10000) {
+/**
+ * Stop the llama-server process as fast as possible.
+ * Does not wait for graceful shutdown — we force-kill immediately to prevent
+ * the Electron main process from hanging on Windows GPU cleanup.
+ * Resolves within 3 s regardless of whether the process actually exited.
+ */
+async function stopLlamaServer(timeoutMs = 3000) {
   return new Promise((resolve) => {
+    // Hard cap — never wait longer than 3 s
+    const hardTimeout = setTimeout(() => {
+      llamaServerProcess = null;
+      isServerRunning = false;
+      killProcessOnPort(13434);
+      resolve();
+    }, Math.min(timeoutMs, 3000));
+
     if (!llamaServerProcess) {
+      clearTimeout(hardTimeout);
       killProcessOnPort(13434);
       isServerRunning = false;
       resolve();
@@ -1827,105 +1972,47 @@ async function stopLlamaServer(timeoutMs = 10000) {
 
     const processToKill = llamaServerProcess;
     const pid = processToKill.pid;
-    let resolved = false;
 
-    // If the process has already exited, resolve immediately
+    // If already exited, clean up and go
     if (processToKill.exitCode !== null || processToKill.killed) {
-      if (llamaServerProcess === processToKill) {
-        llamaServerProcess = null;
-        isServerRunning = false;
-      }
+      clearTimeout(hardTimeout);
+      llamaServerProcess = null;
+      isServerRunning = false;
       killProcessOnPort(13434);
       resolve();
       return;
     }
 
-    function finish() {
-      if (resolved) return;
-      resolved = true;
-      clearTimeout(timeout);
-      clearInterval(graceInterval);
-      // Only clear the global reference if it still points to this process
-      if (llamaServerProcess === processToKill) {
-        llamaServerProcess = null;
-        isServerRunning = false;
-      }
+    // Listen for the process exit so we can resolve early
+    processToKill.once('close', () => {
+      clearTimeout(hardTimeout);
+      llamaServerProcess = null;
+      isServerRunning = false;
       killProcessOnPort(13434);
       resolve();
-    }
-
-    // Listen for the process to actually exit
-    processToKill.once('close', () => {
-      console.log(`llama-server process ${pid} exited`);
-      finish();
     });
 
-    // Fallback timeout in case the event never fires
-    const timeout = setTimeout(() => {
-      console.warn(`Timeout waiting for llama-server ${pid} to exit, forcing cleanup`);
-      finish();
-    }, timeoutMs);
-
-    let graceInterval = null;
-
-    try {
-      if (process.platform === 'win32') {
-        // Step 1: try graceful shutdown (no /F) so active API requests can finish
-        try {
-          execSync(`taskkill /PID ${pid}`, { timeout: 3000, windowsHide: true });
-          console.log(`Sent graceful shutdown to llama-server ${pid}, waiting...`);
-        } catch (gracefulErr) {
-          // Graceful may fail if process is already exiting; that's ok
-        }
-
-        // Step 2: wait up to 5 s for natural exit before escalating
-        const graceStart = Date.now();
-        graceInterval = setInterval(() => {
-          if (processToKill.exitCode !== null || processToKill.killed) {
-            finish();
-          } else if (Date.now() - graceStart > 5000) {
-            // Step 3: force-kill the entire process tree
-            try {
-              execSync(`taskkill /F /T /PID ${pid}`, { timeout: 3000, windowsHide: true });
-              console.log(`Force-killed llama-server ${pid}`);
-            } catch (forceErr) {
-              console.error('Force-kill failed:', forceErr.message);
-            }
-            finish();
+    // Fire force-kill immediately (non-blocking)
+    if (process.platform === 'win32') {
+      try {
+        // /F /T = force kill + entire process tree; /IM = by image name is safer than PID
+        const { exec } = require('child_process');
+        exec(`taskkill /F /T /IM llama-server.exe`, { windowsHide: true }, (err) => {
+          if (err) {
+            // Fallback: try by PID if image-name kill failed
+            try { processToKill.kill(); } catch (_) {}
           }
-        }, 250);
-
-        // Prevent the outer timeout from racing with our grace-interval logic
-        // by extending the overall timeout wrapper
-        return;
-      } else {
-        // Step 1: graceful shutdown
-        processToKill.kill('SIGTERM');
-
-        // Step 2: wait up to 5 s for natural exit before escalating to SIGKILL
-        const graceStart = Date.now();
-        graceInterval = setInterval(() => {
-          if (processToKill.exitCode !== null || processToKill.killed) {
-            finish();
-          } else if (Date.now() - graceStart > 5000) {
-            // Step 3: force-kill with SIGKILL
-            try {
-              process.kill(pid, 'SIGKILL');
-              console.log(`Force-killed (SIGKILL) llama-server ${pid}`);
-            } catch (forceErr) {
-              console.error('SIGKILL failed:', forceErr.message);
-            }
-            finish();
-          }
-        }, 250);
-
-        return;
+        });
+        // Also try PID-specific kill as belt-and-suspenders
+        try { processToKill.kill(); } catch (_) {}
+      } catch (e) {
+        console.error('[stopLlamaServer] Error force-killing:', e.message);
       }
-    } catch (e) {
-      console.error('Error killing llama-server process:', e.message);
-      // Process may have already exited between the existence check and the kill attempt
-      if (processToKill.exitCode !== null || processToKill.killed) {
-        finish();
+    } else {
+      try {
+        processToKill.kill('SIGKILL');
+      } catch (e) {
+        console.error('[stopLlamaServer] SIGKILL failed:', e.message);
       }
     }
   });
@@ -2026,6 +2113,34 @@ function findDownloadedLlamaServerBinary() {
   }
 
   return null;
+}
+
+/**
+ * Return metadata about the currently active llama-server binary.
+ * Distinguishes bundled (shipped with the app) from runtime-downloaded
+ * backends so the UI can show the correct version and update path.
+ */
+function getCurrentBackendInfo() {
+  const binary = findLlamaServerBinary();
+  if (!binary) {
+    return { tag: null, backend: null, path: null, isBundled: false, installed: false };
+  }
+
+  const backendsDir = binaryManager.getBackendsDir(app);
+  const normalized = path.normalize(binary);
+  const normalizedBackends = path.normalize(backendsDir);
+
+  if (normalized.startsWith(normalizedBackends)) {
+    // Runtime-downloaded backend: path is .../backends/<tag>/<backend>/...
+    const relative = path.relative(normalizedBackends, normalized);
+    const parts = relative.split(path.sep);
+    const tag = parts[0] || null;
+    const backend = parts[1] || null;
+    return { tag, backend, path: binary, isBundled: false, installed: true };
+  }
+
+  // Bundled binary: we can't determine a tag, but we know it's present.
+  return { tag: 'bundled', backend: 'bundled', path: binary, isBundled: true, installed: true };
 }
 
 function getPublicDirectory() {
@@ -2476,16 +2591,55 @@ async function startDocsServer() {
           if (fs.existsSync(notFoundPage)) {
             res.statusCode = 404;
             res.setHeader('Content-Type', 'text/html; charset=utf-8');
-            fs.createReadStream(notFoundPage).pipe(res);
+            try {
+              const stream = fs.createReadStream(notFoundPage);
+              stream.on('error', (err) => {
+                console.error('[docs] 404 stream error:', err.message);
+                if (!res.headersSent) { res.statusCode = 500; res.end('Server Error'); }
+                else { res.destroy(); }
+              });
+              stream.pipe(res);
+            } catch (err) {
+              console.error('[docs] Failed to stream 404 page:', err.message);
+              res.statusCode = 500;
+              res.end('Internal Server Error');
+            }
             return;
           }
           res.statusCode = 404;
           res.end('Not Found');
           return;
         }
+
+        // Refuse to serve files that are unreasonably large (>100 MB) to
+        // protect the main process from memory pressure during streaming.
+        const MAX_DOCS_FILE_SIZE = 100 * 1024 * 1024;
+        if (stat.size > MAX_DOCS_FILE_SIZE) {
+          console.warn(`[docs] Refusing to serve oversized file ${target} (${stat.size} bytes)`);
+          res.statusCode = 403;
+          res.end('File Too Large');
+          return;
+        }
+
         res.setHeader('Content-Type', getDocsMimeType(target));
         res.setHeader('Cache-Control', 'no-cache');
-        fs.createReadStream(target).pipe(res);
+        try {
+          const stream = fs.createReadStream(target);
+          stream.on('error', (err) => {
+            console.error('[docs] Read stream error for', target, ':', err.message);
+            if (!res.headersSent) { res.statusCode = 500; res.end('Server Error'); }
+            else { res.destroy(); }
+          });
+          res.on('error', (err) => {
+            console.error('[docs] Response stream error for', target, ':', err.message);
+            stream.destroy();
+          });
+          stream.pipe(res);
+        } catch (err) {
+          console.error('[docs] Failed to stream file', target, ':', err.message);
+          if (!res.headersSent) { res.statusCode = 500; res.end('Internal Server Error'); }
+          else { res.destroy(); }
+        }
       } catch (err) {
         console.error('[docs] Request handler error:', err.message);
         res.statusCode = 500;
@@ -2611,6 +2765,78 @@ function setSelectedModels(modelNames) {
   store.set('selectedModels', modelNames);
 }
 
+/**
+ * Download a single file from a URL to a local path, following redirects.
+ * Returns a Promise that resolves to { success: boolean, skipped?: boolean, error?: string }.
+ */
+function downloadSingleFile(url, filePath, downloadId, label) {
+  return new Promise((resolve) => {
+    if (fs.existsSync(filePath)) {
+      const stats = fs.statSync(filePath);
+      console.log(`${label} already exists (${(stats.size / 1024 / 1024).toFixed(2)} MB), skipping download`);
+      resolve({ success: true, skipped: true });
+      return;
+    }
+
+    downloadProgress.set(downloadId, { progress: 0, total: 0, current: 0, status: 'downloading' });
+    console.log(`Downloading ${label} from ${url}`);
+
+    const file = fs.createWriteStream(filePath);
+    const requestOptions = {
+      headers: { 'User-Agent': 'alpacabitollama/1.0', 'Accept': '*/*' }
+    };
+
+    function handleSuccess(stream, totalSize) {
+      let downloadedSize = 0;
+      stream.on('data', (chunk) => {
+        downloadedSize += chunk.length;
+        if (totalSize) {
+          const progress = downloadedSize / totalSize;
+          downloadProgress.set(downloadId, { progress, total: totalSize, current: downloadedSize, status: 'downloading' });
+        } else {
+          downloadProgress.set(downloadId, { progress: 0, total: 0, current: downloadedSize, status: 'downloading' });
+        }
+      });
+      stream.pipe(file);
+      file.on('finish', () => {
+        file.close();
+        downloadProgress.set(downloadId, { progress: 1, total: totalSize, current: totalSize, status: 'completed' });
+        console.log(`Downloaded ${label} successfully`);
+        resolve({ success: true });
+      });
+    }
+
+    function fail(message) {
+      fs.unlink(filePath, () => {});
+      downloadProgress.set(downloadId, { status: 'error', error: message });
+      console.error(`Error downloading ${label}: ${message}`);
+      resolve({ success: false, error: message });
+    }
+
+    function fetchWithRedirects(fetchUrl, hops) {
+      if (hops > 5) { fail('Too many redirects'); return; }
+      https.get(fetchUrl, requestOptions, (response) => {
+        const code = response.statusCode;
+        if (code === 301 || code === 302 || code === 307 || code === 308) {
+          const next = response.headers.location;
+          if (!next) { fail(`Redirect ${code} with no Location header`); return; }
+          response.resume();
+          fetchWithRedirects(next, hops + 1);
+          return;
+        }
+        if (code === 200) {
+          const totalSize = parseInt(response.headers['content-length'], 10) || 0;
+          handleSuccess(response, totalSize);
+          return;
+        }
+        fail(`HTTP ${code}`);
+      }).on('error', (err) => fail(err.message));
+    }
+
+    fetchWithRedirects(url, 0);
+  });
+}
+
 async function downloadModels() {
   const modelsDir = getModelsDirectory();
   const modelsToDownload = getSelectedModels();
@@ -2619,82 +2845,34 @@ async function downloadModels() {
   console.log('Models directory:', modelsDir);
   console.log(`Models to download: ${modelsToDownload.length}`);
 
-  const downloadPromises = modelsToDownload.map((model) => {
-    return new Promise((resolve) => {
-      const modelPath = path.join(modelsDir, model.filename);
+  const downloadPromises = modelsToDownload.map(async (model) => {
+    const modelPath = path.join(modelsDir, model.filename);
+    const modelDownloadId = `builtin/${model.filename}`;
 
-      if (fs.existsSync(modelPath)) {
-        const stats = fs.statSync(modelPath);
-        console.log(`Model ${model.name} already exists (${(stats.size / 1024 / 1024).toFixed(2)} MB), skipping download`);
-        resolve({ success: true, skipped: true, filename: model.filename });
-        return;
+    // Download the main model file
+    const modelResult = await downloadSingleFile(model.url, modelPath, modelDownloadId, model.name);
+    if (!modelResult.success && !modelResult.skipped) {
+      const errMsg = `Error downloading ${model.name}: ${modelResult.error}`;
+      lastMainError = { source: 'downloadModels', message: errMsg, time: new Date().toISOString() };
+      notifyDownloadComplete(model.filename, false, modelResult.error);
+      return { success: false, error: modelResult.error, filename: model.filename };
+    }
+
+    // Download mmproj (vision projector) if specified — best-effort, do not fail the model
+    if (model.mmprojUrl && model.mmprojFilename) {
+      const mmprojPath = path.join(modelsDir, model.mmprojFilename);
+      const mmprojDownloadId = `builtin/${model.mmprojFilename}`;
+      const mmprojResult = await downloadSingleFile(model.mmprojUrl, mmprojPath, mmprojDownloadId, `${model.name} (vision projector)`);
+      if (!mmprojResult.success && !mmprojResult.skipped) {
+        console.warn(`Mmproj download failed for ${model.name}: ${mmprojResult.error}. Model will work without vision support.`);
       }
+    }
 
-      const downloadId = `builtin/${model.filename}`;
-      downloadProgress.set(downloadId, { progress: 0, total: 0, current: 0, status: 'downloading' });
-
-      console.log(`Downloading ${model.name} from ${model.url}`);
-
-      const file = fs.createWriteStream(modelPath);
-      // Reason: HF often performs multiple redirects (huggingface.co -> cdn-lfs.hf.co
-      // -> signed S3 url) and may 403 user-agent-less requests.
-      const requestOptions = {
-        headers: { 'User-Agent': 'alpacabitollama/1.0', 'Accept': '*/*' }
-      };
-
-      function handleSuccess(stream, totalSize) {
-        let downloadedSize = 0;
-        stream.on('data', (chunk) => {
-          downloadedSize += chunk.length;
-          if (totalSize) {
-            const progress = downloadedSize / totalSize;
-            downloadProgress.set(downloadId, { progress, total: totalSize, current: downloadedSize, status: 'downloading' });
-          } else {
-            downloadProgress.set(downloadId, { progress: 0, total: 0, current: downloadedSize, status: 'downloading' });
-          }
-        });
-        stream.pipe(file);
-        file.on('finish', () => {
-          file.close();
-          downloadProgress.set(downloadId, { progress: 1, total: totalSize, current: totalSize, status: 'completed' });
-          console.log(`Downloaded ${model.name} successfully`);
-          notifyDownloadComplete(model.filename, true);
-          resolve({ success: true, filename: model.filename });
-        });
-      }
-
-      function fail(message) {
-        fs.unlink(modelPath, () => {});
-        downloadProgress.set(downloadId, { status: 'error', error: message });
-        const errMsg = `Error downloading ${model.name}: ${message}`;
-        lastMainError = { source: 'downloadModels', message: errMsg, time: new Date().toISOString() };
-        console.error(errMsg);
-        notifyDownloadComplete(model.filename, false, message);
-        resolve({ success: false, error: message });
-      }
-
-      function fetchWithRedirects(url, hops) {
-        if (hops > 5) { fail('Too many redirects'); return; }
-        https.get(url, requestOptions, (response) => {
-          const code = response.statusCode;
-          if (code === 301 || code === 302 || code === 307 || code === 308) {
-            const next = response.headers.location;
-            if (!next) { fail(`Redirect ${code} with no Location header`); return; }
-            response.resume(); // discard body
-            fetchWithRedirects(next, hops + 1);
-            return;
-          }
-          if (code === 200) {
-            const totalSize = parseInt(response.headers['content-length'], 10) || 0;
-            handleSuccess(response, totalSize);
-            return;
-          }
-          fail(`HTTP ${code}`);
-        }).on('error', (err) => fail(err.message));
-      }
-
-      fetchWithRedirects(model.url, 0);
-    });
+    if (modelResult.skipped) {
+      return { success: true, skipped: true, filename: model.filename };
+    }
+    notifyDownloadComplete(model.filename, true);
+    return { success: true, filename: model.filename };
   });
 
   console.log('Model download initiated. Check console for progress.');
@@ -3046,11 +3224,26 @@ function notifyDownloadComplete(filename, success, errorMessage) {
 function deleteModel(filename) {
   const modelsDir = getModelsDirectory();
   const modelPath = path.join(modelsDir, filename);
+  let deleted = false;
   if (fs.existsSync(modelPath)) {
     fs.unlinkSync(modelPath);
-    return true;
+    deleted = true;
   }
-  return false;
+  // Also delete the paired mmproj file if one exists
+  const modelEntry = MODELS_TO_DOWNLOAD.find((m) => m.filename === filename);
+  if (modelEntry && modelEntry.mmprojFilename) {
+    const mmprojPath = path.join(modelsDir, modelEntry.mmprojFilename);
+    if (fs.existsSync(mmprojPath)) {
+      fs.unlinkSync(mmprojPath);
+      deleted = true;
+    }
+  }
+  // If the deleted model was the active one, clear its mmproj from store
+  const activeModel = store.get('activeModelFilename', null);
+  if (activeModel === filename) {
+    store.delete('activeModelMmprojFilename');
+  }
+  return deleted;
 }
 
 function getStorageInfo() {
@@ -3307,25 +3500,49 @@ function quitApplication() {
   // app.exit() races with their close handlers.
   try { if (logsViewerWindow && !logsViewerWindow.isDestroyed()) logsViewerWindow.destroy(); } catch (_) { /* ignore */ }
   logsViewerWindow = null;
-  try { if (docsServer) { docsServer.close(); docsServer = null; docsServerUrl = null; docsServerStartPromise = null; } } catch (_) { /* ignore */ }
 
   let exited = false;
   const finalise = (code) => {
     if (exited) return;
     exited = true;
-    try { killProcessOnPort(13434); } catch (_) { /* ignore */ }
+    // Destroy the tray icon — on Windows an active Tray keeps the event loop alive
+    try { if (tray && !tray.isDestroyed()) tray.destroy(); } catch (_) { /* ignore */ }
+    tray = null;
+    // Force-close the main window so no hidden window blocks exit
+    try { if (mainWindow && !mainWindow.isDestroyed()) mainWindow.destroy(); } catch (_) { /* ignore */ }
+    mainWindow = null;
+    // Force-kill any remaining llama-server processes (non-blocking)
+    killProcessOnPort(13434);
+    // Close docs server and sever any keep-alive connections
+    try {
+      if (docsServer) {
+        if (typeof docsServer.closeAllConnections === 'function') docsServer.closeAllConnections();
+        docsServer.close();
+        docsServer = null;
+        docsServerUrl = null;
+        docsServerStartPromise = null;
+      }
+    } catch (_) { /* ignore */ }
+    // Nuclear option: kill all llama-server.exe instances (non-blocking)
+    if (process.platform === 'win32') {
+      const { exec } = require('child_process');
+      exec('taskkill /F /IM llama-server.exe', { windowsHide: true }, () => {});
+    }
     app.exit(code);
+    // Safety net: if app.exit() leaves the process alive (can happen on Windows
+    // when the event loop has hidden handles), force-terminate after 500 ms.
+    setTimeout(() => process.exit(code), 500);
   };
 
-  // Hard safety net — Quit must always close the app, even if the graceful
-  // shutdown path hangs.
-  const SAFETY_MS = 6000;
+  // Hard safety net — Quit must always close the app within 5 s even if the
+  // server stop path hangs (Windows GPU cleanup can stall for minutes).
+  const SAFETY_MS = 5000;
   const safetyTimer = setTimeout(() => {
     console.warn(`[quitApplication] Graceful stop did not complete within ${SAFETY_MS} ms; forcing exit.`);
     finalise(0);
   }, SAFETY_MS);
 
-  stopLlamaServer(5000)
+  stopLlamaServer(3000)
     .then(() => {
       clearTimeout(safetyTimer);
       console.log('[quitApplication] llama-server stopped, exiting.');
@@ -3338,26 +3555,52 @@ function quitApplication() {
     });
 }
 
+/**
+ * Shared cleanup that must run on every exit path. Destroys the tray icon
+ * (which on Windows keeps the event loop alive), kills orphan llama-server
+ * processes, and clears global references.
+ */
+function cleanupBeforeExit() {
+  try { if (tray && !tray.isDestroyed()) tray.destroy(); } catch (_) { /* ignore */ }
+  tray = null;
+  try { if (mainWindow && !mainWindow.isDestroyed()) mainWindow.destroy(); } catch (_) { /* ignore */ }
+  mainWindow = null;
+  try { if (logsViewerWindow && !logsViewerWindow.isDestroyed()) logsViewerWindow.destroy(); } catch (_) { /* ignore */ }
+  logsViewerWindow = null;
+  try {
+    if (docsServer) {
+      if (typeof docsServer.closeAllConnections === 'function') docsServer.closeAllConnections();
+      docsServer.close();
+      docsServer = null;
+      docsServerUrl = null;
+      docsServerStartPromise = null;
+    }
+  } catch (_) { /* ignore */ }
+  killProcessOnPort(13434);
+  llamaServerProcess = null;
+  isServerRunning = false;
+}
+
 app.on('before-quit', (event) => {
   if (isShuttingDown) return;
   app.isQuitting = true;
   if (llamaServerProcess) {
     event.preventDefault();
     isShuttingDown = true;
-    console.log('[before-quit] Stopping llama-server gracefully before exit...');
-    stopLlamaServer(10000)
+    console.log('[before-quit] Stopping llama-server before exit...');
+    stopLlamaServer(3000)
       .then(() => {
         console.log('[before-quit] Server stopped, exiting now');
+        cleanupBeforeExit();
         app.exit(0);
       })
       .catch((err) => {
         console.error('[before-quit] Error during server stop:', err.message);
-        killProcessOnPort(13434);
+        cleanupBeforeExit();
         app.exit(1);
       });
   } else {
-    // Safety net: force-kill any orphan llama-server.exe
-    killProcessOnPort(13434);
+    cleanupBeforeExit();
   }
 });
 
@@ -3366,26 +3609,23 @@ app.on('will-quit', (event) => {
     event.preventDefault();
     isShuttingDown = true;
     console.log('[will-quit] Last-chance server cleanup before exit...');
-    stopLlamaServer(5000)
+    stopLlamaServer(3000)
       .then(() => {
         console.log('[will-quit] Server stopped, exiting now');
+        cleanupBeforeExit();
         app.exit(0);
       })
       .catch(() => {
-        killProcessOnPort(13434);
+        cleanupBeforeExit();
         app.exit(1);
       });
   } else {
-    killProcessOnPort(13434);
+    cleanupBeforeExit();
   }
 });
 
 app.on('quit', () => {
-  killProcessOnPort(13434);
-  // Ensure the global process reference is cleared so a new instance
-  // (single-instance lock) never sees a stale PID.
-  llamaServerProcess = null;
-  isServerRunning = false;
+  cleanupBeforeExit();
 });
 
 // ============================================================================
@@ -3796,7 +4036,17 @@ ipcMain.handle('get-installed-models', () => {
 });
 
 ipcMain.handle('get-active-model', () => {
-  return store.get('activeModelFilename', null);
+  const filename = store.get('activeModelFilename', null);
+  if (!filename) return null;
+  const modelEntry = MODELS_TO_DOWNLOAD.find((m) => m.filename === filename);
+  const mmprojFilename = store.get('activeModelMmprojFilename', null) || (modelEntry ? modelEntry.mmprojFilename : null);
+  const mmprojPath = mmprojFilename ? path.join(getModelsDirectory(), mmprojFilename) : null;
+  const mmprojExists = mmprojPath ? fs.existsSync(mmprojPath) : false;
+  return {
+    filename,
+    mmprojFilename: mmprojExists ? mmprojFilename : null,
+    hasVision: mmprojExists || !!(modelEntry && modelEntry.hasVision),
+  };
 });
 
 ipcMain.handle('delete-model', (event, filename) => {
@@ -3926,6 +4176,16 @@ ipcMain.handle('switch-model', async (event, filename) => {
 
   console.log(`[switch-model] Setting activeModelFilename to: ${filename}`);
   store.set('activeModelFilename', filename);
+
+  // Store (or clear) the paired mmproj filename so startLlamaServer can match it
+  const modelEntry = MODELS_TO_DOWNLOAD.find((m) => m.filename === filename);
+  if (modelEntry && modelEntry.mmprojFilename) {
+    store.set('activeModelMmprojFilename', modelEntry.mmprojFilename);
+    console.log(`[switch-model] Stored mmproj filename: ${modelEntry.mmprojFilename}`);
+  } else {
+    store.delete('activeModelMmprojFilename');
+    console.log('[switch-model] Cleared stored mmproj filename (model has no paired mmproj)');
+  }
 
   // Restart server if it's running
     const apiCfg = apiServer.getApiConfig();
@@ -4693,6 +4953,105 @@ ipcMain.handle('download-backend', async (event, backend, version) => {
     };
   } catch (err) {
     console.error('[download-backend] Failed:', err.message);
+    return { success: false, error: err.message };
+  }
+});
+
+ipcMain.handle('get-current-backend-info', () => {
+  return getCurrentBackendInfo();
+});
+
+function parseTagNumber(tag) {
+  return parseInt(String(tag).replace(/\D/g, ''), 10) || 0;
+}
+
+ipcMain.handle('update-backend', async () => {
+  try {
+    const current = getCurrentBackendInfo();
+    const release = await binaryManager.getLatestReleaseInfo();
+    const latestTag = release.tag;
+    const currentNum = parseTagNumber(current.tag);
+    const latestNum = parseTagNumber(latestTag);
+
+    if (current.tag && latestNum <= currentNum) {
+      return {
+        success: true,
+        updated: false,
+        message: `Already on the latest backend (${current.tag}).`,
+        currentTag: current.tag,
+        latestTag,
+      };
+    }
+
+    console.log(`[update-backend] Update available: ${current.tag || 'none'} -> ${latestTag}. Downloading...`);
+    const caps = getCachedHardwareCapabilities();
+    const wasRunning = isServerRunning && !!llamaServerProcess;
+
+    const result = await binaryManager.ensureBackend(app, caps, (currentBytes, total) => {
+      const pct = total ? Math.round((currentBytes / total) * 100) : 0;
+      console.log(`[binary-manager] Update download progress: ${pct}% (${(currentBytes / 1024 / 1024).toFixed(1)} / ${(total / 1024 / 1024).toFixed(1)} MB)`);
+    });
+
+    if (!result.fresh && current.tag === result.tag) {
+      return {
+        success: true,
+        updated: false,
+        message: `Backend ${result.tag} is already cached and up to date.`,
+        currentTag: current.tag,
+        latestTag: result.tag,
+        exePath: result.exePath,
+      };
+    }
+
+    // Restart server if it was running so the new binary is picked up.
+    if (wasRunning) {
+      console.log('[update-backend] Server was running; restarting to pick up new binary...');
+      const apiCfg = apiServer.getApiConfig();
+      const serverPort = apiCfg.port || 13434;
+      const apiUrl = apiServer.getApiUrl();
+
+      await stopLlamaServer(15000);
+      killProcessOnPort(serverPort);
+      try {
+        await waitForPortFree(serverPort, 10000);
+      } catch (e) {
+        killProcessOnPort(serverPort);
+        await waitForPortFree(serverPort, 10000);
+      }
+
+      const started = await startLlamaServer();
+      if (!started) {
+        return {
+          success: false,
+          error: 'Backend downloaded but server failed to restart.',
+          currentTag: current.tag,
+          latestTag: result.tag,
+        };
+      }
+      await waitForServerReady(`${apiUrl}/`, 120000);
+
+      // Reload the main chat window so the SSE connection is re-established
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        const currentUrl = mainWindow.webContents.getURL();
+        if (currentUrl.startsWith(apiUrl)) {
+          mainWindow.webContents.reload();
+        }
+      }
+    }
+
+    return {
+      success: true,
+      updated: true,
+      message: wasRunning
+        ? `Updated to ${result.tag} and restarted server.`
+        : `Updated to ${result.tag}. Server will use the new version on next start.`,
+      currentTag: current.tag,
+      latestTag: result.tag,
+      exePath: result.exePath,
+      restarted: wasRunning,
+    };
+  } catch (err) {
+    console.error('[update-backend] Failed:', err.message);
     return { success: false, error: err.message };
   }
 });

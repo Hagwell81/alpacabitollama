@@ -1,6 +1,6 @@
 {
   "name": "alpacabitollama-monorepo",
-  "version": "1.1.0",
+  "version": "1.0.0",
   "description": "Alpacabitollama - Local AI Chat & Development Platform with Documentation",
   "private": true,
   "scripts": {

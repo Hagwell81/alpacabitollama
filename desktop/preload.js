@@ -94,6 +94,8 @@ contextBridge.exposeInMainWorld('llamaAPI', {
   getInstalledBackends: () => ipcRenderer.invoke('get-installed-backends'),
   checkForBackendUpdate: () => ipcRenderer.invoke('check-for-backend-update'),
   downloadBackend: (backend, version) => ipcRenderer.invoke('download-backend', backend, version),
+  getCurrentBackendInfo: () => ipcRenderer.invoke('get-current-backend-info'),
+  updateBackend: () => ipcRenderer.invoke('update-backend'),
   // Service logs (live monitor)
   getInitialLogs: () => ipcRenderer.invoke('logs:get-initial'),
   openLogFile: () => ipcRenderer.invoke('logs:open-file'),

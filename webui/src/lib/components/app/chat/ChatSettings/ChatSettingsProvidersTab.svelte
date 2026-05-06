@@ -5,7 +5,112 @@
 	import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '$lib/components/ui/card';
 	import { providersStore } from '$lib/stores/providers.svelte';
 	import { userStore } from '$lib/stores/user.svelte';
-	import { KeyRound, Plus, Trash2, Edit3, Globe, Server, AlertCircle, Lock, Save, X } from '@lucide/svelte';
+	import {
+		KeyRound,
+		Plus,
+		Trash2,
+		Edit3,
+		Globe,
+		Server,
+		AlertCircle,
+		Lock,
+		Save,
+		X,
+		Cpu,
+		Download,
+		RefreshCw,
+		CheckCircle2,
+		CircleAlert
+	} from '@lucide/svelte';
+
+	// Local backend (llama.cpp) state
+	let backendInfo = $state<{ tag: string | null; backend: string | null; installed: boolean } | null>(null);
+	let latestTag = $state<string | null>(null);
+	let isCheckingUpdate = $state(false);
+	let isUpdating = $state(false);
+	let updateMessage = $state<string | null>(null);
+	let updateError = $state<string | null>(null);
+
+	async function loadBackendInfo() {
+		try {
+			const api = (window as any).llamaAPI;
+			if (!api?.getCurrentBackendInfo) return;
+			const info = await api.getCurrentBackendInfo();
+			backendInfo = info;
+		} catch (e) {
+			console.error('Failed to load backend info:', e);
+		}
+	}
+
+	async function checkForBackendUpdate() {
+		isCheckingUpdate = true;
+		updateMessage = null;
+		updateError = null;
+		try {
+			const api = (window as any).llamaAPI;
+			if (!api?.checkForBackendUpdate) {
+				updateError = 'Backend update check not available';
+				return;
+			}
+			const [info, release] = await Promise.all([
+				api.getCurrentBackendInfo?.() || Promise.resolve(null),
+				api.checkForBackendUpdate()
+			]);
+			if (info) backendInfo = info;
+			if (release.success) {
+				latestTag = release.tag;
+				const currentNum = parseInt(String(backendInfo?.tag || '').replace(/\D/g, ''), 10) || 0;
+				const latestNum = parseInt(String(release.tag).replace(/\D/g, ''), 10) || 0;
+				if (backendInfo?.tag && latestNum <= currentNum) {
+					updateMessage = `Backend is up to date (${backendInfo.tag}).`;
+				} else {
+					updateMessage = null;
+				}
+			} else {
+				updateError = release.error || 'Failed to check for updates';
+			}
+		} catch (e) {
+			updateError = 'Failed to check for updates';
+		} finally {
+			isCheckingUpdate = false;
+		}
+	}
+
+	async function updateBackend() {
+		isUpdating = true;
+		updateMessage = null;
+		updateError = null;
+		try {
+			const api = (window as any).llamaAPI;
+			if (!api?.updateBackend) {
+				updateError = 'Backend update not available';
+				return;
+			}
+			const result = await api.updateBackend();
+			if (result.success) {
+				updateMessage = result.message;
+				if (result.latestTag) latestTag = result.latestTag;
+				if (result.latestTag) {
+					backendInfo = {
+						tag: result.latestTag,
+						backend: backendInfo?.backend ?? null,
+						installed: true
+					};
+				}
+			} else {
+				updateError = result.error || 'Update failed';
+			}
+		} catch (e) {
+			updateError = 'Update failed';
+		} finally {
+			isUpdating = false;
+		}
+	}
+
+	// Load backend info on mount
+	$effect(() => {
+		loadBackendInfo();
+	});
 
 	let isEditing = $state(false);
 	let editId = $state('');
@@ -75,6 +180,77 @@
 </script>
 
 <div class="space-y-6">
+	<!-- Local Backend (llama.cpp) -->
+	<Card>
+		<CardHeader class="pb-3">
+			<div class="flex items-start justify-between">
+				<div class="flex items-center gap-2">
+					<Cpu class="h-4 w-4 text-muted-foreground" />
+					<CardTitle class="text-base">Local Backend (llama.cpp)</CardTitle>
+				</div>
+				{#if backendInfo?.tag && latestTag}
+					{@const currentNum = parseInt(String(backendInfo.tag).replace(/\D/g, ''), 10) || 0}
+					{@const latestNum = parseInt(String(latestTag).replace(/\D/g, ''), 10) || 0}
+					{#if latestNum > currentNum}
+						<span class="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">
+							<CircleAlert class="mr-1 h-3 w-3" />
+							Update available
+						</span>
+					{:else}
+						<span class="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300">
+							<CheckCircle2 class="mr-1 h-3 w-3" />
+							Up to date
+						</span>
+					{/if}
+				{/if}
+			</div>
+			<CardDescription>
+				Current version: {backendInfo?.tag ?? 'Not installed'}
+				{#if latestTag && latestTag !== backendInfo?.tag}
+					&nbsp;&bull; Latest: {latestTag}
+				{/if}
+			</CardDescription>
+		</CardHeader>
+		<CardContent class="space-y-3 pt-0">
+			<div class="flex flex-wrap gap-2">
+				<Button
+					variant="outline"
+					size="sm"
+					onclick={checkForBackendUpdate}
+					disabled={isCheckingUpdate || isUpdating}
+				>
+					<RefreshCw class="mr-1 h-4 w-4 {isCheckingUpdate ? 'animate-spin' : ''}" />
+					{isCheckingUpdate ? 'Checking...' : 'Check for Updates'}
+				</Button>
+				{#if latestTag && backendInfo?.tag}
+					{@const currentNum = parseInt(String(backendInfo.tag).replace(/\D/g, ''), 10) || 0}
+					{@const latestNum = parseInt(String(latestTag).replace(/\D/g, ''), 10) || 0}
+					{#if latestNum > currentNum}
+						<Button
+							variant="default"
+							size="sm"
+							onclick={updateBackend}
+							disabled={isUpdating}
+						>
+							<Download class="mr-1 h-4 w-4" />
+							{isUpdating ? 'Updating...' : `Update to ${latestTag}`}
+						</Button>
+					{/if}
+				{/if}
+			</div>
+			{#if updateMessage}
+				<div class="rounded-lg bg-emerald-50 p-3 text-sm text-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-300">
+					{updateMessage}
+				</div>
+			{/if}
+			{#if updateError}
+				<div class="rounded-lg bg-red-50 p-3 text-sm text-red-800 dark:bg-red-950/30 dark:text-red-300">
+					{updateError}
+				</div>
+			{/if}
+		</CardContent>
+	</Card>
+
 	{#if !userStore.isLoggedIn}
 		<div class="rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-950/30">
 			<div class="flex items-start gap-3">
