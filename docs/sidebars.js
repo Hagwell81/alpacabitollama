@@ -139,5 +139,12 @@ module.exports = {
         'advanced/faq',
       ],
     },
+    {
+      type: 'category',
+      label: 'Roadmap',
+      items: [
+        'roadmap',
+      ],
+    },
   ],
 };

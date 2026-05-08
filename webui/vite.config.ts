@@ -91,6 +91,7 @@ export default defineConfig({
 	},
 
 	server: {
+		port: 13439,
 		proxy: {
 			'/v1': 'http://localhost:13434',
 			'/props': 'http://localhost:13434',

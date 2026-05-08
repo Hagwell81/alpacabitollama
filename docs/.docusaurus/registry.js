@@ -6,6 +6,7 @@ export default {
   "06025134": [() => import(/* webpackChunkName: "06025134" */ "@site/src/pages/api-explorer.jsx"), "@site/src/pages/api-explorer.jsx", require.resolveWeak("@site/src/pages/api-explorer.jsx")],
   "0b60d507": [() => import(/* webpackChunkName: "0b60d507" */ "@site/docs/api-management/azure-foundry.md"), "@site/docs/api-management/azure-foundry.md", require.resolveWeak("@site/docs/api-management/azure-foundry.md")],
   "0dc2d1e4": [() => import(/* webpackChunkName: "0dc2d1e4" */ "@site/docs/ide/cursor-integration.md"), "@site/docs/ide/cursor-integration.md", require.resolveWeak("@site/docs/ide/cursor-integration.md")],
+  "0dffb83e": [() => import(/* webpackChunkName: "0dffb83e" */ "@site/docs/roadmap.md"), "@site/docs/roadmap.md", require.resolveWeak("@site/docs/roadmap.md")],
   "17896441": [() => import(/* webpackChunkName: "17896441" */ "@theme/DocItem"), "@theme/DocItem", require.resolveWeak("@theme/DocItem")],
   "17fd55ce": [() => import(/* webpackChunkName: "17fd55ce" */ "@site/docs/advanced/deployment.md"), "@site/docs/advanced/deployment.md", require.resolveWeak("@site/docs/advanced/deployment.md")],
   "1a554569": [() => import(/* webpackChunkName: "1a554569" */ "@site/docs/agentic/subagent-delegation.md"), "@site/docs/agentic/subagent-delegation.md", require.resolveWeak("@site/docs/agentic/subagent-delegation.md")],

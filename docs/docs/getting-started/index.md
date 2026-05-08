@@ -6,44 +6,75 @@ description: Local AI Chat & Development Platform
 
 # Welcome to Alpacabitollama
 
-**Alpacabitollama** is a comprehensive local AI platform that brings together chat, development tools, and agentic services in a unified desktop application.
+**Alpacabitollama** is a user-friendly desktop application that brings the power of local LLM inference to everyday users through an intuitive chat interface built on top of llama.cpp.
 
 ## What is Alpacabitollama?
 
-Alpacabitollama is a powerful, open-source platform designed for developers and AI enthusiasts who want to:
+Alpacabitollama is a powerful, open-source desktop application designed for developers and AI enthusiasts who want to:
 
-- **Chat with Local AI Models** - Run LLMs locally with support for multiple model formats
-- **Manage Multiple AI Providers** - Seamlessly switch between OpenAI, Google, Anthropic, Mistral, and more
-- **Build Agentic Systems** - Create sophisticated multi-agent architectures with tool delegation
-- **Extract & Process Knowledge** - Web scraping, document RAG, and knowledge base management
-- **Develop with IDE Integration** - Integrated VS Code-like IDE with Copilot and Terminal
-- **Collaborate in Workspaces** - User and app workspaces for joint project development
+- **Chat with Local AI Models** - Run LLMs locally with support for GGUF models
+- **Manage Models Easily** - Download, switch, and manage models from HuggingFace
+- **Web Search Integration** - Built-in DuckDuckGo search for context
+- **Code Retrieval** - Index and search GitHub repositories
+- **OpenAI-Compatible API** - Expose local models via standard API endpoint
+- **System Tray Integration** - Run in the background with easy access
+
+:::info Planned Features
+Alpacabitollama has an ambitious roadmap including multi-provider support, agentic systems, knowledge base with RAG, and IDE integration. See the [Project Roadmap](../roadmap.md) for details.
+:::
 
 ## Key Features
 
-### 🤖 Multi-Provider AI Support
-- OpenAI, Google, Anthropic, Mistral, Open Router
-- Ollama, LM Studio, Azure Foundry (local)
-- Custom OpenAI-compatible endpoints
-- Secure API key management
+### 🤖 Local LLM Inference
+- Built on llama.cpp for efficient local inference
+- Automatic hardware detection (CUDA, ROCm, Vulkan, CPU)
+- Auto-download of correct backend binaries
+- Support for GGUF models from HuggingFace
+- Vision/multimodal support via mmproj files
 
-### 🧠 Advanced Agentic Services
-- Multi-agent orchestration with subagent delegation
-- Tool and skill creation framework
-- Spec-driven development process
-- Comprehensive tool registry
+### 💬 Modern Chat Interface
+- SvelteKit-based web UI
+- Real-time streaming responses
+- Message history and context management
+- Markdown rendering with syntax highlighting
+- Copy-to-clipboard for code and messages
 
-### 📚 Knowledge Management
-- Web scraping and document ingestion
-- Image processing and RAG
-- Knowledge base creation and management
-- MCP (Model Context Protocol) service
+### 📦 Model Management
+- Curated model list (Qwen, Llama, Gemma, Mistral, Phi, SmolLM2, Bonsai)
+- Search any HuggingFace GGUF repository
+- Active model switching without restart
+- Model download progress tracking
 
-### 💻 Development Tools
-- Integrated IDE with Copilot
-- Terminal emulation
-- Project workspace management
-- Collaborative features
+### � Web Search
+- DuckDuckGo integration for web search
+- Automatic page content fetching
+- Text extraction from HTML
+- Context injection into conversations
+
+### 🔧 Code Retrieval
+- Index GitHub repositories from search results
+- Browse local workspace folders
+- Search symbols (functions, classes, methods)
+- Retrieve source code with byte-accurate offsets
+
+### 🌐 OpenAI-Compatible API
+- Exposes `http://127.0.0.1:13434/v1` for IDE integrations
+- Interactive API Explorer (Swagger UI)
+- Chat completions endpoint
+- Models listing endpoint
+- Health check endpoint
+
+### 📚 Bundled Documentation
+- Built-in Docusaurus documentation site
+- API reference and guides
+- Troubleshooting documentation
+- Accessible from within the app
+
+### 👤 User System
+- Local user registration
+- SHA-256 password hashing
+- User profiles and settings
+- Secure data storage
 
 ### ⚡ Performance Optimized
 - Circuit breaker pattern for resilience
@@ -88,16 +119,15 @@ npm start
 ┌─────────────────────────────────────────────────────────┐
 │                  Desktop Application                     │
 │  ┌──────────────────────────────────────────────────┐   │
-│  │  Chat Interface | IDE | Terminal | Workspace    │   │
+│  │  Chat Interface | Settings | Documentation      │   │
 │  └──────────────────────────────────────────────────┘   │
 └─────────────────────────────────────────────────────────┘
                          │
         ┌────────────────┼────────────────┐
         │                │                │
    ┌────▼────┐    ┌─────▼──────┐   ┌────▼────┐
-   │ Agentic │    │ Knowledge  │   │   API   │
-   │ Services│    │   Base &   │   │Provider │
-   │         │    │    RAG     │   │ Manager │
+   │ Chat    │    │   Model    │   │  API    │
+   │ Service │    │  Manager   │   │ Server  │
    └────┬────┘    └─────┬──────┘   └────┬────┘
         │                │                │
         └────────────────┼────────────────┘
@@ -105,8 +135,8 @@ npm start
         ┌────────────────┼────────────────┐
         │                │                │
    ┌────▼────┐    ┌─────▼──────┐   ┌────▼────┐
-   │  Local  │    │  External  │   │Workspace│
-   │  Models │    │   APIs     │   │ Storage │
+   │ llama   │    │  Hugging   │   │  Web    │
+   │ .cpp    │    │   Face     │   │ Search  │
    └─────────┘    └────────────┘   └─────────┘
 ```
 
@@ -115,28 +145,26 @@ npm start
 ### Chat Service
 Real-time chat with streaming support, message history, and context management.
 
-### API Management
-Unified interface for managing multiple AI provider credentials and models.
+### Model Manager
+Download, switch, and manage GGUF models from HuggingFace and other sources.
 
-### Agentic Framework
-Create agents, tools, and skills with automatic delegation and orchestration.
+### API Server
+OpenAI-compatible API endpoint for IDE integrations and third-party tools.
 
-### Knowledge Base
-Extract, process, and query knowledge from web, documents, and images.
+### System Tray
+Background service with tray menu for easy access and control.
 
-### Workspace
-Collaborative environment for user and application projects.
-
-### IDE Integration
-Integrated development environment with Copilot and terminal capabilities.
+### Documentation Viewer
+Built-in Docusaurus documentation site for guides and API reference.
 
 ## What's Next?
 
 - **[Installation Guide](./installation.md)** - Detailed setup instructions
 - **[Quick Start](./quick-start.md)** - Get up and running in 5 minutes
 - **[User Guide](../user-guide/chat-interface.md)** - Learn the interface
-- **[API Management](../api-management/overview.md)** - Configure AI providers
+- **[API Reference](../api/rest-api.md)** - API documentation
 - **[Development](../development/architecture.md)** - Start building
+- **[Project Roadmap](../roadmap.md)** - See planned features
 
 ## Community & Support
 

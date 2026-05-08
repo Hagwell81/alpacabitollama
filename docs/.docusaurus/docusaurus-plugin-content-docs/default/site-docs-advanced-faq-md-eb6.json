@@ -16,5 +16,9 @@
   "previous": {
     "title": "Troubleshooting Guide",
     "permalink": "/docs/advanced/troubleshooting"
+  },
+  "next": {
+    "title": "Project Roadmap",
+    "permalink": "/docs/roadmap"
   }
 }

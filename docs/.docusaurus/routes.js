@@ -49,15 +49,15 @@ export default [
   },
   {
     path: '/docs',
-    component: ComponentCreator('/docs', 'c53'),
+    component: ComponentCreator('/docs', '020'),
     routes: [
       {
         path: '/docs',
-        component: ComponentCreator('/docs', 'd47'),
+        component: ComponentCreator('/docs', '118'),
         routes: [
           {
             path: '/docs',
-            component: ComponentCreator('/docs', '9c1'),
+            component: ComponentCreator('/docs', '265'),
             routes: [
               {
                 path: '/docs/advanced/deployment',
@@ -356,6 +356,12 @@ export default [
               {
                 path: '/docs/rag/vector-stores',
                 component: ComponentCreator('/docs/rag/vector-stores', '7f3'),
+                exact: true,
+                sidebar: "tutorialSidebar"
+              },
+              {
+                path: '/docs/roadmap',
+                component: ComponentCreator('/docs/roadmap', 'ced'),
                 exact: true,
                 sidebar: "tutorialSidebar"
               },

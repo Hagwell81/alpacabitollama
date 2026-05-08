@@ -8,38 +8,42 @@ description: System architecture and component design
 
 ## System Architecture
 
-Alpacabitollama is built on a modular, layered architecture that separates concerns and enables extensibility:
+Alpacabitollama is built on a modular, layered architecture focused on local LLM inference with llama.cpp:
+
+:::note Planned Features
+This documentation describes the current implementation. For planned features like multi-provider support, agentic framework, knowledge base with RAG, and IDE integration, see the [Project Roadmap](../roadmap.md).
+:::
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                    Presentation Layer                        │
 │  ┌──────────────┬──────────────┬──────────────────────────┐ │
-│  │ Chat UI      │ IDE / Editor │ Workspace / Projects    │ │
-│  │ (Svelte)     │ (VS Code)    │ (Collaborative)         │ │
+│  │ Chat UI      │ Settings     │ Documentation Viewer     │ │
+│  │ (SvelteKit)  │ (SvelteKit)  │ (Docusaurus)             │ │
 │  └──────────────┴──────────────┴──────────────────────────┘ │
 └─────────────────────────────────────────────────────────────┘
                          │
 ┌─────────────────────────────────────────────────────────────┐
 │                    Application Layer                         │
 │  ┌──────────────┬──────────────┬──────────────────────────┐ │
-│  │ Chat Service │ Agentic      │ Knowledge Base Service  │ │
-│  │              │ Framework    │                         │ │
+│  │ Chat Service │ Model Manager│ API Server               │ │
+│  │              │              │ (OpenAI-compatible)      │ │
 │  └──────────────┴──────────────┴──────────────────────────┘ │
 └─────────────────────────────────────────────────────────────┘
                          │
 ┌─────────────────────────────────────────────────────────────┐
 │                    Integration Layer                         │
 │  ┌──────────────┬──────────────┬──────────────────────────┐ │
-│  │ API Manager  │ Provider     │ Workspace Manager       │ │
-│  │              │ Adapters     │                         │ │
+│  │ Binary Mgr   │ Web Search   │ Code Retrieval            │ │
+│  │ (llama.cpp)  │ (DuckDuckGo) │ (GitHub)                 │ │
 │  └──────────────┴──────────────┴──────────────────────────┘ │
 └─────────────────────────────────────────────────────────────┘
                          │
 ┌─────────────────────────────────────────────────────────────┐
 │                    Services Layer                            │
 │  ┌──────────────┬──────────────┬──────────────────────────┐ │
-│  │ Local Models │ Cloud APIs   │ Storage & Database      │ │
-│  │ (llama.cpp)  │ (OpenAI etc) │                         │ │
+│  │ Local Models │ HuggingFace  │ User Data                │ │
+│  │ (llama.cpp)  │ Model Hub    │ (electron-store)          │ │
 │  └──────────────┴──────────────┴──────────────────────────┘ │
 └─────────────────────────────────────────────────────────────┘
 ```
@@ -56,14 +60,18 @@ Alpacabitollama is built on a modular, layered architecture that separates conce
 - File system access
 - Process management (llama.cpp server)
 - Tray menu and system integration
+- Lazy-start server management
 
 **Key Files**:
 - `main.js` - Main process entry point
 - `api-server.js` - API server configuration
 - `request-manager.js` - Request queue and circuit breaker
+- `binary-manager.js` - Auto-download llama.cpp backends
+- `splash-manager.js` - Splash screen IPC updates
+- `lazy-start-manager.js` - On-demand server start
 - `preload.js` - IPC channel exposure
 
-### 2. Web UI (Svelte/SvelteKit)
+### 2. Web UI (SvelteKit)
 
 **Location**: `webui/`
 
@@ -72,86 +80,92 @@ Alpacabitollama is built on a modular, layered architecture that separates conce
 - Settings and configuration
 - Model management
 - Real-time updates via SSE
+- User authentication
 
 **Key Files**:
 - `src/lib/services/chat.service.ts` - Chat API communication
 - `src/lib/stores/chat.svelte.ts` - Chat state management
 - `src/routes/` - Page routes
 
-### 3. API Management Service
+### 3. llama.cpp Integration
 
-**Location**: `services/api-manager/`
-
-**Responsibilities**:
-- Provider credential management
-- Model discovery and selection
-- Request routing to appropriate provider
-- Usage tracking and analytics
-
-**Supported Providers**:
-- OpenAI, Google, Anthropic, Mistral
-- Open Router, Ollama, LM Studio
-- Azure Foundry (local), Custom endpoints
-
-### 4. Agentic Framework
-
-**Location**: `services/agentic/`
-
-**Components**:
-- **Agent Engine** - Multi-agent orchestration
-- **Tool Registry** - Tool definitions and management
-- **Skill System** - Reusable skill components
-- **Subagent Delegation** - Task delegation to specialized agents
-- **Spec-Driven Development** - Specification-based agent creation
-
-**Based on**:
-- Hermes Agent architecture
-- Awesome Claude Code Subagents patterns
-- Tool Registry standards
-- OpenSpec specifications
-
-### 5. Knowledge Base & RAG
-
-**Location**: `services/knowledge-base/`
-
-**Features**:
-- Web scraping (Archon integration)
-- Document ingestion and processing
-- Image processing and OCR
-- Vector embeddings and similarity search
-- MCP (Model Context Protocol) service
-
-**Based on**:
-- Archon web scraping capabilities
-- RAG best practices
-- MCP service standards
-
-### 6. Workspace Management
-
-**Location**: `services/workspace/`
+**Location**: `desktop/binary-manager.js`
 
 **Responsibilities**:
-- User workspace management
-- Application workspace management
-- Project structure and organization
-- Collaborative features
-- File synchronization
-
-### 7. IDE Integration
-
-**Location**: `ide/`
-
-**Features**:
-- VS Code-like editor
-- Integrated Copilot
-- Terminal emulation
-- Project management
-- Code execution
+- Hardware detection (CUDA, ROCm, Vulkan, CPU)
+- Backend binary auto-download from GitHub releases
+- DLL verification (Windows)
+- CUDA runtime download (if needed)
+- Backend management and updates
 
 **Based on**:
-- VS Code architecture
-- Copilot Chat integration
-- Terminal emulation (Warp/Wezterm)
+- ggml-org/llama.cpp releases
+- Automatic hardware detection
+- Cross-platform binary support
+
+### 4. Model Management
+
+**Location**: Web UI + llama.cpp
+
+**Responsibilities**:
+- Curated model list from HuggingFace
+- Search any HuggingFace GGUF repository
+- Model download progress tracking
+- Active model switching
+- Model metadata (size, quantization, context)
+
+**Supported Models**:
+- Qwen, Llama, Gemma, Mistral, Phi, SmolLM2, Bonsai
+- Vision models with mmproj support
+- Custom GGUF models
+
+### 5. API Server
+
+**Location**: `desktop/api-server.js`
+
+**Responsibilities**:
+- OpenAI-compatible API endpoint (`http://127.0.0.1:13434/v1`)
+- Chat completions
+- Model listing
+- Health checks
+- Token counting
+- Request queue management
+
+**Features**:
+- Circuit breaker pattern
+- Request queuing
+- Streaming support (SSE)
+- Health monitoring
+
+### 6. Web Search Integration
+
+**Location**: Web UI
+
+**Responsibilities**:
+- DuckDuckGo search integration
+- Page content fetching
+- HTML text extraction
+- Context injection into chat
+
+### 7. Code Retrieval
+
+**Location**: Web UI
+
+**Responsibilities**:
+- GitHub repository indexing
+- Local workspace browsing
+- Symbol search (functions, classes, methods)
+- Source code retrieval with byte offsets
+
+### 8. Documentation Site
+
+**Location**: `docs/` (Docusaurus)
+
+**Responsibilities**:
+- Comprehensive documentation
+- API reference
+- Guides and tutorials
+- Built-in viewer in desktop app
 
 ## Data Flow
 
@@ -161,34 +175,22 @@ Alpacabitollama is built on a modular, layered architecture that separates conce
 User Input
     │
     ▼
-Chat UI (Svelte)
+Chat UI (SvelteKit)
     │
     ▼
 Chat Service (IPC)
     │
     ▼
-API Manager
+API Server
     │
-    ├─ Check provider config
-    ├─ Select model
-    ├─ Route to provider
-    │
-    ▼
-Provider Adapter
-    │
-    ├─ OpenAI Adapter
-    ├─ Google Adapter
-    ├─ Anthropic Adapter
-    ├─ Local Model Adapter
+    ├─ Check model status
+    ├─ Queue request
     │
     ▼
-Provider API / Local Server
+llama.cpp Server
     │
     ▼
-Response Stream
-    │
-    ▼
-Chat Service (SSE)
+Response Stream (SSE)
     │
     ▼
 Chat UI (Update)
@@ -197,42 +199,28 @@ Chat UI (Update)
 User Sees Response
 ```
 
-### Agent Execution Flow
+### Model Download Flow
 
 ```
-Agent Request
+User Selects Model
     │
     ▼
-Agent Engine
+Model Manager
     │
-    ├─ Parse request
-    ├─ Create execution plan
-    ├─ Initialize tools
-    │
-    ▼
-Agent Loop
-    │
-    ├─ Call LLM
-    ├─ Parse response
-    ├─ Execute tools
-    ├─ Update context
+    ├─ Check HuggingFace
+    ├─ Download GGUF
     │
     ▼
-Tool Execution
+Binary Manager
     │
-    ├─ Tool Registry lookup
-    ├─ Parameter validation
-    ├─ Execute tool
-    ├─ Return result
+    ├─ Detect hardware
+    ├─ Download backend
     │
     ▼
-Agent Loop (continue or delegate)
-    │
-    ├─ Subagent delegation (if needed)
-    ├─ Collect results
+llama.cpp Server
     │
     ▼
-Final Response
+Model Loaded
 ```
 
 ## IPC Channels
@@ -242,104 +230,37 @@ Final Response
 - `get-chat-history` - Retrieve conversation history
 - `clear-chat` - Clear current conversation
 
-### API Management
-- `get-api-settings` - Get API configuration
-- `set-api-settings` - Update API configuration
-- `get-available-providers` - List available providers
-- `get-provider-models` - Get models for provider
-- `add-provider-credential` - Add API key
-- `remove-provider-credential` - Remove API key
+### Model Management
+- `get-models` - List available models
+- `download-model` - Download model from HuggingFace
+- `switch-model` - Switch active model
+- `delete-model` - Delete model from disk
+
+### Server Control
+- `start-server` - Start llama.cpp server
+- `stop-server` - Stop llama.cpp server
+- `restart-server` - Restart llama.cpp server
+- `get-server-status` - Get server status
 
 ### Health & Monitoring
 - `api:health` - Server health check
 - `api:count-tokens` - Estimate token count
 - `api:queue-status` - Request queue status
 
-### Workspace
-- `get-workspace-projects` - List projects
-- `create-project` - Create new project
-- `open-project` - Open project
-- `save-project` - Save project
-
-### IDE
-- `open-file` - Open file in editor
-- `save-file` - Save file
-- `execute-code` - Execute code
-- `run-terminal-command` - Run terminal command
-
-## Database Schema
-
-### Core Tables
-
-**conversations**
-```sql
-CREATE TABLE conversations (
-  id TEXT PRIMARY KEY,
-  title TEXT,
-  created_at TIMESTAMP,
-  updated_at TIMESTAMP,
-  provider TEXT,
-  model TEXT,
-  system_prompt TEXT
-);
-```
-
-**messages**
-```sql
-CREATE TABLE messages (
-  id TEXT PRIMARY KEY,
-  conversation_id TEXT,
-  role TEXT,
-  content TEXT,
-  tokens INTEGER,
-  created_at TIMESTAMP,
-  FOREIGN KEY (conversation_id) REFERENCES conversations(id)
-);
-```
-
-**api_credentials**
-```sql
-CREATE TABLE api_credentials (
-  id TEXT PRIMARY KEY,
-  provider TEXT,
-  name TEXT,
-  encrypted_key TEXT,
-  created_at TIMESTAMP,
-  last_used TIMESTAMP
-);
-```
-
-**agents**
-```sql
-CREATE TABLE agents (
-  id TEXT PRIMARY KEY,
-  name TEXT,
-  description TEXT,
-  config JSON,
-  tools JSON,
-  created_at TIMESTAMP,
-  updated_at TIMESTAMP
-);
-```
-
-**projects**
-```sql
-CREATE TABLE projects (
-  id TEXT PRIMARY KEY,
-  name TEXT,
-  path TEXT,
-  type TEXT,
-  config JSON,
-  created_at TIMESTAMP,
-  updated_at TIMESTAMP
-);
-```
+### System Tray
+- `show-window` - Show main window
+- `hide-window` - Hide main window
+- `quit-app` - Quit application
 
 ## Configuration
 
 ### Application Config
-Located in `~/.alpacabitollama/config.json`:
+Located in user data directory:
+- Windows: `%APPDATA%/alpacabitollama/`
+- macOS: `~/.config/alpacabitollama/`
+- Linux: `~/.config/alpacabitollama/`
 
+**config.json** (electron-store):
 ```json
 {
   "apiServer": {
@@ -350,14 +271,12 @@ Located in `~/.alpacabitollama/config.json`:
     "requestTimeout": 300000,
     "maxConcurrentRequests": 10
   },
-  "providers": {
-    "openai": {
-      "enabled": true,
-      "baseUrl": "https://api.openai.com/v1"
-    }
+  "lazyStart": {
+    "enabled": true
   },
-  "workspace": {
-    "defaultPath": "~/alpacabitollama-workspace"
+  "models": {
+    "defaultModel": "llama-3-8b",
+    "downloadPath": "models"
   }
 }
 ```
@@ -368,58 +287,45 @@ Located in `~/.alpacabitollama/config.json`:
 - **Circuit Breaker**: Prevents cascading failures
 - **Request Queue**: Manages concurrency
 - **Heartbeat Detection**: Detects unresponsive servers
-- **Caching**: Response caching for repeated queries
+- **Lazy-Start**: Delayed server start to reduce RAM usage
 
 ### Streaming
 - **Chunked Processing**: Process data as it arrives
-- **Backpressure Handling**: Manage flow control
+- **SSE (Server-Sent Events)**: Real-time response streaming
 - **Error Recovery**: Graceful error handling
 
-### Storage
-- **Database Indexing**: Fast query performance
-- **Lazy Loading**: Load data on demand
-- **Compression**: Reduce storage footprint
+### Splash Screen
+- **Persistent Splash**: Single splash screen during startup
+- **IPC Updates**: Progress updates via IPC
+- **Smooth Transitions**: No black flashes during startup
 
 ## Security
 
-### API Key Management
-- Encrypted storage using system keyring
-- No keys in logs or memory dumps
-- Automatic key rotation support
+### User Data
+- SHA-256 password hashing
+- Local-only data storage
+- No external data transmission
 
 ### Communication
-- HTTPS for cloud APIs
 - Local-only for llama.cpp server
 - IPC for inter-process communication
-
-### Access Control
-- User authentication (future)
-- Role-based access control (future)
-- API rate limiting
+- User authentication for local access
 
 ## Extensibility
 
-### Adding Providers
-1. Create provider adapter in `services/api-manager/providers/`
-2. Implement `IProvider` interface
-3. Register in provider registry
-4. Add configuration schema
+### Adding Model Sources
+1. Extend model manager with new HuggingFace repositories
+2. Add model metadata parsing
+3. Update UI to display new models
 
-### Adding Tools
-1. Create tool in `services/agentic/tools/`
-2. Implement `ITool` interface
-3. Register in tool registry
-4. Add documentation
-
-### Adding Skills
-1. Create skill in `services/agentic/skills/`
-2. Implement `ISkill` interface
-3. Register in skill registry
-4. Create usage examples
+### Adding Backend Support
+1. Update binary-manager.js for new hardware
+2. Add backend detection logic
+3. Configure download URLs
 
 ## Next Steps
 
-- **[Project Structure](./project-structure.md)** - Directory organization
-- **[Adding Providers](./adding-providers.md)** - Extend provider support
-- **[Creating Agents](./creating-agents.md)** - Build agentic systems
+- **[Build System](./build-system.md)** - Build and deployment
+- **[Contributing](./contributing.md)** - Contribution guidelines
 - **[API Reference](../api/rest-api.md)** - API documentation
+- **[Project Roadmap](../roadmap.md)** - Planned features

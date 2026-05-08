@@ -1,11 +1,36 @@
 ; Custom NSIS include for alpacabitollama installer
-; Installs the Visual C++ 2015-2022 Redistributable (x64) silently so that
-; llama-server.exe and its companion DLLs can run on machines that do not
-; already have the VC++ runtime installed.
+; Enhanced installer with custom pages and user data directory creation
+
+!macro customInit
+  ; Initialization logic can be added here if needed
+!macroend
 
 !macro customInstall
-  ; vc_redist.x64.exe is placed in $INSTDIR by the electron-builder extraFiles rule.
-  ; Run it silently, then remove it so it does not clutter the install directory.
-  ExecWait '"$INSTDIR\vc_redist.x64.exe" /install /quiet /norestart'
-  Delete "$INSTDIR\vc_redist.x64.exe"
+  ; Create data directory for user models and settings
+  CreateDirectory "$APPDATA\alpacabitollama"
+  CreateDirectory "$APPDATA\alpacabitollama\models"
+  CreateDirectory "$APPDATA\alpacabitollama\backends"
+  CreateDirectory "$APPDATA\alpacabitollama\logs"
+
+  DetailPrint "Created user data directories"
+!macroend
+
+!macro customUnInstall
+  ; Clean up user data directories (optional - commented out by default)
+  ; Uncomment the following lines to remove user data on uninstall
+
+  ; MessageBox MB_YESNO "Do you want to remove all user data including models and settings?" IDNO skip_cleanup
+  ; RMDir /r "$APPDATA\alpacabitollama"
+  ; skip_cleanup:
+
+  DetailPrint "Uninstallation complete"
+!macroend
+
+!macro customInstallMode
+  ; Set default installation directory based on architecture
+  ${If} ${RunningX64}
+    StrCpy $INSTDIR "$PROGRAMFILES64\Alpacabitollama"
+  ${Else}
+    StrCpy $INSTDIR "$PROGRAMFILES\Alpacabitollama"
+  ${EndIf}
 !macroend

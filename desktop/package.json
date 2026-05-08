@@ -9,11 +9,18 @@
     "build:jcm": "node scripts/build-jcm.js",
     "start": "electron .",
     "clean": "node clean-dist.js",
-    "build": "npm run clean && npm run build:jcm && npm run copy-webui && npm run copy-docs && electron-builder --win",
+    "build": "npm run clean && npm run build:jcm && npm run copy-webui && npm run copy-docs && electron-builder",
     "build:win": "npm run clean && npm run build:jcm && npm run copy-webui && npm run copy-docs && electron-builder --win",
+    "build:mac": "npm run clean && npm run build:jcm && npm run copy-webui && npm run copy-docs && electron-builder --mac",
     "build:linux": "npm run clean && npm run build:jcm && npm run copy-webui && npm run copy-docs && electron-builder --linux",
     "build:portable": "npm run clean && npm run build:jcm && npm run copy-webui && npm run copy-docs && electron-builder --win portable",
-    "build:installer": "npm run clean && npm run build:jcm && npm run copy-webui && npm run copy-docs && electron-builder --win nsis"
+    "build:installer": "npm run clean && npm run build:jcm && npm run copy-webui && npm run copy-docs && electron-builder --win nsis",
+    "build:dmg": "npm run clean && npm run build:jcm && npm run copy-webui && npm run copy-docs && electron-builder --mac --x64 --config.dmg.target=dmg",
+    "build:pkg": "npm run clean && npm run build:jcm && npm run copy-webui && npm run copy-docs && electron-builder --mac --x64 --config.pkg.target=pkg",
+    "build:appimage": "npm run clean && npm run build:jcm && npm run copy-webui && npm run copy-docs && electron-builder --linux --x64 --config.linux.target=AppImage",
+    "build:deb": "npm run clean && npm run build:jcm && npm run copy-webui && npm run copy-docs && electron-builder --linux --x64 --config.linux.target=deb",
+    "build:rpm": "npm run clean && npm run build:jcm && npm run copy-webui && npm run copy-docs && electron-builder --linux --x64 --config.linux.target=rpm",
+    "build:snap": "npm run clean && npm run build:jcm && npm run copy-webui && npm run copy-docs && electron-builder --linux --x64 --config.linux.target=snap"
   },
   "build": {
     "appId": "com.ggml.llamacpp",
@@ -60,12 +67,135 @@
       ],
       "icon": "resources/alpaca.ico"
     },
-    "extraFiles": [
-      {
-        "from": "resources/vc_redist.x64.exe",
-        "to": "vc_redist.x64.exe"
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        },
+        {
+          "target": "pkg",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ],
+      "icon": "resources/alpaca.icns",
+      "category": "public.app-category.developer-tools",
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.plist"
+    },
+    "dmg": {
+      "artifactName": "Alpacabitollama-${version}-macOS.dmg",
+      "title": "Alpacabitollama",
+      "background": "resources/dmg-background.png",
+      "window": {
+        "width": 540,
+        "height": 380
+      },
+      "contents": [
+        {
+          "x": 144,
+          "y": 180,
+          "type": "file"
+        },
+        {
+          "x": 400,
+          "y": 180,
+          "type": "link",
+          "path": "/Applications"
+        }
+      ]
+    },
+    "pkg": {
+      "artifactName": "Alpacabitollama-${version}-macOS.pkg",
+      "installLocation": "/Applications",
+      "background": {
+        "file": "resources/pkg-background.png",
+        "alignment": "center",
+        "scaling": "tofit"
       }
-    ],
+    },
+    "linux": {
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "deb",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "rpm",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "snap",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "resources/alpaca.png",
+      "category": "Development",
+      "maintainer": "Alpacabitollama Team",
+      "vendor": "Alpacabitollama",
+      "synopsis": "Local AI Chat & Development Platform",
+      "description": "Alpacabitollama brings the power of local LLM inference to everyday users through an intuitive desktop application with a modern chat interface and model management."
+    },
+    "appImage": {
+      "artifactName": "Alpacabitollama-${version}-linux.AppImage",
+      "synopsis": "Local AI Chat & Development Platform"
+    },
+    "deb": {
+      "artifactName": "alpacabitollama_${version}_amd64.deb",
+      "depends": [
+        "gconf2",
+        "gconf-service",
+        "libnotify4",
+        "libappindicator1",
+        "libxtst6",
+        "libnss3"
+      ]
+    },
+    "rpm": {
+      "artifactName": "alpacabitollama-${version}.x86_64.rpm",
+      "depends": [
+        "gconf2",
+        "gconf-service",
+        "libnotify4",
+        "libappindicator",
+        "libxtst",
+        "nss"
+      ]
+    },
+    "snap": {
+      "artifactName": "alpacabitollama_${version}_amd64.snap",
+      "grade": "stable",
+      "confinement": "strict",
+      "plugs": [
+        "desktop",
+        "desktop-legacy",
+        "home",
+        "network",
+        "network-bind",
+        "removable-media",
+        "unity7"
+      ]
+    },
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
@@ -73,11 +203,20 @@
       "createStartMenuShortcut": true,
       "runAfterFinish": true,
       "deleteAppDataOnUninstall": true,
-      "artifactName": "Alpacabitollama-Setup.exe",
-      "include": "installer.nsh"
+      "artifactName": "Alpacabitollama-Setup-${version}.exe",
+      "include": "installer.nsh",
+      "installerIcon": "resources/alpaca.ico",
+      "uninstallerIcon": "resources/alpaca.ico",
+      "license": "LICENSE",
+      "perMachine": false,
+      "allowElevation": true,
+      "installerLanguages": [
+        "en_US"
+      ],
+      "language": "1033"
     },
     "portable": {
-      "artifactName": "Alpacabitollama-Portable-Setup.exe"
+      "artifactName": "Alpacabitollama-Portable-${version}.exe"
     }
   },
   "dependencies": {

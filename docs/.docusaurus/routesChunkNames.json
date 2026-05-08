@@ -95,17 +95,17 @@
     "sidebar": "814f3328",
     "content": "8eca05e1"
   },
-  "/docs-c53": {
+  "/docs-020": {
     "__comp": "5e95c892",
     "__context": {
       "plugin": "aba21aa0"
     }
   },
-  "/docs-d47": {
+  "/docs-118": {
     "__comp": "a7bd4aaa",
     "__props": "0058b4c6"
   },
-  "/docs-9c1": {
+  "/docs-265": {
     "__comp": "a94703ab"
   },
   "/docs/advanced/deployment-5f5": {
@@ -307,6 +307,10 @@
   "/docs/rag/vector-stores-7f3": {
     "__comp": "17896441",
     "content": "b5fccbdd"
+  },
+  "/docs/roadmap-ced": {
+    "__comp": "17896441",
+    "content": "0dffb83e"
   },
   "/docs/user-guide/chat-interface-df5": {
     "__comp": "17896441",

@@ -261,6 +261,11 @@
               "sidebar": "tutorialSidebar"
             },
             {
+              "id": "roadmap",
+              "path": "/docs/roadmap",
+              "sidebar": "tutorialSidebar"
+            },
+            {
               "id": "user-guide/chat-interface",
               "path": "/docs/user-guide/chat-interface",
               "sidebar": "tutorialSidebar"
