@@ -82,6 +82,9 @@ jobs:
       - name: Build WebUI
         run: npm run build --prefix webui
 
+      - name: Collect explicit Phase 1 evidence
+        run: node desktop/scripts/collect-phase1-release-evidence.js
+
       - name: Upload trusted manifest artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -95,6 +98,12 @@ jobs:
         with:
           name: webui-build
           path: public/
+
+      - name: Upload Phase 1 evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase1-evidence
+          path: artifacts/phase1-evidence/
 
       - name: Manifest hash
         id: manifest-hash
@@ -225,9 +234,6 @@ jobs:
       - name: Install desktop dependencies
         run: npm ci --prefix desktop
 
-      - name: Install WebUI dependencies
-        run: npm ci --prefix webui
-
       - name: Download trusted manifest
         uses: actions/download-artifact@v4
         with:
@@ -246,8 +252,11 @@ jobs:
           name: windows-artifacts
           path: desktop/release/
 
-      - name: Collect explicit Phase 1 evidence
-        run: node desktop/scripts/collect-phase1-release-evidence.js
+      - name: Download Phase 1 evidence
+        uses: actions/download-artifact@v4
+        with:
+          name: phase1-evidence
+          path: artifacts/phase1-evidence/
 
       - name: Publish release assets
         uses: softprops/action-gh-release@v2
