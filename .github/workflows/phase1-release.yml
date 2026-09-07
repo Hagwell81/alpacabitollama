@@ -21,10 +21,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
@@ -78,7 +78,13 @@ jobs:
         run: npm run build --prefix webui
 
       - name: Build desktop packages
-        run: npm run build --prefix desktop
+        run: |
+          cd desktop
+          npm run clean
+          npm run build:jcm
+          npm run copy-webui
+          npm run copy-docs
+          npx electron-builder --linux AppImage deb
 
       - name: Collect explicit Phase 1 evidence
         run: node desktop/scripts/collect-phase1-release-evidence.js
