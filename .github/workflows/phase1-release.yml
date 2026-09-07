@@ -77,15 +77,20 @@ jobs:
       - name: Build WebUI
         run: npm run build --prefix webui
 
-      - name: Build desktop packages
-        run: |
-          cd desktop
-          npm run clean
-          rm -rf release
-          npm run build:jcm
-          npm run copy-webui
-          npm run copy-docs
-          npx electron-builder --linux deb --verbose
+      - name: Clean dist
+        run: cd desktop && npm run clean && rm -rf release
+
+      - name: Build JCM (optional)
+        run: cd desktop && npm run build:jcm
+
+      - name: Copy WebUI build
+        run: cd desktop && npm run copy-webui
+
+      - name: Copy docs
+        run: cd desktop && npm run copy-docs
+
+      - name: Build desktop package
+        run: cd desktop && npx electron-builder --linux deb --verbose
 
       - name: Collect explicit Phase 1 evidence
         run: node desktop/scripts/collect-phase1-release-evidence.js
