@@ -64,3 +64,14 @@ coverage/
 # Electron-builder
 electron-builder.yml
 electron-builder.json
+
+# Release staging and Phase 1 evidence
+release-artifacts.json
+release-assets/
+artifacts/
+private-release-key/
+
+# Minisign private signing key — MUST NEVER be committed
+trusted-artifacts.key
+*.minisign.key
+minisign.key
