@@ -75,3 +75,7 @@ private-release-key/
 trusted-artifacts.key
 *.minisign.key
 minisign.key
+
+# CI-generated trusted artifact manifest and signature (downloaded from releases)
+desktop/resources/trusted-artifacts.json
+desktop/resources/trusted-artifacts.json.minisig

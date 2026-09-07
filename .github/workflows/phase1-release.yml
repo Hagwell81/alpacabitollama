@@ -17,8 +17,13 @@ env:
   RELEASE_ARTIFACT_DECLARATIONS: ${{ vars.RELEASE_ARTIFACT_DECLARATIONS }}
 
 jobs:
-  verify-build-publish:
+  # Job 1: Generate the trusted-artifact manifest and build the WebUI.
+  # This runs on Linux and produces the signed manifest that all build
+  # jobs need to bundle into the desktop package.
+  trust-and-webui:
     runs-on: ubuntu-latest
+    outputs:
+      manifest-hash: ${{ steps.manifest-hash.outputs.hash }}
     steps:
       - name: Check out source
         uses: actions/checkout@v5
@@ -77,8 +82,55 @@ jobs:
       - name: Build WebUI
         run: npm run build --prefix webui
 
-      - name: Clean dist
-        run: cd desktop && npm run clean && rm -rf release
+      - name: Upload trusted manifest artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: trusted-manifest
+          path: |
+            desktop/resources/trusted-artifacts.json
+            desktop/resources/trusted-artifacts.json.minisig
+
+      - name: Upload WebUI build
+        uses: actions/upload-artifact@v4
+        with:
+          name: webui-build
+          path: public/
+
+      - name: Manifest hash
+        id: manifest-hash
+        run: echo "hash=$(sha256sum desktop/resources/trusted-artifacts.json | cut -d' ' -f1)" >> $GITHUB_OUTPUT
+
+  # Job 2: Build Linux deb package
+  build-linux:
+    needs: trust-and-webui
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v5
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            webui/package-lock.json
+            desktop/package-lock.json
+
+      - name: Install desktop dependencies
+        run: npm ci --prefix desktop
+
+      - name: Download trusted manifest
+        uses: actions/download-artifact@v4
+        with:
+          name: trusted-manifest
+          path: desktop/resources/
+
+      - name: Download WebUI build
+        uses: actions/download-artifact@v4
+        with:
+          name: webui-build
+          path: public/
 
       - name: Build JCM (optional)
         run: cd desktop && npm run build:jcm
@@ -89,8 +141,107 @@ jobs:
       - name: Copy docs
         run: cd desktop && npm run copy-docs
 
-      - name: Build desktop package
+      - name: Build Linux deb package
         run: cd desktop && npm run build:linux
+
+      - name: Upload Linux artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-artifacts
+          path: desktop/release/*.deb
+
+  # Job 3: Build Windows NSIS installer and portable exe
+  build-windows:
+    needs: trust-and-webui
+    runs-on: windows-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v5
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            webui/package-lock.json
+            desktop/package-lock.json
+
+      - name: Install desktop dependencies
+        run: npm ci --prefix desktop
+
+      - name: Download trusted manifest
+        uses: actions/download-artifact@v4
+        with:
+          name: trusted-manifest
+          path: desktop/resources/
+
+      - name: Download WebUI build
+        uses: actions/download-artifact@v4
+        with:
+          name: webui-build
+          path: public/
+
+      - name: Build JCM (optional)
+        run: cd desktop && npm run build:jcm
+
+      - name: Copy WebUI build
+        run: cd desktop && npm run copy-webui
+
+      - name: Copy docs
+        run: cd desktop && npm run copy-docs
+
+      - name: Build Windows NSIS installer
+        run: cd desktop && npx electron-builder --win nsis
+
+      - name: Build Windows portable exe
+        run: cd desktop && npx electron-builder --win portable
+
+      - name: Upload Windows artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-artifacts
+          path: |
+            desktop/release/Alpacabitollama-Setup-*.exe
+            desktop/release/Alpacabitollama-Portable-*.exe
+
+  # Job 4: Collect evidence and publish the GitHub release with all artifacts
+  publish:
+    needs: [trust-and-webui, build-linux, build-windows]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v5
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            webui/package-lock.json
+            desktop/package-lock.json
+
+      - name: Install desktop dependencies
+        run: npm ci --prefix desktop
+
+      - name: Download trusted manifest
+        uses: actions/download-artifact@v4
+        with:
+          name: trusted-manifest
+          path: desktop/resources/
+
+      - name: Download Linux artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: linux-artifacts
+          path: desktop/release/
+
+      - name: Download Windows artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-artifacts
+          path: desktop/release/
 
       - name: Collect explicit Phase 1 evidence
         run: node desktop/scripts/collect-phase1-release-evidence.js
@@ -102,8 +253,6 @@ jobs:
           files: |
             desktop/release/Alpacabitollama-Setup-*.exe
             desktop/release/Alpacabitollama-Portable-*.exe
-            desktop/release/*.dmg
-            desktop/release/*.AppImage
             desktop/release/*.deb
             desktop/resources/trusted-artifacts.json
             desktop/resources/trusted-artifacts.json.minisig

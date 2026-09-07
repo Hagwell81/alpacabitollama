@@ -356,56 +356,56 @@ Do not begin or enable any Phase 2 task unless task 11.5 passes all of the follo
   - Resource/cancellation checks pass for one-load-at-a-time, bounded queues/body/checkpoints/diagnostics/artifacts, reference-counted unload, heartbeat timeout, and controlled OOM retry.
   - The gate sets `phase1ExitCriteriaPassed` only on success; otherwise every Phase 2 flag remains disabled and the existing local workflow remains available.
 
-- [ ] 12. Phase 2 provider and discovery extensions (gated)
-  - [~] 12.1 Implement `OpenAICompatibleProvider`, `OllamaProvider`, and `LMStudioProvider` adapters plus shared transport/normalization/cancellation/health/redaction contract suite; register them only when `phase1ExitCriteriaPassed` and explicit user configuration are true.
+- [x] 12. Phase 2 provider and discovery extensions (gated)
+  - [x] 12.1 Implement `OpenAICompatibleProvider`, `OllamaProvider`, and `LMStudioProvider` adapters plus shared transport/normalization/cancellation/health/redaction contract suite; register them only when `phase1ExitCriteriaPassed` and explicit user configuration are true.
     - Target: `desktop/providers/openai-compatible-provider.js`, `ollama-provider.js`, `lmstudio-provider.js`, shared transport and registry.
     - Prerequisites: 11.5, 3.1–3.6.
     - Requirements: 18.1, 18.3–18.6.
-  - [~] 12.2 Implement opt-in bounded discovery/cache under `desktop/catalog/discovery-cache.js` with source attribution, verification status, pagination, cancellation, expiry, previous-record retention, and no implicit network access.
+  - [x] 12.2 Implement opt-in bounded discovery/cache under `desktop/catalog/discovery-cache.js` with source attribution, verification status, pagination, cancellation, expiry, previous-record retention, and no implicit network access.
     - Target: `desktop/catalog/discovery-cache.js`, catalog/bridge/UI integrations.
     - Prerequisites: 11.5, 4.1–4.5, 8.4–8.5.
     - Requirements: 18.2–18.3, 16.2–16.3.
-  - [~] 12.3 Add remote-provider disclosure UI and tests for transport, authentication, privacy, availability, failure redaction, cancellation, phase gate, and local-provider fallback.
+  - [x] 12.3 Add remote-provider disclosure UI and tests for transport, authentication, privacy, availability, failure redaction, cancellation, phase gate, and local-provider fallback.
     - Target: provider settings components, `webui/tests/`, `desktop/tests/providers/phase2/`.
     - Prerequisites: 12.1–12.2.
     - Requirements: 18.3–18.6.
 
-- [ ] 13. Phase 2 calibration, settings/tools/organization, and split panels (gated)
-  - [~] 13.1 Implement bounded opt-in local benchmark calibration with pause/cancel/resource limits, summarized Model_Digest + Hardware_Snapshot results, clear opt-out, and no prompt/generated-content transmission.
+- [x] 13. Phase 2 calibration, settings/tools/organization, and split panels (gated)
+  - [x] 13.1 Implement bounded opt-in local benchmark calibration with pause/cancel/resource limits, summarized Model_Digest + Hardware_Snapshot results, clear opt-out, and no prompt/generated-content transmission.
     - Target: `desktop/calibration/`, `desktop/feature-gates.js`, settings IPC and WebUI settings.
     - Prerequisites: 11.5, 5.1–5.2, 9.2.
     - Requirements: 19.1–19.2, 19.6.
-  - [~] 13.2 Implement richer grouped provider settings, model management, and supported tool-progress/continuation states without changing the common chat contract.
+  - [x] 13.2 Implement richer grouped provider settings, model management, and supported tool-progress/continuation states without changing the common chat contract.
     - Target: provider settings/model management components and provider capability projections.
     - Prerequisites: 12.1, 11.5, 10.3–10.5.
     - Requirements: 19.3.
-  - [~] 13.3 Implement local project/workspace organization using existing conversation identifiers and local artifacts only; add the nested split layout with resizable panes, minimum sizes, persistence, keyboard navigation, and single-pane fallback.
+  - [x] 13.3 Implement local project/workspace organization using existing conversation identifiers and local artifacts only; add the nested split layout with resizable panes, minimum sizes, persistence, keyboard navigation, and single-pane fallback.
     - Target: WebUI stores/components/routes/styles and additive persistence helpers.
     - Prerequisites: 11.5, 7.3, 10.5.
     - Requirements: 19.4–19.5.
-  - [~] 13.4 * Add browser/property/example tests for calibration opt-in/privacy, pause/cancel, settings/tool states, organization ID preservation, split-pane resize/persistence/accessibility, and fallback behavior.
+  - [x] 13.4 * Add browser/property/example tests for calibration opt-in/privacy, pause/cancel, settings/tool states, organization ID preservation, split-pane resize/persistence/accessibility, and fallback behavior.
     - Target: `webui/tests/e2e/`, `webui/tests/unit/`, `desktop/tests/calibration/`.
     - Prerequisites: 13.1–13.3.
     - Requirements: 19.1–19.6, 17.3–17.6.
-  - [~] 13.5 Add fast-check tests for **Property 19: Phase gates and optional complexity**.
+  - [x] 13.5 Add fast-check tests for **Property 19: Phase gates and optional complexity**.
     - Validate: Requirements 18.5, 19.1–19.2, 19.6, 20.1, 20.3, 20.6.
     - Target: `desktop/tests/properties/phase2-gates.property.test.js`.
     - Prerequisites: 13.1–13.3.
 
-- [ ] 14. Phase 2 routing and multi-model scheduling (gated)
-  - [~] 14.1 Implement opt-in route candidate evaluation using capabilities, Fit_Plans, privacy/availability constraints, user preferences, and current scheduler state; return typed no-route results and preserve configured fallback behavior.
+- [x] 14. Phase 2 routing and multi-model scheduling (gated)
+  - [x] 14.1 Implement opt-in route candidate evaluation using capabilities, Fit_Plans, privacy/availability constraints, user preferences, and current scheduler state; return typed no-route results and preserve configured fallback behavior.
     - Target: `desktop/routing/route-planner.js`, `desktop/routing/route-result.js`.
     - Prerequisites: 11.5, 12.1, 5.2, 6.5.
     - Requirements: 20.1, 20.3, 20.6.
-  - [~] 14.2 Integrate route selection with EnsureReady, one-load-at-a-time scheduling, reference-counted unload, cancellation, OOM recovery, and response metadata containing Model_Digest, Provider identity, reason, and readiness outcome.
+  - [x] 14.2 Integrate route selection with EnsureReady, one-load-at-a-time scheduling, reference-counted unload, cancellation, OOM recovery, and response metadata containing Model_Digest, Provider identity, reason, and readiness outcome.
     - Target: `desktop/runtime/runtime-coordinator.js`, `desktop/routing/`, `webui/src/lib/stores/chat.svelte.ts`.
     - Prerequisites: 14.1, 2.3, 6.3–6.4, 7.4.
     - Requirements: 20.2, 20.4–20.5.
-  - [~] 14.3 Add routing tests for no-route, fallback, visible model changes, prior metadata preservation, phase gate, cancellation, bounded admission, and provider parity.
+  - [x] 14.3 Add routing tests for no-route, fallback, visible model changes, prior metadata preservation, phase gate, cancellation, bounded admission, and provider parity.
     - Target: `desktop/tests/routing/`, `webui/tests/e2e/routing.spec.ts`.
     - Prerequisites: 14.1–14.2.
     - Requirements: 20.1–20.6, 17.2–17.4.
-  - [~] 14.4 Add fast-check tests for routing portions of **Property 9: Reference-counted deterministic recovery**.
+  - [x] 14.4 Add fast-check tests for routing portions of **Property 9: Reference-counted deterministic recovery**.
     - Validate: Requirements 20.5.
     - Target: `desktop/tests/properties/routing.property.test.js`; use at least 100 runs and the required Feature/Property comment.
     - Prerequisites: 14.1–14.2.
