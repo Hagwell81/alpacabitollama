@@ -90,16 +90,7 @@ jobs:
         run: cd desktop && npm run copy-docs
 
       - name: Build desktop package
-        run: |
-          cd desktop
-          echo "=== Node version ==="
-          node --version
-          echo "=== npm version ==="
-          npm --version
-          echo "=== electron-builder binary ==="
-          ls -la node_modules/.bin/electron-builder 2>&1 || echo "electron-builder binary not found!"
-          echo "=== Running build:linux ==="
-          npm run build:linux -- --verbose 2>&1 || { echo "Build failed with exit code $?"; exit 1; }
+        run: cd desktop && npm run build:linux
 
       - name: Collect explicit Phase 1 evidence
         run: node desktop/scripts/collect-phase1-release-evidence.js
