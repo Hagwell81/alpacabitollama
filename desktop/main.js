@@ -1860,13 +1860,76 @@ async function startLlamaServer(forceCpuBackend = false) {
     ...process.env,
     PATH: `${binDir}${path.delimiter}${process.env.PATH || ''}`,
   };
+
+  // Pre-check: run `llama-server --version` to verify the binary can start
+  // at all. This catches DLL loading failures, missing VC++ runtime, and
+  // CPU instruction incompatibilities before we try to load a model, giving
+  // us a clean error message instead of a generic "exit code 1" crash.
+  console.log(`[startLlamaServer] Backend directory: ${binDir}`);
+  try {
+    const dirContents = fs.readdirSync(binDir);
+    console.log(`[startLlamaServer] Backend directory contents: ${dirContents.join(', ')}`);
+  } catch (e) {
+    console.warn(`[startLlamaServer] Could not list backend directory: ${e.message}`);
+  }
+  const preCheckResult = await new Promise((resolve) => {
+    const preCheck = spawn(llamaServerBinary, ['--version'], {
+      env: spawnEnv,
+      windowsHide: true,
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+    let preStdout = '', preStderr = '';
+    preCheck.stdout.on('data', (d) => { preStdout += d.toString(); });
+    preCheck.stderr.on('data', (d) => { preStderr += d.toString(); });
+    preCheck.on('error', (err) => {
+      resolve({ ok: false, error: err.message, stdout: '', stderr: '' });
+    });
+    preCheck.on('close', (code) => {
+      if (code === 0 || code === 1) {
+        // Some builds return 1 for --version; treat 0-1 as "binary can start"
+        resolve({ ok: true, stdout: preStdout.trim(), stderr: preStderr.trim() });
+      } else {
+        resolve({ ok: false, error: `exit code ${code}`, stdout: preStdout.trim(), stderr: preStderr.trim() });
+      }
+    });
+  });
+
+  if (!preCheckResult.ok) {
+    let diagnosis = `llama-server binary failed to start (${preCheckResult.error}).`;
+    if (preCheckResult.stderr) {
+      diagnosis += ` stderr: ${preCheckResult.stderr}`;
+    }
+    if (preCheckResult.stdout) {
+      diagnosis += ` stdout: ${preCheckResult.stdout}`;
+    }
+    // Check for common Windows failure modes
+    const exitCodeMatch = preCheckResult.error.match(/exit code (\d+)/);
+    const exitCode = exitCodeMatch ? parseInt(exitCodeMatch[1], 10) : null;
+    if (exitCode === 0xC0000135 || exitCode === 3221225781) {
+      diagnosis = 'A required DLL (likely VC++ runtime vcruntime140.dll / msvcp140.dll) was not found. Please install the Microsoft VC++ Redistributable (https://aka.ms/vs/17/release/vc_redist.x64.exe).';
+    } else if (exitCode === 0xC000001D || exitCode === 3221225501) {
+      diagnosis = 'The llama-server binary uses CPU instructions (e.g. AVX2/AVX-512) not supported by this processor. Try a different CPU backend from Settings > Backend.';
+    } else if (!preCheckResult.stderr && !preCheckResult.stdout) {
+      // No output at all usually means a DLL loading failure
+      diagnosis += ' No output was produced — this usually indicates a missing DLL or incompatible CPU instruction set. Check that the Microsoft VC++ Redistributable is installed (https://aka.ms/vs/17/release/vc_redist.x64.exe).';
+    }
+    const errMsg = diagnosis;
+    lastMainError = { source: 'startLlamaServer', message: errMsg, time: new Date().toISOString() };
+    console.error(`[startLlamaServer] Binary pre-check failed: ${errMsg}`);
+    return false;
+  }
+  console.log(`[startLlamaServer] Binary pre-check passed: ${preCheckResult.stdout || preCheckResult.stderr || 'OK'}`);
+
+  console.log('[startLlamaServer] Full command:', llamaServerBinary, args.join(' '));
   const spawnedProcess = spawn(llamaServerBinary, args, { env: spawnEnv });
   llamaServerProcess = spawnedProcess;
 
-  // Collect stderr for diagnostics in case of crash
+  // Collect both stdout and stderr for diagnostics in case of crash
   const stderrBuffer = [];
+  const stdoutBuffer = [];
 
   spawnedProcess.stdout.on('data', (data) => {
+    stdoutBuffer.push(data.toString());
     appendLog('llama-server', data);
   });
 
@@ -1923,6 +1986,8 @@ async function startLlamaServer(forceCpuBackend = false) {
     if (isGpuBackend) {
       console.warn(`[startLlamaServer] GPU backend (${backendName}) crashed with exit code ${exitCode}. Retrying with CPU backend...`);
       if (stderrTail) console.warn(`[startLlamaServer] stderr: ${stderrTail}`);
+      const stdoutTail = stdoutBuffer.slice(-5).join('').trim();
+      if (stdoutTail) console.warn(`[startLlamaServer] stdout: ${stdoutTail}`);
       return startLlamaServer(true);
     }
 
@@ -1935,10 +2000,15 @@ async function startLlamaServer(forceCpuBackend = false) {
       diagnosis = 'The binary uses CPU instructions (e.g. AVX-512) not supported by this processor. Try downloading a CPU backend without AVX-512 from Settings > Backend.';
     } else {
       diagnosis = `llama-server crashed immediately (exit code ${exitCode}).`;
+      const stdoutTail = stdoutBuffer.slice(-5).join('').trim();
       if (stderrTail) {
         diagnosis += ` Error details: ${stderrTail}`;
-      } else {
-        diagnosis += ' See services.log for details.';
+      }
+      if (stdoutTail) {
+        diagnosis += ` stdout: ${stdoutTail}`;
+      }
+      if (!stderrTail && !stdoutTail) {
+        diagnosis += ' No output was produced — this usually indicates a missing DLL or incompatible CPU instruction set. Check that the Microsoft VC++ Redistributable is installed (https://aka.ms/vs/17/release/vc_redist.x64.exe) and that your CPU supports the required instruction set (AVX2).';
       }
     }
     const errMsg = diagnosis;

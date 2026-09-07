@@ -91,8 +91,8 @@ function verifyVcRuntime() {
     path.join(process.env.SystemRoot || 'C:\\Windows', 'SysWOW64'),
   ];
 
-  const required = ['vcruntime140.dll', 'msvcp140.dll'];
-  const preferred = ['vcruntime140_1.dll', 'msvcp140_1.dll'];
+  const required = ['vcruntime140.dll', 'msvcp140.dll', 'vcruntime140_1.dll'];
+  const preferred = ['msvcp140_1.dll'];
 
   let systemDir = null;
   for (const dir of sysDirs) {
