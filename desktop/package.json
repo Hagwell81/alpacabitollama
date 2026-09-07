@@ -2,6 +2,8 @@
   "name": "alpacabitollama",
   "version": "1.0.0",
   "description": "Desktop application for llama.cpp with system tray, auto model downloads, and integrated documentation",
+  "author": "Hagwell81 <emptyheadsinc@hotmail.com>",
+  "homepage": "https://github.com/Hagwell81/alpacabitollama",
   "main": "main.js",
   "scripts": {
     "copy-webui": "node build-webui.js",
