@@ -3,10 +3,12 @@ const path = require('path');
 const { execSync } = require('child_process');
 
 const distDir = path.join(__dirname, 'dist');
+const isWindows = process.platform === 'win32';
 
 function killLockingProcesses() {
+  if (!isWindows) return;
   try {
-    // Kill common processes that lock app.asar
+    // Kill common processes that lock app.asar (Windows only)
     const procs = ['electron.exe', 'app-builder.exe', 'alpacabitollama.exe'];
     for (const proc of procs) {
       try {
@@ -20,6 +22,14 @@ function killLockingProcesses() {
   }
 }
 
+function sleep(ms) {
+  if (isWindows) {
+    try { execSync(`ping -n ${Math.ceil(ms / 1000) + 1} 127.0.0.1 >nul`, { stdio: 'ignore' }); } catch (_) {}
+  } else {
+    try { execSync(`sleep ${Math.ceil(ms / 1000)}`, { stdio: 'ignore' }); } catch (_) {}
+  }
+}
+
 function tryDelete(retries = 3, delay = 2000) {
   if (!fs.existsSync(distDir)) {
     console.log('dist directory does not exist, nothing to clean');
@@ -29,22 +39,24 @@ function tryDelete(retries = 3, delay = 2000) {
   for (let i = 0; i < retries; i++) {
     if (i > 0) {
       console.log(`Retry ${i}/${retries} after ${delay}ms...`);
-      execSync(`ping -n ${Math.ceil(delay / 1000) + 1} 127.0.0.1 >nul`, { stdio: 'ignore' });
+      sleep(delay);
       killLockingProcesses();
     }
 
-    // Try Windows cmd rmdir first (handles locked files better than Node.js)
-    try {
-      execSync(`cmd /c "rmdir /s /q \"${distDir}\" 2>nul"`, { stdio: 'ignore' });
-      if (!fs.existsSync(distDir)) {
-        console.log('Cleaned dist directory');
-        return true;
+    // Try platform-native rmdir first (handles locked files better on Windows)
+    if (isWindows) {
+      try {
+        execSync(`cmd /c "rmdir /s /q \"${distDir}\" 2>nul"`, { stdio: 'ignore' });
+        if (!fs.existsSync(distDir)) {
+          console.log('Cleaned dist directory');
+          return true;
+        }
+      } catch (e) {
+        // Ignore
       }
-    } catch (e) {
-      // Ignore
     }
 
-    // Try Node.js rimraf with force
+    // Try Node.js rimraf with force (cross-platform)
     try {
       fs.rmSync(distDir, { recursive: true, force: true, maxRetries: 3 });
       if (!fs.existsSync(distDir)) {

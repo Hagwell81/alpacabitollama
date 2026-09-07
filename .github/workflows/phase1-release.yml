@@ -81,10 +81,11 @@ jobs:
         run: |
           cd desktop
           npm run clean
+          rm -rf release
           npm run build:jcm
           npm run copy-webui
           npm run copy-docs
-          npx electron-builder --linux AppImage deb
+          npx electron-builder --linux deb --verbose
 
       - name: Collect explicit Phase 1 evidence
         run: node desktop/scripts/collect-phase1-release-evidence.js
