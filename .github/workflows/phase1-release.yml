@@ -90,7 +90,7 @@ jobs:
         run: cd desktop && npm run copy-docs
 
       - name: Build desktop package
-        run: cd desktop && npx electron-builder --linux deb --verbose
+        run: cd desktop && npm run build:linux -- --verbose
 
       - name: Collect explicit Phase 1 evidence
         run: node desktop/scripts/collect-phase1-release-evidence.js

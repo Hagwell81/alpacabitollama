@@ -17,6 +17,7 @@
     "start": "electron .",
     "clean": "node clean-dist.js",
     "build": "npm run clean && npm run build:jcm && npm run copy-webui && npm run copy-docs && electron-builder",
+    "build:linux": "electron-builder --linux deb",
     "build:win": "npm run clean && npm run build:jcm && npm run copy-webui && npm run copy-docs && electron-builder --win",
     "build:mac": "npm run clean && npm run build:jcm && npm run copy-webui && npm run copy-docs && electron-builder --mac",
     "build:linux": "npm run clean && npm run build:jcm && npm run copy-webui && npm run copy-docs && electron-builder --linux",
