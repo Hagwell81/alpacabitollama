@@ -44,7 +44,6 @@ import type {
 	DatabaseMessageExtraTextFile,
 	DatabaseMessageExtraPdfFile,
 	DatabaseMessageExtraLegacyContext,
-	ExportedConversation,
 	ExportedConversations,
 	// Model types
 	ModelModalities,

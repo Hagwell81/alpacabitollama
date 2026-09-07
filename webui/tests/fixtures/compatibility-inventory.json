@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "capturedFrom": ["src/lib/services/chat.service.ts", "src/lib/services/models.service.ts", "src/lib/services/database.service.ts", "src/lib/stores/chat.svelte.ts", "src/lib/stores/conversations.svelte.ts", "src/lib/stores/models.svelte.ts", "src/lib/stores/server.svelte.ts", "src/lib/components/app/chat/ChatScreen/ChatScreen.svelte", "src/lib/components/app/models/ModelsSelector.svelte"],
+  "services": {
+    "ChatService": { "path": "src/lib/services/chat.service.ts", "operations": ["sendMessage", "preEncode", "areAllSlotsIdle", "stream SSE", "AbortSignal cancellation", "reasoning callbacks", "tool-call callbacks", "model/timings callbacks"] },
+    "ModelsService": { "path": "src/lib/services/models.service.ts", "operations": ["list", "listRouter", "load", "unload", "parseModelId"] },
+    "DatabaseService": { "path": "src/lib/services/database.service.ts", "operations": ["createConversation", "createMessageBranch", "createRootMessage", "createSystemMessage", "getAllConversations", "getConversationMessages", "updateMessage", "forkConversation", "importConversations", "deleteConversation"] }
+  },
+  "stores": {
+    "chatStore": { "path": "src/lib/stores/chat.svelte.ts", "state": ["activeProcessingState", "currentResponse", "errorDialogState", "isLoading", "chatLoadingStates", "chatStreamingStates", "AbortController per conversation"] },
+    "conversationsStore": { "path": "src/lib/stores/conversations.svelte.ts", "state": ["conversations", "activeConversation", "activeMessages", "isInitialized", "pendingMcpServerOverrides"], "persistence": "DatabaseService" },
+    "modelsStore": { "path": "src/lib/stores/models.svelte.ts", "modes": ["MODEL", "ROUTER"], "state": ["models", "routerModels", "selectedModelId", "selectedModelName", "modelUsage", "modelLoadingStates", "favoriteModelIds"] },
+    "serverStore": { "path": "src/lib/stores/server.svelte.ts", "state": ["props", "loading", "error", "role"], "roles": ["MODEL", "ROUTER"] },
+    "providersStore": { "path": "src/lib/stores/providers.svelte.ts", "operations": ["getProviderCredentials", "setProviderCredential", "deleteProviderCredential"] }
+  },
+  "components": {
+    "ChatScreen": "src/lib/components/app/chat/ChatScreen/ChatScreen.svelte",
+    "ModelsSelector": "src/lib/components/app/models/ModelsSelector.svelte",
+    "ModelsSelectorSheet": "src/lib/components/app/models/ModelsSelectorSheet.svelte",
+    "ChatSettingsModelsTab": "src/lib/components/app/chat/ChatSettings/ChatSettingsModelsTab.svelte",
+    "ChatSettingsProvidersTab": "src/lib/components/app/chat/ChatSettings/ChatSettingsProvidersTab.svelte"
+  },
+  "indexedDb": {
+    "databaseName": "LlamacppWebui",
+    "versions": [1, 2],
+    "stores": {
+      "conversations": { "key": "id", "indexes": ["lastModified", "currNode", "name", "userId"], "preservedFields": ["id", "lastModified", "currNode", "name", "userId", "forkedFromConversationId", "mcpServerOverrides"] },
+      "messages": { "key": "id", "indexes": ["convId", "type", "role", "timestamp", "parent", "children"], "preservedFields": ["id", "convId", "type", "role", "timestamp", "parent", "children", "attachments", "model", "reasoningContent", "toolCalls"] }
+    },
+    "migration": { "version": 2, "behavior": "adds nullable userId to existing conversations" },
+    "streamingStateStore": { "present": true, "baseline": "request-keyed bounded checkpoints persist active, interrupted, cancelled, and completed stream state" }
+  },
+  "adapterInputs": {
+    "singleModel": { "serverRole": "MODEL", "model": "local-model.gguf", "expected": "model list and chat use /v1-compatible paths" },
+    "router": { "serverRole": "ROUTER", "model": "org/model.Q4_K_M", "expected": "model load/unload and per-conversation model selection remain available" },
+    "streaming": { "events": ["content", "reasoning_content", "tool_calls", "timings", "prompt_progress", "[DONE]"], "expected": "callbacks preserve content/reasoning/tool/model/timing completion" },
+    "cancellation": { "signal": "AbortSignal", "expected": "reader stops and abort is not treated as backend failure" },
+    "history": { "conversationId": "conversation-1", "messageIds": ["root-1", "user-1", "assistant-1"], "expected": "IDs, order, parent/children branches, model and timestamps survive retrieval" }
+  },
+  "compatibilityOutcomes": ["single-model inference", "router model load/unload", "curated/local model selection", "IndexedDB history retrieval", "streaming", "cancellation", "preload-backed provider settings"]
+}

@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "capturedFrom": {
+    "main": "desktop/main.js",
+    "preload": "desktop/preload.js",
+    "apiServer": "desktop/api-server.js",
+    "requestManager": "desktop/request-manager.js",
+    "binaryManager": "desktop/binary-manager.js",
+    "lazyStartManager": "desktop/lazy-start-manager.js"
+  },
+  "runtimeModules": {
+    "main": { "processOwner": true, "state": "isServerRunning", "modelSelection": "activeModelFilename", "modes": ["single-model", "router"] },
+    "preload": { "bridgeName": "llamaAPI", "contextBridge": true, "ipcRendererValidation": "legacy allowlist wrappers" },
+    "apiServer": { "configKey": "apiServer", "defaults": { "enabled": true, "host": "127.0.0.1", "port": 13434, "requireApiKey": false, "corsOrigins": ["*"], "metricsEnabled": false }, "endpoints": ["/v1", "/props", "/models", "/slots"] },
+    "requestManager": { "exports": ["RequestQueue", "CircuitBreaker", "getRequestQueue", "resetRequestQueue"], "states": ["CLOSED", "OPEN", "HALF_OPEN"], "queueBound": "maxConcurrent * 2 for enqueueOrReject" },
+    "binaryManager": { "exports": ["ensureBackend", "getInstalledBackends", "getLatestReleaseInfo", "mapCapabilitiesToBackend", "getBackendsDir", "deleteBackend", "verifyBackendDlls", "getRequiredDlls", "extractArchive", "downloadFile", "getAssetUrl", "verifyVcRuntime"], "artifactSources": ["github", "cdn"], "archiveFormats": ["zip", "tar.gz"] },
+    "lazyStartManager": { "settings": { "enabledKey": "lazyStart.enabled", "autoShutdownKey": "lazyStart.autoShutdownDelayMinutes", "defaultEnabled": true, "defaultDelayMinutes": 0 }, "actions": ["start-lazy-server", "get-lazy-start-settings", "set-lazy-start-enabled"] }
+  },
+  "mainIpcHandlers": ["get-server-status", "get-hardware-info", "refresh-hardware-detection", "start-server", "stop-server", "start-lazy-server", "get-lazy-start-settings", "set-lazy-start-enabled", "download-models", "get-models-directory", "set-selected-models", "get-selected-models", "get-app-data-directory", "open-data-folder", "get-installed-models", "get-active-model", "delete-model", "search-huggingface", "download-huggingface-model", "get-download-progress", "get-last-error", "copy-log-path", "logs:get-initial", "logs:open-file", "logs:reveal-in-folder", "docs:open", "get-all-download-progress", "get-storage-info", "switch-model", "go-back-to-main", "register-user", "login-user", "get-current-user", "logout-user", "update-user-profile", "get-provider-credentials", "set-provider-credential", "delete-provider-credential", "web-search", "fetch-web-page", "jcm-health-check", "jcm-index-repo", "jcm-index-folder", "jcm-search-symbols", "jcm-get-symbol-source", "jcm-list-repos", "jcm-get-repo-outline", "jcm-get-file-tree", "jcm-get-file-content", "jcm-get-context-bundle", "jcm-get-file-outline", "jcm-invalidate-cache", "select-local-folder", "get-api-settings", "set-api-settings", "api:health", "api:count-tokens", "api:queue-status", "get-installed-backends", "check-for-backend-update", "download-backend", "get-current-backend-info", "update-backend"],
+  "preloadBridge": {
+    "name": "llamaAPI",
+    "invokeChannels": ["get-server-status", "start-server", "stop-server", "download-models", "get-models-directory", "set-selected-models", "get-selected-models", "get-app-data-directory", "open-data-folder", "get-installed-models", "get-active-model", "delete-model", "switch-model", "search-huggingface", "download-huggingface-model", "get-download-progress", "get-all-download-progress", "get-storage-info", "get-last-error", "copy-log-path", "get-hardware-info", "refresh-hardware-detection", "go-back-to-main", "register-user", "login-user", "get-current-user", "logout-user", "update-user-profile", "web-search", "fetch-web-page", "jcm-health-check", "jcm-index-repo", "jcm-index-folder", "jcm-search-symbols", "jcm-get-symbol-source", "jcm-list-repos", "jcm-get-repo-outline", "jcm-get-file-tree", "jcm-get-file-content", "jcm-get-context-bundle", "jcm-get-file-outline", "jcm-invalidate-cache", "select-local-folder", "get-api-settings", "set-api-settings", "api:health", "api:count-tokens", "api:queue-status", "get-installed-backends", "check-for-backend-update", "download-backend", "get-current-backend-info", "update-backend", "logs:get-initial", "logs:open-file", "logs:reveal-in-folder", "docs:open", "start-lazy-server", "get-lazy-start-settings", "set-lazy-start-enabled", "get-provider-credentials", "set-provider-credential", "delete-provider-credential"],
+    "eventChannels": ["model-switch-status", "download-complete", "logs:append", "splash:update"],
+    "authorizationCases": [
+      { "operation": "startServer", "channel": "start-server", "arguments": [], "expected": "invoke allowlisted channel" },
+      { "operation": "switchModel", "channel": "switch-model", "arguments": ["Model-Q4.gguf"], "expected": "invoke allowlisted channel" },
+      { "operation": "onDownloadComplete", "channel": "download-complete", "arguments": ["callback"], "expected": "register wrapped listener" },
+      { "operation": "unknownChannel", "channel": "filesystem:read", "arguments": [], "expected": "not exposed" }
+    ]
+  },
+  "adapterInputs": {
+    "apiServer": [
+      { "name": "default-local", "input": {}, "expected": { "host": "127.0.0.1", "port": 13434, "corsOrigins": ["*"] } },
+      { "name": "valid-tuning", "input": { "port": 18080, "maxConcurrentRequests": 2, "streamHeartbeatIntervalMs": 5000 }, "expected": { "port": 18080, "maxConcurrentRequests": 2, "streamHeartbeatIntervalMs": 5000 } }
+    ],
+    "lazyStart": [
+      { "name": "default", "stored": {}, "expected": { "enabled": true, "autoShutdownDelayMinutes": 0 } },
+      { "name": "clamped-delay", "stored": {}, "setDelay": 2000, "expectedDelay": 1440 }
+    ],
+    "requestQueue": [
+      { "name": "success", "operation": "enqueue", "expectedTerminal": "resolved" },
+      { "name": "failure-opens-circuit", "operation": "recordFailure", "threshold": 2, "expectedState": "OPEN" },
+      { "name": "capacity-rejection", "operation": "enqueueOrReject", "expectedError": "Too Many Requests" }
+    ],
+    "binary": [
+      { "name": "cpu", "capabilities": { "cuda": false, "rocm": false, "vulkan": false }, "expectedBackendByPlatform": { "win32": "win-cpu-x64", "darwin": "macos-x64", "linux": "ubuntu-x64" } },
+      { "name": "cuda-windows", "capabilities": { "cuda": true, "rocm": false, "vulkan": false }, "expectedBackend": "win-cuda-12.4-x64" }
+    ]
+  },
+  "compatibilityOutcomes": ["server startup", "server stop", "curated model selection/download", "router model selection", "streaming", "cancellation", "preload authorization", "local-only API default"]
+}

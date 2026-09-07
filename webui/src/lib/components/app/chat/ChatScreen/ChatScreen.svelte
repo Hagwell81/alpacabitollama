@@ -11,7 +11,10 @@
 		ServerLoadingSplash,
 		DialogConfirmation,
 		DialogUserAuth,
-		DialogWebSearch
+		DialogWebSearch,
+		ConversationRecovery,
+		HealthView,
+		ReadinessPanel
 	} from '$lib/components/app';
 	import * as Alert from '$lib/components/ui/alert';
 	import * as AlertDialog from '$lib/components/ui/alert-dialog';
@@ -31,6 +34,8 @@
 		activeConversation
 	} from '$lib/stores/conversations.svelte';
 	import { config } from '$lib/stores/settings.svelte';
+	import { runtimeStore } from '$lib/stores/runtime.svelte';
+	import { streamingStore } from '$lib/stores/streaming.svelte';
 	import { serverLoading, serverError, serverStore, isRouterMode } from '$lib/stores/server.svelte';
 	import { modelsStore, modelOptions, selectedModelId } from '$lib/stores/models.svelte';
 	import { isFileTypeSupported, filterFilesByModalities } from '$lib/utils';
@@ -91,6 +96,20 @@
 	let hasPropsError = $derived(!!serverError());
 
 	let isCurrentConversationLoading = $derived(isLoading() || isChatStreaming());
+	let recoveryState = $derived.by(() => {
+		const conversation = activeConversation();
+		if (!conversation) return null;
+		const checkpoints = streamingStore.getForConversation(conversation.id);
+		const checkpoint = checkpoints
+			.filter((entry) => entry.status !== 'completed' && entry.status !== 'active')
+			.sort((a, b) => b.updatedAt - a.updatedAt)[0];
+		if (!checkpoint) return null;
+		const checkpointStatus = checkpoint.status as string;
+		const status = checkpointStatus === 'context-overflow' ? 'context-overflow'
+			: checkpointStatus === 'failed' ? 'failed'
+			: checkpointStatus === 'cancelled' ? 'cancelled' : 'interrupted';
+		return { ...checkpoint, status } as const;
+	});
 
 	let isRouter = $derived(isRouterMode());
 
@@ -248,6 +267,22 @@
 		autoScroll.handleScroll();
 	}
 
+	async function recoverConversation(action: 'continue' | 'retry') {
+		const conversationId = activeConversation()?.id;
+		const recovery = recoveryState;
+		if (!conversationId || !recovery?.messageId) return;
+		if (activeConversation()?.id !== conversationId) return;
+		if (action === 'continue') await chatStore.continueAssistantMessage(recovery.messageId);
+		else await chatStore.regenerateMessage(recovery.messageId);
+	}
+
+	async function reduceRecoveryContext() {
+		const conversationId = activeConversation()?.id;
+		const messageId = recoveryState?.messageId;
+		if (!conversationId || !messageId || activeConversation()?.id !== conversationId) return;
+		await chatStore.regenerateMessage(messageId);
+	}
+
 	async function handleSendMessage(message: string, files?: ChatUploadedFile[]): Promise<boolean> {
 		const plainFiles = files ? $state.snapshot(files) : undefined;
 		const result = plainFiles
@@ -363,6 +398,8 @@
 			initialMessage = pendingDraft.message;
 			uploadedFiles = pendingDraft.files;
 		}
+
+		void runtimeStore.refresh();
 	});
 
 	$effect(() => {
@@ -410,6 +447,16 @@
 			>
 				<ChatScreenProcessingInfo />
 
+				{#if recoveryState}
+					<ConversationRecovery
+						status={recoveryState.status}
+						error={null}
+						onContinue={() => recoverConversation('continue')}
+						onRetry={() => recoverConversation('retry')}
+						onReduceContext={reduceRecoveryContext}
+					/>
+				{/if}
+
 				{#if hasPropsError}
 					<div
 						class="pointer-events-auto mx-auto mb-4 max-w-[48rem] px-1"
@@ -453,7 +500,11 @@
 	</div>
 {:else if isServerLoading}
 	<!-- Server Loading State -->
-	<ServerLoadingSplash />
+	<div class="grid h-full place-items-center gap-4 p-4">
+		<ServerLoadingSplash />
+		<ReadinessPanel />
+		<HealthView />
+	</div>
 {:else}
 	<div
 		aria-label="Welcome screen with file drop zone"

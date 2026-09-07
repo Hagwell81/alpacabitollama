@@ -11,8 +11,70 @@ const binaryManager = require('./binary-manager');
 const apiServer = require('./api-server');
 const splashManager = require('./splash-manager');
 const { createManager: createLazyStartManager } = require('./lazy-start-manager');
+const { detectHardwareSnapshot } = require('./planning/hardware-snapshot');
+const { RuntimeCoordinator } = require('./runtime/runtime-coordinator');
+const { ModelCatalog } = require('./catalog/model-catalog');
+const { inspectGGUF } = require('./catalog/gguf-inspector');
+const { digestArtifact } = require('./catalog/model-identity');
+const { evaluateFitPlan } = require('./planning/fit-plan');
+const { installMainValidation } = require('./security/bridge-schema');
+const { CredentialStore } = require('./security/credential-store');
+const { DiagnosticsService } = require('./diagnostics/diagnostics-service');
+const { ArtifactVerifier } = require('./security/artifact-verifier');
+const { loadTrustedArtifactManifest } = require('./security/trusted-artifact-manifest');
+const { FeatureGates } = require('./feature-gates');
+const { Phase1ExitEvaluator } = require('./runtime/phase1-exit-evaluator');
+const { createPhase1CheckMap } = require('./runtime/phase1-checks');
+const { VersionedConfigStore } = require('./config/versioned-config-store');
+
+installMainValidation(ipcMain);
 
 const store = new Store();
+
+// Versioned config store for hardware capabilities — the first domain migrated
+// from raw electron-store to the versioned, backed-up config system. Other
+// domains (activeModel, selectedModels, users) will follow the same pattern.
+const hardwareConfigStore = new VersionedConfigStore({
+  store,
+  key: 'hardwareConfig',
+  legacyKey: 'hardwareCapabilities',
+  currentVersion: 1,
+  defaults: { capabilities: null },
+  validate: (config) => ({ config, warnings: [] }),
+  backupDir: path.join(app.getPath('userData'), 'config-backups', 'hardware')
+});
+
+const credentialStore = new CredentialStore({
+  store,
+  safeStorage,
+  allowFallback: Boolean(store.get('allowInsecureCredentialFallback', false)),
+  logger: (message) => console.warn(`[provider-credentials] ${message}`)
+});
+
+// Structured diagnostics are persisted separately from the legacy service log.
+// The callback is intentionally non-throwing so diagnostics can never affect
+// lifecycle, provider, or renderer operations.
+const diagnosticsService = new DiagnosticsService({
+  storagePath: path.join(app.getPath('userData'), 'diagnostics', 'records.ndjson'),
+  metricsEnabled: Boolean(store.get('diagnosticsMetricsEnabled', false))
+});
+const trustedArtifactManifest = loadTrustedArtifactManifest(
+  path.join(__dirname, 'resources', 'trusted-artifacts.json'),
+  { publicKeyPath: path.join(__dirname, 'resources', 'trusted-artifacts-public-key.pem') }
+);
+const artifactVerifier = trustedArtifactManifest ? new ArtifactVerifier({ applicationRoot: app.getPath('userData') }) : null;
+if (binaryManager.configureArtifactVerification) {
+  binaryManager.configureArtifactVerification(artifactVerifier ? {
+    artifactVerifier,
+    trustedArtifact: ({ kind, backend, tag, assetName }) => trustedArtifactManifest.lookup(kind, `${tag}/${assetName}`) || trustedArtifactManifest.lookup('archive', `${tag}/${assetName}`)
+  } : null);
+}
+const featureGates = new FeatureGates({
+  phase1ExitCriteriaPassed: false,
+  onRollback: (event) => {
+    try { diagnosticsService.record({ type: 'phase1-rollback', ...event }); } catch (_) { /* best effort */ }
+  }
+});
 
 let mainWindow = null;
 let tray = null;
@@ -177,10 +239,11 @@ function detectHardwareCapabilities() {
 }
 
 function getCachedHardwareCapabilities() {
-  const cached = store.get('hardwareCapabilities', null);
+  const snapshot = hardwareConfigStore.snapshot();
+  const cached = snapshot.config.capabilities;
   if (cached) return cached;
   const detected = detectHardwareCapabilities();
-  store.set('hardwareCapabilities', detected);
+  hardwareConfigStore.save({ capabilities: detected });
   return detected;
 }
 
@@ -2239,16 +2302,20 @@ function waitForPortInUse(port, timeoutMs = 20000) {
 function waitForServerReady(url, timeoutMs = null) {
   return new Promise((resolve, reject) => {
     const startTime = Date.now();
-    
+
     // Adaptive timeout based on hardware capabilities.
     // Model loading on slow drives can exceed 60 s, so we default to
     // 120 s to avoid false-timeout hangs on relaunch.
     if (!timeoutMs) {
       timeoutMs = 120000; // 120 seconds
     }
-    
+
     const checkInterval = 500; // Check every 500ms instead of 1000ms for faster detection
     const requestTimeoutMs = 5000;
+
+    // Derive the /health endpoint URL from the base URL to verify model
+    // readiness, not just that the TCP listener is up.
+    const healthUrl = url.replace(/\/$/, '') + '/health';
 
     console.log(`Waiting for server at ${url}... (timeout: ${timeoutMs}ms)`);
 
@@ -2291,11 +2358,28 @@ function waitForServerReady(url, timeoutMs = null) {
         activeReq = null;
       }
 
-      activeReq = http.get(url, (res) => {
+      // First try the /health endpoint. If it responds with 200, the model
+      // is loaded and the server is truly ready. If /health returns 503,
+      // the server is up but the model is still loading — keep waiting.
+      // Fall back to the base URL for older server versions without /health.
+      activeReq = http.get(healthUrl, (res) => {
         activeReq = null;
-        // Any HTTP response means the server is up and listening
-        console.log(`Server responded with status: ${res.statusCode}`);
-        onSuccess();
+        if (res.statusCode === 200) {
+          console.log(`Server /health responded with status: ${res.statusCode} — model ready`);
+          res.resume();
+          onSuccess();
+        } else if (res.statusCode === 503) {
+          // Server is up but model is still loading
+          res.resume();
+          const elapsed = Date.now() - startTime;
+          console.log(`Server /health returned 503 (model loading), retrying... (${elapsed}ms elapsed)`);
+          checkTimer = setTimeout(check, checkInterval);
+        } else {
+          // Unknown status — fall back to treating any response as ready
+          console.log(`Server /health responded with status: ${res.statusCode}`);
+          res.resume();
+          onSuccess();
+        }
       });
 
       activeReq.setTimeout(requestTimeoutMs, () => {
@@ -2357,6 +2441,13 @@ function getServicesLogPath() {
 // output unexpectedly early.
 let logsViewerWindow = null;
 
+// Save the original console methods BEFORE appendLog is defined, so appendLog
+// can call the real console.log without triggering the wrapper (which would
+// cause infinite recursion: appendLog → console.log → appendLog → ...).
+const _originalConsoleLog = console.log;
+const _originalConsoleWarn = console.warn;
+const _originalConsoleError = console.error;
+
 function appendLog(source, data) {
   const logPath = getServicesLogPath();
   const lines = data.toString().split(/\r?\n/).filter((l) => l.trim().length > 0);
@@ -2367,8 +2458,8 @@ function appendLog(source, data) {
   } catch (_) {
     // Ignore write errors to avoid disrupting the main process
   }
-  // Also mirror to console
-  console.log(`[${source}]`, data.toString().trimEnd());
+  // Also mirror to console — use the ORIGINAL console.log to avoid recursion.
+  _originalConsoleLog(`[${source}]`, data.toString().trimEnd());
   // Stream into any open in-app service-log viewer windows so they stay live.
   try {
     if (logsViewerWindow && !logsViewerWindow.isDestroyed() && entries.length > 0) {
@@ -2379,10 +2470,6 @@ function appendLog(source, data) {
 
 // Redirect all main-process console output to services.log so failures on
 // end-user machines are diagnosable even without DevTools.
-const _originalConsoleLog = console.log;
-const _originalConsoleWarn = console.warn;
-const _originalConsoleError = console.error;
-
 function _wrapConsole(method, original, level) {
   return function (...args) {
     try {
@@ -2837,6 +2924,16 @@ function downloadSingleFile(url, filePath, downloadId, label) {
   });
 }
 
+async function verifyTrustedArtifact(filePath, kind, reference) {
+  if (!artifactVerifier || !trustedArtifactManifest) return { ok: true, skipped: true };
+  const trusted = trustedArtifactManifest.lookup(kind, reference);
+  if (!trusted) return { ok: true, skipped: true };
+  return artifactVerifier.verifyArtifact({
+    filePath, kind, source: kind === 'model' ? 'curated-model' : 'remote-model', reference,
+    expectedDigest: trusted.digest, signature: trusted.signature, manifestVersion: trusted.version
+  });
+}
+
 async function downloadModels() {
   const modelsDir = getModelsDirectory();
   const modelsToDownload = getSelectedModels();
@@ -2851,6 +2948,14 @@ async function downloadModels() {
 
     // Download the main model file
     const modelResult = await downloadSingleFile(model.url, modelPath, modelDownloadId, model.name);
+    if (modelResult.success) {
+      const verification = await verifyTrustedArtifact(modelPath, 'model', model.filename);
+      if (!verification.ok) {
+        const error = verification.error?.message || `Artifact verification failed: ${verification.status}`;
+        notifyDownloadComplete(model.filename, false, error);
+        return { success: false, error, filename: model.filename };
+      }
+    }
     if (!modelResult.success && !modelResult.skipped) {
       const errMsg = `Error downloading ${model.name}: ${modelResult.error}`;
       lastMainError = { source: 'downloadModels', message: errMsg, time: new Date().toISOString() };
@@ -2863,6 +2968,10 @@ async function downloadModels() {
       const mmprojPath = path.join(modelsDir, model.mmprojFilename);
       const mmprojDownloadId = `builtin/${model.mmprojFilename}`;
       const mmprojResult = await downloadSingleFile(model.mmprojUrl, mmprojPath, mmprojDownloadId, `${model.name} (vision projector)`);
+      if (mmprojResult.success) {
+        const verification = await verifyTrustedArtifact(mmprojPath, 'model', model.mmprojFilename);
+        if (!verification.ok) console.warn(`Mmproj verification failed for ${model.name}: ${verification.error?.message || verification.status}`);
+      }
       if (!mmprojResult.success && !mmprojResult.skipped) {
         console.warn(`Mmproj download failed for ${model.name}: ${mmprojResult.error}. Model will work without vision support.`);
       }
@@ -3092,7 +3201,7 @@ function getInstalledModels() {
 }
 
 async function downloadHuggingFaceModel(repoId, filename, hfToken) {
-  return new Promise((resolve, reject) => {
+  const result = await new Promise((resolve, reject) => {
     const modelsDir = getModelsDirectory();
     const cleanRepoId = repoId
       .replace(/^https?:\/\/huggingface\.co\//, '')
@@ -3143,6 +3252,15 @@ async function downloadHuggingFaceModel(repoId, filename, hfToken) {
       reject(err);
     });
   });
+  if (result?.success) {
+    const verification = await verifyTrustedArtifact(path.join(getModelsDirectory(), filename), 'model', filename);
+    if (!verification.ok) {
+      const error = verification.error?.message || `Artifact verification failed: ${verification.status}`;
+      notifyDownloadComplete(filename, false, error);
+      return { success: false, error, filename };
+    }
+  }
+  return result;
 }
 
 function handleDownloadResponse(response, file, filename, downloadId, resolve, reject) {
@@ -3450,7 +3568,7 @@ app.whenReady().then(async () => {
   // logs always have an up-to-date cached snapshot.
   try {
     const hw = detectHardwareCapabilities();
-    store.set('hardwareCapabilities', hw);
+    hardwareConfigStore.save({ capabilities: hw });
     console.log('Hardware capabilities detected:', formatHardwareSummary(hw));
   } catch (err) {
     console.error('Hardware detection failed:', err.message);
@@ -3713,7 +3831,7 @@ function updateUserProfile(updates) {
  * Get stored provider credentials for the currently logged-in user.
  * Returns an error if no user is authenticated.
  */
-function getProviderCredentials() {
+function getProviderCredentialsLegacy() {
   const currentUser = store.get('currentUser', null);
   if (!currentUser) {
     return { success: false, error: 'Authentication required. Please log in or register to store provider credentials.' };
@@ -3745,7 +3863,7 @@ function getProviderCredentials() {
  * Save or update a provider credential for the current user.
  * API keys are encrypted with safeStorage before persisting.
  */
-function setProviderCredential(id, name, baseUrl, apiKey, models) {
+function setProviderCredentialLegacy(id, name, baseUrl, apiKey, models) {
   const currentUser = store.get('currentUser', null);
   if (!currentUser) {
     return { success: false, error: 'Authentication required. Please log in or register to store provider credentials.' };
@@ -3795,7 +3913,7 @@ function setProviderCredential(id, name, baseUrl, apiKey, models) {
 /**
  * Delete a provider credential for the current user.
  */
-function deleteProviderCredential(id) {
+function deleteProviderCredentialLegacy(id) {
   const currentUser = store.get('currentUser', null);
   if (!currentUser) {
     return { success: false, error: 'Authentication required. Please log in or register to manage provider credentials.' };
@@ -3813,6 +3931,23 @@ function deleteProviderCredential(id) {
   store.set('providerCredentials', allCredentials);
 
   return { success: true };
+}
+
+function getProviderCredentials() {
+  const currentUser = store.get('currentUser', null);
+  if (!currentUser) return { success: false, error: 'Authentication required. Please log in or register to store provider credentials.' };
+  return { success: true, providers: credentialStore.list(currentUser), status: credentialStore.status() };
+}
+function setProviderCredential(id, name, baseUrl, apiKey, models) {
+  const currentUser = store.get('currentUser', null);
+  if (!currentUser) return { success: false, error: 'Authentication required. Please log in or register to store provider credentials.' };
+  try { return { success: true, provider: credentialStore.save(currentUser, { id, name, baseUrl, apiKey, models }), status: credentialStore.status() }; }
+  catch (error) { return { success: false, error: error instanceof Error ? error.message : 'Failed to securely store API key.' }; }
+}
+function deleteProviderCredential(id) {
+  const currentUser = store.get('currentUser', null);
+  if (!currentUser) return { success: false, error: 'Authentication required. Please log in or register to manage provider credentials.' };
+  return credentialStore.remove(currentUser, id) ? { success: true } : { success: false, error: 'Provider not found.' };
 }
 
 // ============================================================================
@@ -3931,9 +4066,119 @@ async function fetchWebPage(rawUrl) {
   }
 }
 
+async function buildLocalCatalogRecords() {
+  const records = [];
+  for (const installed of getInstalledModels()) {
+    const record = {
+      id: installed.filename,
+      displayName: installed.filename,
+      providerId: 'local-llama-server',
+      providerGroupId: 'local',
+      source: 'local',
+      format: 'gguf',
+      reference: installed.filename,
+      sizeBytes: installed.size,
+      availability: 'available',
+      verification: 'unverified',
+      metadata: {}
+    };
+    try {
+      const inspection = await inspectGGUF(installed.path);
+      record.metadata = inspection.metadata;
+      record.metadataStatus = inspection.metadataStatus;
+      if (inspection.valid) record.metadataVerified = true;
+    } catch (error) {
+      record.metadataStatus = { status: 'unavailable', error: 'GGUF inspection failed' };
+    }
+    // Compute digest and verify against the trusted artifact manifest if
+    // an entry exists for this model. If the manifest has a trusted digest
+    // and the ArtifactVerifier confirms it, mark the model as verified and
+    // available for execution. Otherwise, retain the digest for catalog
+    // correlation but leave it unverified.
+    try {
+      const computed = await digestArtifact(fs.createReadStream(installed.path));
+      const trusted = trustedArtifactManifest?.lookup('model', installed.filename);
+      if (trusted && trusted.digest && artifactVerifier) {
+        const result = await artifactVerifier.verifyArtifact({
+          filePath: installed.path,
+          kind: 'model',
+          source: 'local',
+          reference: installed.filename,
+          expectedDigest: trusted.digest,
+          signature: trusted.signature,
+          manifestVersion: trusted.version
+        });
+        if (result.ok && result.digest) {
+          record.digest = result.digest; // { ..., verified: true }
+          record.verification = 'verified';
+          record.availability = 'available';
+        } else {
+          record.digest = { ...computed, verified: false };
+          record.verification = 'failed';
+          record.availability = 'unavailable';
+        }
+      } else {
+        record.digest = { ...computed, verified: false };
+      }
+    } catch (_) { /* a catalog read must not block installed-model compatibility */ }
+    records.push(record);
+  }
+  return records;
+}
+
+const runtimeCoordinator = new RuntimeCoordinator({
+  lifecycle: {
+    start: () => startLlamaServer(),
+    stop: (options = {}) => stopLlamaServer(options.timeoutMs),
+    // After the process spawns, verify model health via /health endpoint
+    // so 'ready' means the model is loaded and serving, not just that the
+    // TCP listener is up.
+    readinessCheck: () => {
+      const url = apiServer.getApiUrl();
+      if (!url) throw new Error('API server is disabled');
+      return waitForServerReady(`${url}/`, 120000);
+    }
+  },
+  binaryManager,
+  app,
+  capabilities: getCachedHardwareCapabilities(),
+  featureGates,
+  catalog: new ModelCatalog(),
+  catalogProvider: buildLocalCatalogRecords,
+  onDiagnostic: (event) => {
+    try { diagnosticsService.record(event); } catch (_) { /* diagnostics are best effort */ }
+  }
+});
+
+const phase1Evaluator = new Phase1ExitEvaluator({
+  featureGates,
+  onDiagnostic: (event) => { try { diagnosticsService.record(event); } catch (_) { /* best effort */ } },
+  checkMap: createPhase1CheckMap({ coordinator: runtimeCoordinator, diagnosticsService, applicationRoot: __dirname })
+});
+runtimeCoordinator.phase1Evaluator = phase1Evaluator;
+
 // IPC handlers for renderer process
-ipcMain.handle('get-server-status', () => {
-  return isServerRunning;
+ipcMain.handle('get-server-status', () => runtimeCoordinator.getServerStatus());
+
+ipcMain.handle('get-provider-status', () => runtimeCoordinator.providerStatuses());
+ipcMain.handle('get-feature-gates', () => runtimeCoordinator.getFeatureGates());
+ipcMain.handle('evaluate-phase1', () => runtimeCoordinator.evaluatePhase1());
+ipcMain.handle('ensure-ready', (_event, request) => runtimeCoordinator.ensureReady(request));
+ipcMain.handle('cancel-runtime-operation', (_event, request, callerId) => runtimeCoordinator.cancelOperation(request, callerId));
+ipcMain.handle('get-runtime-snapshot', () => runtimeCoordinator.snapshot());
+ipcMain.handle('get-diagnostics-health', () => diagnosticsService.getHealthProjection(runtimeCoordinator.snapshot()));
+ipcMain.handle('export-diagnostics', async () => {
+  const exportPath = path.join(app.getPath('userData'), 'diagnostics', 'export.ndjson');
+  await diagnosticsService.exportToStream(fs.createWriteStream(exportPath));
+  return { path: exportPath, recordCount: diagnosticsService.getRecords().length };
+});
+ipcMain.handle('get-scheduler-status', () => runtimeCoordinator.getSchedulerStatus());
+ipcMain.handle('get-model-catalog', async () => runtimeCoordinator.getCatalogSnapshot({ includeDigest: true }));
+ipcMain.handle('get-model-fit-plan', async (_event, filename, hardware) => {
+  if (typeof filename !== 'string' || path.basename(filename) !== filename) return { status: 'unknown', error: 'Invalid model filename' };
+  const model = (await runtimeCoordinator.getCatalogSnapshot({ includeDigest: false })).records.find((item) => item.id === filename);
+  if (!model) return { status: 'unknown', error: 'Model not found' };
+  return evaluateFitPlan(model, hardware || await detectHardwareSnapshot({ legacyCapabilities: getCachedHardwareCapabilities() }));
 });
 
 ipcMain.handle('get-hardware-info', () => {
@@ -3942,19 +4187,26 @@ ipcMain.handle('get-hardware-info', () => {
 
 ipcMain.handle('refresh-hardware-detection', () => {
   const fresh = detectHardwareCapabilities();
-  store.set('hardwareCapabilities', fresh);
+  hardwareConfigStore.save({ capabilities: fresh });
   console.log('Hardware detection refreshed:', formatHardwareSummary(fresh));
   return fresh;
 });
 
-ipcMain.handle('start-server', async () => {
-  const started = await startLlamaServer();
-  return started && isServerRunning;
-});
+// Additive normalized snapshot seam. The legacy capability handlers above remain
+// unchanged because backend selection and existing renderer callers depend on
+// their response shape.
+ipcMain.handle('get-hardware-snapshot', () => detectHardwareSnapshot({
+  legacyCapabilities: getCachedHardwareCapabilities()
+}));
+ipcMain.handle('refresh-hardware-snapshot', () => detectHardwareSnapshot({
+  legacyCapabilities: detectHardwareCapabilities()
+}));
+
+ipcMain.handle('start-server', () => runtimeCoordinator.startServer());
 
 ipcMain.handle('stop-server', async () => {
-  await stopLlamaServer();
-  return !isServerRunning;
+  await runtimeCoordinator.stopServer();
+  return !runtimeCoordinator.getServerStatus();
 });
 
 ipcMain.handle('start-lazy-server', async () => {
@@ -3970,7 +4222,7 @@ ipcMain.handle('start-lazy-server', async () => {
     return { success: false, error: 'No model found' };
   }
 
-  const serverStarted = await startLlamaServer();
+  const serverStarted = await runtimeCoordinator.start();
   if (!serverStarted) {
     return { success: false, error: 'Failed to start llama-server' };
   }
@@ -4159,8 +4411,9 @@ function broadcastSwitchStatus(payload) {
 }
 
 // Switch active model and restart server
-ipcMain.handle('switch-model', async (event, filename) => {
-  console.log(`[switch-model] IPC called for: ${filename}`);
+async function performLegacyModelSwitch(event, filename, context) {
+  const correlationId = context?.correlationId || 'unknown';
+  console.log(`[switch-model] IPC called for: ${filename} (correlation: ${correlationId})`);
   const modelsDir = getModelsDirectory();
   const modelPath = path.join(modelsDir, filename);
   console.log(`[switch-model] Checking model path: ${modelPath}`);
@@ -4198,7 +4451,7 @@ ipcMain.handle('switch-model', async (event, filename) => {
       try {
         broadcastSwitchStatus({ phase: 'stopping', filename });
         // 1. Stop the old server gracefully and wait for process exit
-        await stopLlamaServer(15000);
+        await runtimeCoordinator.stop({ timeoutMs: 15000 });
 
         // 1b. Aggressively kill any remaining process on the port
         killProcessOnPort(serverPort);
@@ -4212,9 +4465,8 @@ ipcMain.handle('switch-model', async (event, filename) => {
           await waitForPortFree(serverPort, 10000);
         }
 
-        // 3. Start new server with the new model
         broadcastSwitchStatus({ phase: 'starting', filename });
-        const started = await startLlamaServer();
+        const started = await runtimeCoordinator.start();
         if (!started) {
           broadcastSwitchStatus({ phase: 'error', filename, error: 'Failed to start server with new model' });
           return { success: false, error: 'Failed to start server with new model' };
@@ -4240,7 +4492,7 @@ ipcMain.handle('switch-model', async (event, filename) => {
       console.error('Model switch failed:', err.message);
       // Attempt cleanup if something went wrong
       try {
-        await stopLlamaServer(5000);
+        await runtimeCoordinator.stop({ timeoutMs: 5000 });
       } catch (_) { /* ignore cleanup errors */ }
       broadcastSwitchStatus({ phase: 'error', filename, error: err.message });
       return { success: false, error: err.message };
@@ -4249,6 +4501,10 @@ ipcMain.handle('switch-model', async (event, filename) => {
 
   broadcastSwitchStatus({ phase: 'ready', filename });
   return { success: true, restarted: false };
+}
+
+ipcMain.handle('switch-model', async (event, filename) => {
+  return runtimeCoordinator.switchModel({ filename }, (context) => performLegacyModelSwitch(event, filename, context));
 });
 
 async function transitionToMainApp() {
@@ -4291,7 +4547,7 @@ async function transitionToMainApp() {
   if (validModel) {
     if (!isServerRunning) {
       showMainWindowLoading('alpacabitollama', 'Starting llama-server…');
-      const started = await startLlamaServer();
+      const started = await runtimeCoordinator.start();
       if (!started) {
         const setupHtmlPath = getSetupHtmlPath();
         const setupHtml = getSetupHtml(generateModelOptions());
@@ -4759,19 +5015,28 @@ ipcMain.handle('select-local-folder', async () => {
 // ============================================================================
 
 ipcMain.handle('get-api-settings', () => {
-  const cfg = apiServer.getApiConfig();
+  const cfg = apiServer.getPublicApiConfig();
   return {
     ...cfg,
     openAIEndpoint: apiServer.getApiOpenAIEndpoint(),
+    security: {
+      exposure: apiServer.classifyExposure(cfg.host),
+      apiKeyConfigured: cfg.hasApiKey,
+      credentialedCors: Boolean(cfg.allowCredentials)
+    }
   };
 });
 
 ipcMain.handle('set-api-settings', (event, settings) => {
   try {
-    const updated = apiServer.setApiConfig(settings);
-    return { success: true, config: updated };
+    if (settings?.preview === true) {
+      return { success: true, preview: apiServer.previewApiConfig(settings.config || {}) };
+    }
+    const { confirmationToken, preview, ...config } = settings || {};
+    const updated = apiServer.setApiConfig(config, { confirmationToken });
+    return { success: true, config: { ...apiServer.getPublicApiConfig(), exposure: updated.exposure }, restartRequired: true };
   } catch (err) {
-    return { success: false, error: err.message };
+    return { success: false, error: err.message, code: err.code || 'INVALID_API_CONFIG' };
   }
 });
 

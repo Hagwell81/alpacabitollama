@@ -2,34 +2,49 @@ import Dexie, { type EntityTable } from 'dexie';
 import { findDescendantMessages, uuid, filterByLeafNodeId } from '$lib/utils';
 import type { McpServerOverride } from '$lib/types/database';
 
+export interface StreamingState {
+	requestId: string;
+	conversationId: string;
+	messageId?: string;
+	content: string;
+	reasoning?: string;
+	checkpointSequence: number;
+	createdAt: number;
+	updatedAt: number;
+	status: 'active' | 'completed' | 'cancelled' | 'interrupted' | 'failed';
+	contextUsed?: number;
+	contextTotal?: number;
+}
+
 class LlamacppDatabase extends Dexie {
 	conversations!: EntityTable<DatabaseConversation, string>;
 	messages!: EntityTable<DatabaseMessage, string>;
+	streamingState!: EntityTable<StreamingState, 'requestId'>;
 
 	constructor() {
 		super('LlamacppWebui');
-
 		this.version(1).stores({
 			conversations: 'id, lastModified, currNode, name',
 			messages: 'id, convId, type, role, timestamp, parent, children'
 		});
-
 		this.version(2).stores({
 			conversations: 'id, lastModified, currNode, name, userId',
 			messages: 'id, convId, type, role, timestamp, parent, children'
 		}).upgrade(async (tx) => {
-			// Migrate existing conversations to have null userId (shared / default)
 			const convs = await tx.table('conversations').toArray();
-			for (const conv of convs) {
-				if (conv.userId === undefined) {
-					await tx.table('conversations').update(conv.id, { userId: null });
-				}
-			}
+			for (const conv of convs) if (conv.userId === undefined) await tx.table('conversations').update(conv.id, { userId: null });
+		});
+		this.version(3).stores({
+			conversations: 'id, lastModified, currNode, name, userId',
+			messages: 'id, convId, type, role, timestamp, parent, children',
+			streamingState: 'requestId, conversationId, updatedAt, status'
 		});
 	}
 }
 
 const db = new LlamacppDatabase();
+const checkpointWrites = new Map<string, Promise<void>>();
+const checkpointQueue = new Map<string, StreamingState>();
 import { MessageRole } from '$lib/enums';
 
 export class DatabaseService {
@@ -519,4 +534,27 @@ export class DatabaseService {
 			return newConv;
 		});
 	}
+
+	static async saveStreamingCheckpoint(state: Omit<StreamingState, 'updatedAt'> & { updatedAt?: number }): Promise<void> {
+		checkpointQueue.set(state.requestId, { ...state, updatedAt: state.updatedAt ?? Date.now() });
+		const existing = checkpointWrites.get(state.requestId);
+		if (existing) return existing;
+		const write = Promise.resolve().then(async () => {
+			const latest = checkpointQueue.get(state.requestId);
+			if (!latest) return;
+			checkpointQueue.delete(state.requestId);
+			await db.streamingState.put(latest);
+			const count = await db.streamingState.count();
+			if (count > 100) {
+				const stale = await db.streamingState.orderBy('updatedAt').limit(count - 100).toArray();
+				await db.streamingState.bulkDelete(stale.map((item) => item.requestId));
+			}
+		}).finally(() => checkpointWrites.delete(state.requestId));
+		checkpointWrites.set(state.requestId, write);
+		return write;
+	}
+	static async getStreamingCheckpoint(requestId: string): Promise<StreamingState | undefined> { return db.streamingState.get(requestId); }
+	static async listStreamingCheckpoints(conversationId?: string): Promise<StreamingState[]> { return conversationId ? db.streamingState.where('conversationId').equals(conversationId).toArray() : db.streamingState.toArray(); }
+	static async markActiveStreamsInterrupted(): Promise<number> { const active = await db.streamingState.where('status').equals('active').toArray(); if (active.length) await db.streamingState.bulkPut(active.map((item) => ({ ...item, status: 'interrupted' as const, updatedAt: Date.now() }))); return active.length; }
+	static async deleteStreamingCheckpoint(requestId: string): Promise<void> { await db.streamingState.delete(requestId); }
 }

@@ -8,6 +8,9 @@
  * @module request-manager
  */
 
+const { AdmissionScheduler } = require('./scheduling/admission-scheduler');
+const { CircuitBreaker: KeyedCircuitBreaker } = require('./scheduling/circuit-breaker');
+
 /**
  * Circuit Breaker pattern implementation to prevent cascading failures
  * when API requests repeatedly fail.
@@ -22,31 +25,31 @@ class CircuitBreaker {
   constructor(threshold = 5, resetMs = 60000) {
     this.threshold = threshold;
     this.resetMs = resetMs;
-    this.failureCount = 0;
-    this.state = 'CLOSED'; // States: CLOSED, OPEN, HALF_OPEN
-    this.lastFailureTime = null;
+    this._providerId = 'legacy-request-manager';
+    this._operationCategory = 'request';
+    this._lastFailureTime = null;
+    this._breaker = new KeyedCircuitBreaker({ threshold, resetMs });
   }
 
   /**
    * Records a successful request, resetting failure count.
    */
-  recordSuccess() {
-    this.failureCount = 0;
-    if (this.state === 'HALF_OPEN') {
-      this.state = 'CLOSED';
-    }
+  recordSuccess(permit) {
+    this._breaker.recordSuccess(this._providerId, this._operationCategory, permit);
   }
 
   /**
    * Records a failed request, incrementing failure count.
    */
-  recordFailure() {
-    this.failureCount++;
-    this.lastFailureTime = Date.now();
-    
-    if (this.failureCount >= this.threshold) {
-      this.state = 'OPEN';
+  acquire() {
+    return this._breaker.acquire(this._providerId, this._operationCategory);
+  }
+
+  recordFailure(error, permit) {
+    if (!error || !['CALLER_CANCELLED', 'CANCELLED', 'CANCELED'].includes(String(error.code || '').toUpperCase())) {
+      this._lastFailureTime = Date.now();
     }
+    return this._breaker.recordFailure(this._providerId, this._operationCategory, error, permit);
   }
 
   /**
@@ -55,19 +58,7 @@ class CircuitBreaker {
    * @returns {boolean} True if request can be attempted
    */
   canAttempt() {
-    if (this.state === 'CLOSED') return true;
-    
-    if (this.state === 'OPEN') {
-      const timeSinceLastFailure = Date.now() - this.lastFailureTime;
-      if (timeSinceLastFailure > this.resetMs) {
-        this.state = 'HALF_OPEN';
-        this.failureCount = 0;
-        return true;
-      }
-      return false;
-    }
-    
-    return this.state === 'HALF_OPEN';
+    return this._breaker.canAttempt(this._providerId, this._operationCategory);
   }
 
   /**
@@ -76,16 +67,20 @@ class CircuitBreaker {
    * @returns {Object} Circuit breaker status
    */
   getState() {
+    const state = this._breaker.getState(this._providerId, this._operationCategory);
     return {
-      state: this.state,
-      failureCount: this.failureCount,
-      threshold: this.threshold,
-      timeSinceLastFailure: this.lastFailureTime ? Date.now() - this.lastFailureTime : null,
-      resetMs: this.resetMs,
-      resetIn: this.state === 'OPEN' && this.lastFailureTime 
-        ? Math.max(0, this.resetMs - (Date.now() - this.lastFailureTime))
-        : 0
+      state: state.state,
+      failureCount: state.failureCount,
+      threshold: state.threshold,
+      timeSinceLastFailure: this._lastFailureTime === null ? null : Math.max(0, Date.now() - this._lastFailureTime),
+      resetMs: state.resetMs,
+      resetIn: state.resetIn
     };
+  }
+
+  reset() {
+    this._breaker.reset(this._providerId, this._operationCategory);
+    this._lastFailureTime = null;
   }
 }
 
@@ -102,19 +97,19 @@ class RequestQueue {
    * @param {number} circuitBreakerThreshold - Failure threshold for circuit breaker
    * @param {number} circuitBreakerResetMs - Reset time for circuit breaker
    */
-  constructor(maxConcurrent = 10, enableCircuitBreaker = true, 
+  constructor(maxConcurrent = 10, enableCircuitBreaker = true,
               circuitBreakerThreshold = 5, circuitBreakerResetMs = 60000) {
     this.maxConcurrent = maxConcurrent;
-    this.activeRequests = 0;
-    this.queue = [];
-    this.circuitBreaker = enableCircuitBreaker 
-      ? new CircuitBreaker(circuitBreakerThreshold, circuitBreakerResetMs) 
+    this.admissionScheduler = new AdmissionScheduler({
+      maxActive: maxConcurrent,
+      maxQueued: maxConcurrent * 2,
+      now: () => Date.now()
+    });
+    this.circuitBreaker = enableCircuitBreaker
+      ? new CircuitBreaker(circuitBreakerThreshold, circuitBreakerResetMs)
       : null;
     this.totalRequests = 0;
     this.totalErrors = 0;
-    this.totalQueued = 0;
-    this.requestLatencies = [];
-    this.maxLatencyHistory = 100; // Keep last 100 latency measurements
   }
 
   /**
@@ -125,21 +120,18 @@ class RequestQueue {
    */
   async enqueue(fn) {
     this.totalRequests++;
-    
-    return new Promise((resolve, reject) => {
-      const task = { 
-        fn, 
-        resolve, 
-        reject, 
-        enqueuedAt: Date.now(),
-        id: `req-${this.totalRequests}`
-      };
-      
-      if (this.activeRequests < this.maxConcurrent && this.canAttempt()) {
-        this.executeTask(task);
-      } else {
-        this.totalQueued++;
-        this.queue.push(task);
+    return this.admissionScheduler.enqueue(async () => {
+      let permit = null;
+      try {
+        if (!this.canAttempt()) throw new Error('Circuit breaker is OPEN');
+        permit = this.circuitBreaker?.acquire();
+        const result = await fn();
+        if (this.circuitBreaker) this.circuitBreaker.recordSuccess(permit);
+        return result;
+      } catch (error) {
+        this.totalErrors++;
+        if (this.circuitBreaker && permit) this.circuitBreaker.recordFailure(error, permit);
+        throw error;
       }
     });
   }
@@ -153,79 +145,20 @@ class RequestQueue {
    */
   async enqueueOrReject(fn) {
     this.totalRequests++;
-    
-    return new Promise((resolve, reject) => {
-      const task = { 
-        fn, 
-        resolve, 
-        reject, 
-        enqueuedAt: Date.now(),
-        id: `req-${this.totalRequests}`
-      };
-      
-      if (this.activeRequests < this.maxConcurrent && this.canAttempt()) {
-        this.executeTask(task);
-      } else if (this.queue.length >= this.maxConcurrent * 2) {
-        // Queue is full, reject immediately
-        reject(new Error('Too Many Requests'));
-      } else {
-        this.totalQueued++;
-        this.queue.push(task);
+    return this.admissionScheduler.enqueueOrReject(async () => {
+      let permit = null;
+      try {
+        if (!this.canAttempt()) throw new Error('Circuit breaker is OPEN');
+        permit = this.circuitBreaker?.acquire();
+        const result = await fn();
+        if (this.circuitBreaker) this.circuitBreaker.recordSuccess(permit);
+        return result;
+      } catch (error) {
+        this.totalErrors++;
+        if (this.circuitBreaker && permit) this.circuitBreaker.recordFailure(error, permit);
+        throw error;
       }
     });
-  }
-
-  /**
-   * Executes a task and tracks metrics.
-   * 
-   * @param {Object} task - Task object with fn, resolve, reject
-   */
-  executeTask(task) {
-    this.activeRequests++;
-    const startTime = Date.now();
-    
-    Promise.resolve()
-      .then(() => {
-        if (!this.canAttempt()) {
-          throw new Error('Circuit breaker is OPEN');
-        }
-        return task.fn();
-      })
-      .then((result) => {
-        if (this.circuitBreaker) {
-          this.circuitBreaker.recordSuccess();
-        }
-        
-        // Record latency
-        const latency = Date.now() - task.enqueuedAt;
-        this.requestLatencies.push(latency);
-        if (this.requestLatencies.length > this.maxLatencyHistory) {
-          this.requestLatencies.shift();
-        }
-        
-        task.resolve(result);
-      })
-      .catch((error) => {
-        this.totalErrors++;
-        if (this.circuitBreaker) {
-          this.circuitBreaker.recordFailure();
-        }
-        task.reject(error);
-      })
-      .finally(() => {
-        this.activeRequests--;
-        this.processQueue();
-      });
-  }
-
-  /**
-   * Processes the next task in queue if capacity allows.
-   */
-  processQueue() {
-    while (this.queue.length > 0 && this.activeRequests < this.maxConcurrent && this.canAttempt()) {
-      const task = this.queue.shift();
-      this.executeTask(task);
-    }
   }
 
   /**
@@ -244,26 +177,22 @@ class RequestQueue {
    * @returns {Object} Queue status with active, queued, and metrics
    */
   getStatus() {
-    const latencies = this.requestLatencies;
-    const sorted = [...latencies].sort((a, b) => a - b);
-    
+    const scheduler = this.admissionScheduler.getStatus();
     return {
-      activeRequests: this.activeRequests,
-      queuedRequests: this.queue.length,
+      activeRequests: scheduler.active,
+      queuedRequests: scheduler.queued,
       maxConcurrent: this.maxConcurrent,
       totalRequests: this.totalRequests,
       totalErrors: this.totalErrors,
-      totalQueued: this.totalQueued,
+      totalQueued: scheduler.queued,
+      rejected: scheduler.rejected,
+      cancelled: scheduler.cancelled,
+      completed: scheduler.completed,
+      failed: scheduler.failed,
+      capacity: scheduler.capacity,
       errorRate: this.totalRequests > 0 ? (this.totalErrors / this.totalRequests) : 0,
       circuitBreaker: this.circuitBreaker ? this.circuitBreaker.getState() : null,
-      latency: {
-        count: latencies.length,
-        p50: sorted[Math.floor(sorted.length * 0.5)] || 0,
-        p95: sorted[Math.floor(sorted.length * 0.95)] || 0,
-        p99: sorted[Math.floor(sorted.length * 0.99)] || 0,
-        min: sorted[0] || 0,
-        max: sorted[sorted.length - 1] || 0,
-      }
+      latency: scheduler.latency
     };
   }
 
@@ -273,26 +202,17 @@ class RequestQueue {
    * @param {Error} error - Error to reject all queued requests with
    */
   clearQueue(error = new Error('Queue cleared')) {
-    while (this.queue.length > 0) {
-      const task = this.queue.shift();
-      task.reject(error);
-    }
+    this.admissionScheduler.clear(error);
   }
 
   /**
    * Resets metrics and circuit breaker.
    */
   reset() {
-    this.failureCount = 0;
-    this.requestLatencies = [];
+    this.admissionScheduler.reset();
     this.totalRequests = 0;
     this.totalErrors = 0;
-    this.totalQueued = 0;
-    if (this.circuitBreaker) {
-      this.circuitBreaker.failureCount = 0;
-      this.circuitBreaker.state = 'CLOSED';
-      this.circuitBreaker.lastFailureTime = null;
-    }
+    if (this.circuitBreaker) this.circuitBreaker.reset();
   }
 }
 

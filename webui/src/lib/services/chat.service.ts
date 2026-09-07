@@ -17,8 +17,17 @@ import {
 import type { ApiChatMessageContentPart, ApiChatCompletionToolCall } from '$lib/types/api';
 import type { DatabaseMessageExtraMcpPrompt, DatabaseMessageExtraMcpResource } from '$lib/types';
 import { modelsStore } from '$lib/stores/models.svelte';
+import { ProviderService, type NormalizedProviderEvent } from './provider.service';
+
+type PartialOutputHook = (state: { conversationId?: string; content: string; reasoning?: string; toolCalls?: string; status: 'active' | 'completed' | 'cancelled' | 'failed' }) => void;
 
 export class ChatService {
+	private static partialOutputHook?: PartialOutputHook;
+
+	static setPartialOutputPersistenceHook(hook?: PartialOutputHook): void {
+		ChatService.partialOutputHook = hook;
+	}
+
 	/**
 	 *
 	 *
@@ -202,26 +211,9 @@ export class ChatService {
 		}
 
 		try {
-			const response = await fetch(`./v1/chat/completions`, {
-				method: 'POST',
-				headers: getJsonHeaders(),
-				body: JSON.stringify(requestBody),
-				signal
-			});
-
-			if (!response.ok) {
-				const error = await ChatService.parseErrorResponse(response);
-
-				if (onError) {
-					onError(error);
-				}
-
-				throw error;
-			}
-
 			if (stream) {
-				await ChatService.handleStreamResponse(
-					response,
+				await ChatService.handleNormalizedStream(
+					requestBody,
 					onChunk,
 					onComplete,
 					onError,
@@ -229,20 +221,29 @@ export class ChatService {
 					onToolCallChunk,
 					onModel,
 					onTimings,
-					conversationId,
-					signal
+					signal,
+					conversationId
 				);
 
 				return;
-			} else {
-				return ChatService.handleNonStreamResponse(
-					response,
-					onComplete,
-					onError,
-					onToolCallChunk,
-					onModel
-				);
 			}
+
+			const normalized = await ProviderService.complete(requestBody, signal);
+			if (normalized.model) onModel?.(normalized.model);
+			const serializedToolCalls = normalized.toolCalls?.length
+				? JSON.stringify(normalized.toolCalls)
+				: undefined;
+			if (!normalized.content.trim() && !serializedToolCalls) {
+				throw new Error('No response received from server. Please try again.');
+			}
+			if (serializedToolCalls) onToolCallChunk?.(serializedToolCalls);
+			onComplete?.(
+				normalized.content,
+				normalized.reasoningContent,
+				normalized.timings,
+				serializedToolCalls
+			);
+			return normalized.content;
 		} catch (error) {
 			if (isAbortError(error)) {
 				console.log('Chat completion request was aborted');
@@ -389,19 +390,8 @@ export class ChatService {
 	 *
 	 */
 
-	/**
-	 * Handles streaming response from the chat completion API
-	 * @param response - The Response object from the fetch request
-	 * @param onChunk - Optional callback invoked for each content chunk received
-	 * @param onComplete - Optional callback invoked when the stream is complete with full response
-	 * @param onError - Optional callback invoked if an error occurs during streaming
-	 * @param onReasoningChunk - Optional callback invoked for each reasoning content chunk
-	 * @param conversationId - Optional conversation ID for per-conversation state tracking
-	 * @returns {Promise<void>} Promise that resolves when streaming is complete
-	 * @throws {Error} if the stream cannot be read or parsed
-	 */
-	private static async handleStreamResponse(
-		response: Response,
+	private static async handleNormalizedStream(
+		request: ApiChatCompletionRequest,
 		onChunk?: (chunk: string) => void,
 		onComplete?: (
 			response: string,
@@ -414,187 +404,51 @@ export class ChatService {
 		onToolCallChunk?: (chunk: string) => void,
 		onModel?: (model: string) => void,
 		onTimings?: (timings?: ChatMessageTimings, promptProgress?: ChatMessagePromptProgress) => void,
-		conversationId?: string,
-		abortSignal?: AbortSignal
+		signal?: AbortSignal,
+		conversationId?: string
 	): Promise<void> {
-		const reader = response.body?.getReader();
-
-		if (!reader) {
-			throw new Error('No response body');
-		}
-
-		const decoder = new TextDecoder();
-		let aggregatedContent = '';
-		let fullReasoningContent = '';
-		let aggregatedToolCalls: ApiChatCompletionToolCall[] = [];
-		let lastTimings: ChatMessageTimings | undefined;
-		let streamFinished = false;
-		let modelEmitted = false;
-		let toolCallIndexOffset = 0;
-		let hasOpenToolCallBatch = false;
-		let lastActivityTime = Date.now();
-		const HEARTBEAT_TIMEOUT = 120000; // 120 seconds without activity indicates server unresponsive
-
-		const finalizeOpenToolCallBatch = () => {
-			if (!hasOpenToolCallBatch) {
-				return;
-			}
-
-			toolCallIndexOffset = aggregatedToolCalls.length;
-			hasOpenToolCallBatch = false;
-		};
-
-		const processToolCallDelta = (toolCalls?: ApiChatCompletionToolCallDelta[]) => {
-			if (!toolCalls || toolCalls.length === 0) {
-				return;
-			}
-
-			aggregatedToolCalls = ChatService.mergeToolCallDeltas(
-				aggregatedToolCalls,
-				toolCalls,
-				toolCallIndexOffset
-			);
-
-			if (aggregatedToolCalls.length === 0) {
-				return;
-			}
-
-			hasOpenToolCallBatch = true;
-
-			const serializedToolCalls = JSON.stringify(aggregatedToolCalls);
-
-			if (import.meta.env.DEV) {
-				console.log('[ChatService] Aggregated tool calls:', serializedToolCalls);
-			}
-
-			if (!serializedToolCalls) {
-				return;
-			}
-
-			if (!abortSignal?.aborted) {
-				onToolCallChunk?.(serializedToolCalls);
-			}
-		};
-
+		let content = '';
+		let reasoning = '';
+		let timings: ChatMessageTimings | undefined;
+		let toolCalls: ApiChatCompletionToolCall[] = [];
+		let completed = false;
 		try {
-			let chunk = '';
-			while (true) {
-				if (abortSignal?.aborted) break;
-
-				// Check for heartbeat timeout - if no activity for too long, server may be unresponsive
-				const timeSinceLastActivity = Date.now() - lastActivityTime;
-				if (timeSinceLastActivity > HEARTBEAT_TIMEOUT) {
-					throw new Error(
-						`Stream heartbeat timeout - no data received for ${HEARTBEAT_TIMEOUT / 1000}s. ` +
-						'The server may be unresponsive. Please try again.'
-					);
-				}
-
-				const { done, value } = await reader.read();
-				if (done) break;
-
-				if (abortSignal?.aborted) break;
-
-				// Update activity timestamp on any data received
-				if (value && value.length > 0) {
-					lastActivityTime = Date.now();
-				}
-
-				chunk += decoder.decode(value, { stream: true });
-				const lines = chunk.split('\n');
-				chunk = lines.pop() || '';
-
-				for (const line of lines) {
-					if (abortSignal?.aborted) break;
-
-					// Skip heartbeat/keep-alive comment lines (lines starting with ':')
-					if (line.startsWith(':')) {
-						if (import.meta.env.DEV) {
-							console.log('[ChatService] Heartbeat received');
-						}
-						continue;
+			await ProviderService.stream(
+				request,
+				(event: NormalizedProviderEvent) => {
+					if ('model' in event && event.model) onModel?.(event.model);
+					if (event.kind === 'content') {
+						content += event.text;
+						onChunk?.(event.text);
+					} else if (event.kind === 'reasoning') {
+						reasoning += event.text;
+						onReasoningChunk?.(event.text);
+					} else if (event.kind === 'tool-call') {
+						toolCalls = ChatService.mergeToolCallDeltas(toolCalls, event.delta);
+						onToolCallChunk?.(JSON.stringify(toolCalls));
+					} else if (event.kind === 'model') {
+						onModel?.(event.id);
+					} else if (event.kind === 'timings') {
+						timings = event.timings;
+						onTimings?.(event.timings, event.promptProgress);
+					} else if (event.kind === 'complete' && !completed && !signal?.aborted) {
+						completed = true;
+						onComplete?.(
+							content,
+							reasoning || undefined,
+							timings,
+							toolCalls.length ? JSON.stringify(toolCalls) : undefined
+						);
 					}
-
-					if (line.startsWith(UrlProtocol.DATA)) {
-						const data = line.slice(6);
-						if (data === '[DONE]') {
-							streamFinished = true;
-
-							continue;
-						}
-
-						try {
-							const parsed: ApiChatCompletionStreamChunk = JSON.parse(data);
-							const content = parsed.choices[0]?.delta?.content;
-							const reasoningContent = parsed.choices[0]?.delta?.reasoning_content;
-							const toolCalls = parsed.choices[0]?.delta?.tool_calls;
-							const timings = parsed.timings;
-							const promptProgress = parsed.prompt_progress;
-
-							const chunkModel = ChatService.extractModelName(parsed);
-							if (chunkModel && !modelEmitted) {
-								modelEmitted = true;
-								onModel?.(chunkModel);
-							}
-
-							if (promptProgress) {
-								ChatService.notifyTimings(undefined, promptProgress, onTimings);
-							}
-
-							if (timings) {
-								ChatService.notifyTimings(timings, promptProgress, onTimings);
-								lastTimings = timings;
-							}
-
-							if (content) {
-								finalizeOpenToolCallBatch();
-								aggregatedContent += content;
-								if (!abortSignal?.aborted) {
-									onChunk?.(content);
-								}
-							}
-
-							if (reasoningContent) {
-								finalizeOpenToolCallBatch();
-								fullReasoningContent += reasoningContent;
-								if (!abortSignal?.aborted) {
-									onReasoningChunk?.(reasoningContent);
-								}
-							}
-
-							processToolCallDelta(toolCalls);
-						} catch (e) {
-							console.error('Error parsing JSON chunk:', e);
-						}
-					}
-				}
-
-				if (abortSignal?.aborted) break;
-			}
-
-			if (abortSignal?.aborted) return;
-
-			if (streamFinished) {
-				finalizeOpenToolCallBatch();
-
-				const finalToolCalls =
-					aggregatedToolCalls.length > 0 ? JSON.stringify(aggregatedToolCalls) : undefined;
-
-				onComplete?.(
-					aggregatedContent,
-					fullReasoningContent || undefined,
-					lastTimings,
-					finalToolCalls
-				);
-			}
+					ChatService.partialOutputHook?.({ conversationId, content, reasoning: reasoning || undefined, toolCalls: toolCalls.length ? JSON.stringify(toolCalls) : undefined, status: event.kind === 'complete' ? 'completed' : signal?.aborted ? 'cancelled' : 'active' });
+				},
+				signal
+			);
 		} catch (error) {
-			const err = error instanceof Error ? error : new Error('Stream error');
-
-			onError?.(err);
-
-			throw err;
-		} finally {
-			reader.releaseLock();
+			ChatService.partialOutputHook?.({ conversationId, content, reasoning: reasoning || undefined, toolCalls: toolCalls.length ? JSON.stringify(toolCalls) : undefined, status: signal?.aborted || isAbortError(error) ? 'cancelled' : 'failed' });
+			if (!isAbortError(error))
+				onError?.(error instanceof Error ? error : new Error('Stream error'));
+			throw error;
 		}
 	}
 

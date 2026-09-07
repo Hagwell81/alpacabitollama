@@ -15,6 +15,7 @@ import { SvelteMap } from 'svelte/reactivity';
 import { DatabaseService } from '$lib/services/database.service';
 import { ChatService } from '$lib/services/chat.service';
 import { conversationsStore } from '$lib/stores/conversations.svelte';
+import { streamingStore } from '$lib/stores/streaming.svelte';
 import { config } from '$lib/stores/settings.svelte';
 import { agenticStore } from '$lib/stores/agentic.svelte';
 import { mcpStore } from '$lib/stores/mcp.svelte';
@@ -59,6 +60,7 @@ class ChatStore {
 	chatLoadingStates = new SvelteMap<string, boolean>();
 	chatStreamingStates = new SvelteMap<string, { response: string; messageId: string }>();
 	private abortControllers = new SvelteMap<string, AbortController>();
+	private streamingRequestIds = new SvelteMap<string, string>();
 	private preEncodeAbortController: AbortController | null = null;
 	private processingStates = new SvelteMap<string, ApiProcessingState | null>();
 	private conversationStateTimestamps = new SvelteMap<string, ConversationStateEntry>();
@@ -96,6 +98,14 @@ class ChatStore {
 		return this.chatStreamingStates.get(convId);
 	}
 	syncLoadingStateForChat(convId: string): void {
+		const restore = async () => {
+			await streamingStore.initialize();
+			const checkpoints = await streamingStore.restoreConversation(convId);
+			if (this.chatStreamingStates.has(convId) || conversationsStore.activeConversation?.id !== convId) return;
+			const checkpoint = checkpoints.filter((item) => item.status !== 'completed').sort((a, b) => b.updatedAt - a.updatedAt)[0];
+			if (checkpoint?.content) this.setChatStreaming(convId, checkpoint.content, checkpoint.messageId || '');
+		};
+		void restore();
 		this.isLoading = this.chatLoadingStates.get(convId) || false;
 		const s = this.chatStreamingStates.get(convId);
 		this.currentResponse = s?.response || '';
@@ -563,6 +573,9 @@ class ChatStore {
 		let resolvedModel: string | null = null;
 		let modelPersisted = false;
 		const convId = assistantMessage.convId;
+		await streamingStore.initialize();
+		const checkpoint = streamingStore.begin(convId, assistantMessage.id);
+		this.streamingRequestIds.set(convId, checkpoint.requestId);
 
 		const recordModel = (modelName: string | null | undefined, persistImmediately = true): void => {
 			if (!modelName) return;
@@ -581,12 +594,18 @@ class ChatStore {
 		};
 
 		const updateStreamingUI = () => {
+			const requestId = this.streamingRequestIds.get(convId);
+			if (requestId) streamingStore.update(requestId, { messageId: currentMessageId, content: streamedContent, reasoning: streamedReasoningContent });
 			this.setChatStreaming(convId, streamedContent, currentMessageId);
 			const idx = conversationsStore.findMessageIndex(currentMessageId);
 			conversationsStore.updateMessageAtIndex(idx, { content: streamedContent });
 		};
 
-		const cleanupStreamingState = () => {
+		const cleanupStreamingState = (status: 'completed' | 'cancelled' | 'failed' = 'completed') => {
+			const requestId = this.streamingRequestIds.get(convId);
+			if (requestId) {
+				void streamingStore.finish(requestId, status, streamedContent, streamedReasoningContent).finally(() => this.streamingRequestIds.delete(convId));
+			}
 			this.setStreamingActive(false);
 			this.setChatLoading(convId, false);
 			this.clearChatStreaming(convId);
@@ -645,6 +664,11 @@ class ChatStore {
 					},
 					convId
 				);
+				const requestId = this.streamingRequestIds.get(convId);
+				if (requestId) {
+					const processing = this.getProcessingState(convId);
+					streamingStore.update(requestId, { contextUsed: processing?.contextUsed ?? undefined, contextTotal: processing?.contextTotal ?? undefined });
+				}
 			},
 			onAssistantTurnComplete: async (
 				content: string,
@@ -746,11 +770,11 @@ class ChatStore {
 			onError: (error: Error) => {
 				this.setStreamingActive(false);
 				if (isAbortError(error)) {
-					cleanupStreamingState();
+					cleanupStreamingState('cancelled');
 					return;
 				}
 				console.error('Streaming error:', error);
-				cleanupStreamingState();
+				cleanupStreamingState('failed');
 				const idx = conversationsStore.findMessageIndex(assistantMessage.id);
 				if (idx !== -1) {
 					const failedMessage = conversationsStore.removeMessageAtIndex(idx);
@@ -847,8 +871,14 @@ class ChatStore {
 	private async savePartialResponseIfNeeded(convId?: string): Promise<void> {
 		const conversationId = convId || conversationsStore.activeConversation?.id;
 		if (!conversationId) return;
-		const streamingState = this.getChatStreaming(conversationId);
-		if (!streamingState || !streamingState.response.trim()) return;
+		const requestId = this.streamingRequestIds.get(conversationId);
+		if (requestId) {
+			await streamingStore.finish(requestId, 'cancelled', this.getChatStreaming(conversationId)?.response || '');
+			this.streamingRequestIds.delete(conversationId);
+		}
+		const conversationStreamingState = this.getChatStreaming(conversationId);
+		if (!conversationStreamingState || !conversationStreamingState.response.trim()) return;
+
 		const messages =
 			conversationId === conversationsStore.activeConversation?.id
 				? conversationsStore.activeMessages
@@ -858,7 +888,7 @@ class ChatStore {
 		if (lastMessage?.role === MessageRole.ASSISTANT) {
 			try {
 				const updateData: { content: string; timings?: ChatMessageTimings } = {
-					content: streamingState.response
+					content: conversationStreamingState.response
 				};
 				const lastKnownState = this.getProcessingState(conversationId);
 				if (lastKnownState) {
@@ -874,10 +904,10 @@ class ChatStore {
 					};
 				}
 				await DatabaseService.updateMessage(lastMessage.id, updateData);
-				lastMessage.content = streamingState.response;
+				lastMessage.content = conversationStreamingState.response;
 				if (updateData.timings) lastMessage.timings = updateData.timings;
 			} catch (error) {
-				lastMessage.content = streamingState.response;
+				lastMessage.content = conversationStreamingState.response;
 				console.error('Failed to save partial response:', error);
 			}
 		}

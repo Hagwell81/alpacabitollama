@@ -1,5 +1,7 @@
 /* eslint-env node */
 const Store = require('electron-store');
+const crypto = require('node:crypto');
+const { VersionedConfigStore } = require('./config/versioned-config-store');
 const store = new Store();
 
 const DEFAULT_API_CONFIG = {
@@ -24,48 +26,61 @@ const DEFAULT_API_CONFIG = {
   // Security
   requireApiKey: false,
   apiKey: null,
-  corsOrigins: ['*'], // Restrict in production
-  
+  corsOrigins: ['*'],
+  allowCredentials: false, // Credentialed wildcard CORS is never permitted
   // Monitoring
   logLevel: 'info',
   metricsEnabled: false,
 };
 
-function getApiConfig() {
-  const stored = store.get('apiServer', DEFAULT_API_CONFIG);
-  // Merge with defaults to ensure all fields exist (backward compatibility)
-  return { ...DEFAULT_API_CONFIG, ...stored };
+const { isLoopbackHost, classifyExposure, normalizeCorsOrigins, validateApiConfig: validatePolicyApiConfig, validateApiKey: validatePolicyApiKey } = require('./security/api-policy');
+
+function validateApiConfig(input, options = {}) {
+  return validatePolicyApiConfig(input, DEFAULT_API_CONFIG, options);
 }
 
-function setApiConfig(config) {
+const configStore = new VersionedConfigStore({
+  store,
+  defaults: DEFAULT_API_CONFIG,
+  validate: (config) => validateApiConfig(config, { confirmed: isLoopbackHost(config.host) })
+});
+const pendingConfirmations = new Map();
+
+function getApiConfig() {
+  return configStore.snapshot().config;
+}
+
+function redactApiConfig(config) {
+  return { ...config, apiKey: config.apiKey ? '[REDACTED]' : null, hasApiKey: Boolean(config.apiKey) };
+}
+
+function getPublicApiConfig() {
+  return redactApiConfig(getApiConfig());
+}
+
+function previewApiConfig(config) {
+  const candidate = { ...getApiConfig(), ...config };
+  const validated = validateApiConfig(candidate, { confirmed: isLoopbackHost(candidate.host) });
+  if (classifyExposure(validated.config.host) === 'non-loopback') {
+    const token = crypto.randomBytes(24).toString('hex');
+    pendingConfirmations.set(token, Date.now() + 120000);
+    return { requiresConfirmation: true, confirmationToken: token, expiresInMs: 120000, exposure: 'non-loopback', config: redactApiConfig(validated.config) };
+  }
+  return { requiresConfirmation: false, exposure: 'loopback', config: redactApiConfig(validated.config) };
+}
+
+function setApiConfig(config, options = {}) {
   const current = getApiConfig();
-  const merged = { ...current, ...config };
-  
-  // Validate
-  if (merged.port && (merged.port < 1024 || merged.port > 65535)) {
-    throw new Error('Port must be between 1024 and 65535');
+  const candidate = { ...current, ...config };
+  let confirmed = isLoopbackHost(candidate.host);
+  if (!confirmed && options.confirmationToken) {
+    const expiry = pendingConfirmations.get(options.confirmationToken);
+    confirmed = Boolean(expiry && expiry > Date.now());
+    pendingConfirmations.delete(options.confirmationToken);
   }
-  if (merged.host && typeof merged.host !== 'string') {
-    throw new Error('Host must be a string');
-  }
-  if (merged.requestTimeout && merged.requestTimeout < 1000) {
-    throw new Error('Request timeout must be at least 1000ms');
-  }
-  if (merged.maxConcurrentRequests && merged.maxConcurrentRequests < 1) {
-    throw new Error('Max concurrent requests must be at least 1');
-  }
-  if (merged.circuitBreakerThreshold && merged.circuitBreakerThreshold < 1) {
-    throw new Error('Circuit breaker threshold must be at least 1');
-  }
-  if (merged.circuitBreakerResetMs && merged.circuitBreakerResetMs < 1000) {
-    throw new Error('Circuit breaker reset time must be at least 1000ms');
-  }
-  if (merged.streamHeartbeatIntervalMs && merged.streamHeartbeatIntervalMs < 5000) {
-    throw new Error('Stream heartbeat interval must be at least 5000ms');
-  }
-  
-  store.set('apiServer', merged);
-  return merged;
+  const validated = validateApiConfig(candidate, { confirmed });
+  const updated = configStore.save(validated.config).config;
+  return { ...updated, exposure: classifyExposure(updated.host) };
 }
 
 function getApiUrl() {
@@ -109,14 +124,18 @@ function getServerArgs() {
 
 function validateApiKey(providedKey) {
   const cfg = getApiConfig();
-  if (!cfg.requireApiKey) return true;
-  if (!cfg.apiKey) return true; // No key configured, skip validation
-  return providedKey === cfg.apiKey;
+  return validatePolicyApiKey(providedKey, cfg.apiKey, cfg.requireApiKey);
 }
 
 module.exports = {
   getApiConfig,
+  getPublicApiConfig,
   setApiConfig,
+  previewApiConfig,
+  validateApiConfig,
+  isLoopbackHost,
+  classifyExposure,
+  normalizeCorsOrigins,
   getApiUrl,
   getApiOpenAIEndpoint,
   getServerArgs,

@@ -283,6 +283,8 @@ export interface ApiChatCompletionStreamChunk {
 
 export interface ApiChatCompletionResponse {
 	model?: string;
+	timings?: ApiChatCompletionStreamChunk['timings'];
+	prompt_progress?: ChatMessagePromptProgress;
 	choices: Array<{
 		model?: string;
 		metadata?: { model?: string };

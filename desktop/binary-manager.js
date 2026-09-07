@@ -3,6 +3,7 @@ const https = require('https');
 const fs = require('fs');
 const path = require('path');
 const { spawn } = require('child_process');
+const { extractArchive: safeExtractArchive } = require('./security/safe-extractor');
 
 const GITHUB_API_LATEST = 'https://api.github.com/repos/ggml-org/llama.cpp/releases/latest';
 const GITHUB_API_RELEASES = 'https://api.github.com/repos/ggml-org/llama.cpp/releases?per_page=15';
@@ -20,6 +21,12 @@ const CDN_FALLBACK_API = 'https://catalog.jan.ai/llama.cpp/releases/releases.jso
 const RELEASE_FALLBACK_LIMIT = 10;
 
 const pendingDownloads = new Map();
+let artifactVerification = null;
+
+function configureArtifactVerification(options = null) {
+  artifactVerification = options && options.artifactVerifier ? { ...options } : null;
+  return artifactVerification !== null;
+}
 
 function getBackendsDir(app) {
   const dir = path.join(app.getPath('userData'), 'backends');
@@ -234,7 +241,7 @@ function getAssetUrl(tag, assetName) {
   return `${GITHUB_DOWNLOAD}/${tag}/${assetName}`;
 }
 
-function extractArchive(archivePath, destDir) {
+function extractArchiveLegacy(archivePath, destDir) {
   return new Promise((resolve, reject) => {
     if (!fs.existsSync(destDir)) fs.mkdirSync(destDir, { recursive: true });
 
@@ -280,6 +287,10 @@ function extractArchive(archivePath, destDir) {
   });
 }
 
+async function extractArchive(archivePath, destDir) {
+  const applicationRoot = path.resolve(destDir, '..', '..');
+  return safeExtractArchive({ archivePath, destination: destDir, applicationRoot });
+}
 function verifyBackendDlls(backendDir, backend) {
   if (process.platform !== 'win32') return { missing: [], ok: true };
   const required = getRequiredDlls(backend);
@@ -368,7 +379,8 @@ function findExeRecursively(dir, exeName) {
   return null;
 }
 
-async function ensureBackend(app, caps, onProgress, onStatus) {
+async function ensureBackend(app, caps, onProgress, onStatus, options = {}) {
+  const verification = options.artifactVerifier ? options : artifactVerification;
   const backend = mapCapabilitiesToBackend(caps);
   const backendKey = `${backend}`;
 
@@ -436,6 +448,18 @@ async function ensureBackend(app, caps, onProgress, onStatus) {
 
   const downloadPromise = downloadFile(downloadUrl, archivePath, onProgress);
   pendingDownloads.set(backendKey, downloadPromise.then(async () => {
+    if (verification?.artifactVerifier) {
+      const trustedArtifact = typeof verification.trustedArtifact === 'function'
+        ? await verification.trustedArtifact({ kind: 'backend', backend, tag, assetName: asset.name })
+        : verification.trustedArtifact;
+      if (!trustedArtifact) throw new Error('Trusted backend artifact metadata was not supplied');
+      const verified = await verification.artifactVerifier.verifyArtifact({
+        filePath: archivePath, kind: 'archive', source: 'curated-backend', reference: `${tag}/${asset.name}`,
+        expectedDigest: trustedArtifact.digest || trustedArtifact, signature: trustedArtifact.signature,
+        manifestVersion: trustedArtifact.version
+      });
+      if (!verified.executable) throw new Error(`Backend artifact verification failed: ${verified.error?.message || verified.status}`);
+    }
     // Extract
     if (onStatus) onStatus({ phase: 'extracting', backend, tag });
     console.log(`[binary-manager] Extracting ${asset.name}...`);
@@ -520,6 +544,7 @@ function deleteBackend(app, tag, backend) {
 
 module.exports = {
   ensureBackend,
+  configureArtifactVerification,
   getInstalledBackends,
   getLatestReleaseInfo,
   mapCapabilitiesToBackend,

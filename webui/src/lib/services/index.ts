@@ -260,3 +260,7 @@ export { ParameterSyncService } from './parameter-sync.service';
  * @see MCP Protocol Specification: https://modelcontextprotocol.io/specification/2025-06-18
  */
 export { MCPService } from './mcp.service';
+
+/** Runtime lifecycle/readiness bridge service. */
+export { RuntimeService, RuntimeBridgeError } from './runtime.service';
+export type { RuntimeBridge } from './runtime.service';

@@ -1,0 +1,99 @@
+name: Phase 1 release gate
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: phase1-release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  RELEASE_ARTIFACT_DECLARATIONS: ${{ vars.RELEASE_ARTIFACT_DECLARATIONS }}
+
+jobs:
+  verify-build-publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            webui/package-lock.json
+            desktop/package-lock.json
+
+      - name: Install WebUI dependencies
+        run: npm ci --prefix webui
+
+      - name: Install desktop dependencies
+        run: npm ci --prefix desktop
+
+      - name: Require release artifact declarations
+        env:
+          DECLARATIONS: ${{ env.RELEASE_ARTIFACT_DECLARATIONS }}
+        run: |
+          test -n "$DECLARATIONS" || { echo 'Set the RELEASE_ARTIFACT_DECLARATIONS repository variable to a JSON array of {reference,url,path} entries.' >&2; exit 1; }
+          printf '%s' "$DECLARATIONS" > release-artifacts.json
+          node -e "const fs=require('fs'); const v=JSON.parse(fs.readFileSync('release-artifacts.json','utf8')); if (!Array.isArray(v)||!v.length||v.some(x=>!x.reference||!x.url||!x.path||!String(x.url).startsWith('https://'))) process.exit(1);"
+
+      - name: Stage declared release artifacts
+        run: node desktop/scripts/stage-release-artifacts.js --input release-artifacts.json
+
+      - name: Verify publisher Minisign public key
+        run: test -s desktop/resources/trusted-artifacts-public-key.pem
+
+      - name: Install Minisign (for encrypted key signing)
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq minisign
+
+      - name: Generate detached Minisign trusted artifact manifest
+        env:
+          MINISIGN_PRIVATE_KEY: ${{ secrets.MINISIGN_PRIVATE_KEY }}
+          MINISIGN_PRIVATE_KEY_PASSWORD: ${{ secrets.MINISIGN_PRIVATE_KEY_PASSWORD }}
+          RELEASE_VERSION: ${{ github.ref_name }}
+        run: |
+          test -n "$MINISIGN_PRIVATE_KEY" || { echo 'MINISIGN_PRIVATE_KEY secret is required.' >&2; exit 1; }
+          node desktop/scripts/generate-trusted-artifact-manifest.js \
+            --out desktop/resources/trusted-artifacts.json \
+            --signature desktop/resources/trusted-artifacts.json.minisig \
+            --private-key-env MINISIGN_PRIVATE_KEY \
+            --artifact-list release-artifacts.json
+          rm -f release-artifacts.json
+
+      - name: Verify detached Minisign manifest
+        run: node desktop/scripts/verify-trusted-artifact-manifest.js --manifest desktop/resources/trusted-artifacts.json --public-key desktop/resources/trusted-artifacts-public-key.pem --signature desktop/resources/trusted-artifacts.json.minisig
+
+      - name: Build WebUI
+        run: npm run build --prefix webui
+
+      - name: Build desktop packages
+        run: npm run build --prefix desktop
+
+      - name: Collect explicit Phase 1 evidence
+        run: node desktop/scripts/collect-phase1-release-evidence.js
+
+      - name: Publish release assets
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          files: |
+            desktop/release/Alpacabitollama-Setup-*.exe
+            desktop/release/Alpacabitollama-Portable-*.exe
+            desktop/release/*.dmg
+            desktop/release/*.AppImage
+            desktop/release/*.deb
+            desktop/resources/trusted-artifacts.json
+            desktop/resources/trusted-artifacts.json.minisig
+            artifacts/phase1-evidence/release-results.json
+          fail_on_unmatched_files: false

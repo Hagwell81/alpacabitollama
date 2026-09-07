@@ -110,3 +110,4 @@ export { default as ModelBadge } from './ModelBadge.svelte';
  * Respects the user's `showRawModelNames` setting.
  */
 export { default as ModelId } from './ModelId.svelte';
+export { default as ProviderGroup } from './ProviderGroup.svelte';

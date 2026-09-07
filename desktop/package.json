@@ -7,6 +7,13 @@
     "copy-webui": "node build-webui.js",
     "copy-docs": "node build-docs.js",
     "build:jcm": "node scripts/build-jcm.js",
+    "generate:trusted-manifest": "node scripts/generate-trusted-artifact-manifest.js",
+    "verify:trusted-manifest": "node scripts/verify-trusted-artifact-manifest.js",
+    "stage:release-artifacts": "node scripts/stage-release-artifacts.js",
+    "release:evidence": "node scripts/collect-phase1-release-evidence.js",
+    "test": "vitest run",
+    "test:scheduling": "node --test tests/scheduling/*.test.js",
+    "test:coverage": "vitest run --coverage",
     "start": "electron .",
     "clean": "node clean-dist.js",
     "build": "npm run clean && npm run build:jcm && npm run copy-webui && npm run copy-docs && electron-builder",
@@ -37,6 +44,10 @@
       "request-manager.js",
       "splash-manager.js",
       "lazy-start-manager.js",
+      "planning/**/*",
+      "scheduling/**/*",
+      "providers/**/*",
+      "feature-gates.js",
       "logs-viewer.js",
       "public/**/*",
       "docs/**/*",
@@ -226,7 +237,10 @@
     "adm-zip": "^0.5.16"
   },
   "devDependencies": {
+    "@vitest/coverage-v8": "3.2.4",
     "electron": "^41.2.2",
-    "electron-builder": "^26.8.1"
+    "electron-builder": "^26.8.1",
+    "fast-check": "4.9.0",
+    "vitest": "3.2.4"
   }
 }

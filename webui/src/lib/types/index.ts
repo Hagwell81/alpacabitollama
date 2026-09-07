@@ -151,3 +151,37 @@ export type {
 	AgenticFlowParams,
 	AgenticFlowResult
 } from './agentic';
+
+// Runtime/provider/catalog/queue/stream contracts
+export type {
+	RuntimeState,
+	CorrelationId,
+	RecoveryAction,
+	SafeError,
+	SuccessEnvelope,
+	ErrorEnvelope,
+	ResultEnvelope,
+	TransitionReason,
+	ProviderRef,
+	ModelRef,
+	ProviderAuthMode,
+	ProviderCapability,
+	ProviderDescriptor,
+	ModelSource,
+	ModelFormat,
+	ModelAvailability,
+	VerificationStatus,
+	MetadataStatus,
+	ModelDigest,
+	ModelRecord,
+	QueueStatus,
+	CircuitState,
+	CircuitStatus,
+	RuntimeSnapshot,
+	FitPlan,
+	SafeToolProgress,
+	SafeTimings,
+	StreamEvent,
+	StreamingState
+} from './runtime';
+export { RUNTIME_STATES } from './runtime';

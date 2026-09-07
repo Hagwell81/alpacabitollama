@@ -43,6 +43,13 @@ export default defineConfig({
 	plugins: [tailwindcss(), sveltekit(), devtoolsJson(), llamaCppBuildPlugin()],
 
 	test: {
+		coverage: {
+			provider: 'v8',
+			reporter: ['text', 'json', 'html'],
+			reportsDirectory: './coverage',
+			include: ['src/**/*.{ts,js,svelte}'],
+			exclude: ['src/**/*.d.ts', 'src/**/__tests__/**']
+		},
 		projects: [
 			{
 				extends: './vite.config.ts',
@@ -64,7 +71,7 @@ export default defineConfig({
 				test: {
 					name: 'unit',
 					environment: 'node',
-					include: ['tests/unit/**/*.{test,spec}.{js,ts}']
+					include: ['tests/unit/**/*.{test,spec}.{js,ts}', 'tests/compatibility/**/*.{test,spec}.{js,ts}']
 				}
 			},
 
