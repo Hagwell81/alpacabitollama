@@ -7,13 +7,11 @@
 	 */
 	interface ProviderDescriptor {
 		id: string;
-		groupId?: string;
 		name: string;
 		origin: string;
 		authMode: string;
 		capabilities: string[];
 		endpoint?: string;
-		modelId?: string;
 	}
 
 	interface ProviderStatus {
