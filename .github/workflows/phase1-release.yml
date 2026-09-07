@@ -225,6 +225,9 @@ jobs:
       - name: Install desktop dependencies
         run: npm ci --prefix desktop
 
+      - name: Install WebUI dependencies
+        run: npm ci --prefix webui
+
       - name: Download trusted manifest
         uses: actions/download-artifact@v4
         with:
