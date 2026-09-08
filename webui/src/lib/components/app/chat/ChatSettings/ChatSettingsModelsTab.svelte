@@ -419,6 +419,11 @@
 											{/each}
 									</div>
 								{/if}
+								{#if searchResults.gated}
+									<Badge variant="outline" class="mt-2 h-5 gap-1 px-2 py-0 text-[11px] text-amber-500">
+										Gated — token required to download
+									</Badge>
+								{/if}
 								{#if searchResults.hasVisionSupport}
 									<Badge variant="outline" class="mt-2 h-5 gap-1 px-2 py-0 text-[11px] text-amber-500">
 										<Eye class="h-3 w-3" />

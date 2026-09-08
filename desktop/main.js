@@ -3171,7 +3171,11 @@ function searchHuggingFaceRepo(repoId, hfToken) {
           return;
         }
         if (res.statusCode === 401) {
-          resolve({ error: 'Unauthorized. The repository may require a HuggingFace token, or the token provided is invalid.' });
+          resolve({ error: 'Unauthorized. The repository may be gated or private. Add a HuggingFace token to access it.' });
+          return;
+        }
+        if (res.statusCode === 429) {
+          resolve({ error: 'HuggingFace API rate limit reached. Wait a moment and try again, or add a HuggingFace token for higher limits.' });
           return;
         }
         if (res.statusCode !== 200) {
@@ -3182,6 +3186,7 @@ function searchHuggingFaceRepo(repoId, hfToken) {
         try {
           const repoData = JSON.parse(data);
           const siblings = repoData.siblings || [];
+          const isGated = repoData.gated === true || repoData.private === true;
           const allGgufFiles = siblings
             .filter((file) => file.rfilename.toLowerCase().endsWith('.gguf'))
             .map((file) => {
@@ -3213,6 +3218,8 @@ function searchHuggingFaceRepo(repoId, hfToken) {
             modelId: repoData.modelId,
             tags: tags,
             downloads: repoData.downloads || 0,
+            gated: isGated,
+            private: repoData.private === true,
             modelFiles: modelFiles,
             mmprojFiles: mmprojFiles,
             ggufFiles: modelFiles, // keep for backward compatibility

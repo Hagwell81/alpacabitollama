@@ -105,6 +105,8 @@ export class ProviderService {
 		signal?: AbortSignal
 	): Promise<ProviderStreamResult> {
 		const response = await ProviderService.fetch(request, signal);
+		const contentType = response.headers?.get('content-type') || '';
+		if (contentType && !contentType.includes('text/event-stream') && !contentType.includes('application/json')) console.warn('[ProviderService] Unexpected response content-type:', contentType);
 		const reader = response.body?.getReader();
 		if (!reader) throw new Error('No response body');
 
@@ -155,6 +157,7 @@ export class ProviderService {
 			buffer += decoder.decode();
 			const finalEvent = ProviderService.normalizeStreamLine(buffer);
 			if (finalEvent && !signal?.aborted) emit(finalEvent);
+			if (events.length === 0) console.warn('[ProviderService] Stream ended with zero events. The server may have returned an empty or non-SSE response.');
 			return { model, events };
 		} catch (error) {
 			status = signal?.aborted ? 'cancelled' : 'failed';

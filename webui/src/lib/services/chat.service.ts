@@ -444,6 +444,21 @@ export class ChatService {
 				},
 				signal
 			);
+			// Fallback: if the stream ended without a "complete" event (server
+			// closed the connection without sending data: [DONE] or a
+			// finish_reason), finalize with whatever content was accumulated.
+			if (!completed && !signal?.aborted) {
+				if (!content && !reasoning && !toolCalls.length) {
+					console.warn('[ChatService] Stream ended with no content. The model may have produced only special tokens or the response format is unexpected.');
+				}
+				completed = true;
+				onComplete?.(
+					content,
+					reasoning || undefined,
+					timings,
+					toolCalls.length ? JSON.stringify(toolCalls) : undefined
+				);
+			}
 		} catch (error) {
 			ChatService.partialOutputHook?.({ conversationId, content, reasoning: reasoning || undefined, toolCalls: toolCalls.length ? JSON.stringify(toolCalls) : undefined, status: signal?.aborted || isAbortError(error) ? 'cancelled' : 'failed' });
 			if (!isAbortError(error))
