@@ -48,6 +48,61 @@ This guide helps you resolve common issues.
 3. Try a smaller model first
 4. Update llama.cpp backend
 
+### mmproj Mismatch Crash
+
+**Symptoms**: `error: mismatch between text model (n_embd = ...) and mmproj (n_embd = ...)` and llama-server exits.
+
+**Cause**: A vision projector (mmproj) file from a different model is being
+applied to the current model. This happens when:
+- You switch from a vision model to a non-vision model
+- The mmproj from the vision model is still on disk
+- The app incorrectly falls back to that mmproj
+
+**Solutions**:
+1. Restart the app — the mmproj matching logic now prevents this fallback
+2. Delete the mmproj file from `%APPDATA%\alpacabitollama\models\` if you no
+   longer need the vision model it belongs to
+3. Switch to the correct vision model first, then switch to the non-vision
+   model
+
+### Bonsai 1-bit Models
+
+**Symptoms**: Bonsai Q1_0 model loads but produces empty or garbage output.
+
+**Cause**: Bonsai 1-bit models use a custom Q1_0 quantization format that
+requires the [PrismML fork of llama.cpp](https://github.com/PrismML-Eng/llama.cpp)
+for the correct dequantization kernels. The upstream llama.cpp build bundled
+with Alpacabitollama may load the model but produce incorrect output.
+
+**Solutions**:
+1. Use a standard quantization model instead (e.g. Q4_K_M) for reliable output
+2. If you need Bonsai specifically, build the PrismML fork of llama.cpp and
+   replace the bundled backend
+
+### Empty Chat Response
+
+**Symptoms**: The model generates tokens (visible in logs) but the chat UI
+shows an empty response.
+
+**Solutions**:
+1. Open the developer console (F12) and check for warnings about
+   `[ProviderService]` or `[ChatService]`
+2. If you see "Stream ended with zero events", the server may have returned
+   a non-SSE response — check the server logs
+3. If you see "Stream ended with no content", the model may have produced
+   only special tokens — try a different model or prompt
+4. Restart the app to ensure you're running the latest WebUI build
+
+### Hugging Face Search Shows "Gated" for Public Repos
+
+**Symptoms**: A public Hugging Face repository is reported as gated.
+
+**Solutions**:
+1. Check if you're being rate-limited — the error message distinguishes
+   "gated" (401) from "rate limit" (429)
+2. Add a Hugging Face token to raise rate limits
+3. Wait a moment and try again if rate-limited
+
 ### Out of Memory
 
 **Symptoms**: System becomes unresponsive during inference.

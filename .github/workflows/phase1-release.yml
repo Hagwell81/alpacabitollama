@@ -36,12 +36,19 @@ jobs:
           cache-dependency-path: |
             webui/package-lock.json
             desktop/package-lock.json
+            docs/package-lock.json
 
       - name: Install WebUI dependencies
         run: npm ci --prefix webui
 
       - name: Install desktop dependencies
         run: npm ci --prefix desktop
+
+      - name: Install docs dependencies
+        run: npm ci --prefix docs
+
+      - name: Build Docusaurus docs
+        run: npm run build --prefix docs
 
       - name: Require release artifact declarations
         env:
@@ -99,6 +106,12 @@ jobs:
           name: webui-build
           path: public/
 
+      - name: Upload docs build
+        uses: actions/upload-artifact@v4
+        with:
+          name: docs-build
+          path: docs/build/
+
       - name: Upload Phase 1 evidence
         uses: actions/upload-artifact@v4
         with:
@@ -140,6 +153,12 @@ jobs:
         with:
           name: webui-build
           path: public/
+
+      - name: Download docs build
+        uses: actions/download-artifact@v4
+        with:
+          name: docs-build
+          path: docs/build/
 
       - name: Build JCM (optional)
         run: cd desktop && npm run build:jcm
@@ -190,6 +209,12 @@ jobs:
         with:
           name: webui-build
           path: public/
+
+      - name: Download docs build
+        uses: actions/download-artifact@v4
+        with:
+          name: docs-build
+          path: docs/build/
 
       - name: Build JCM (optional)
         run: cd desktop && npm run build:jcm

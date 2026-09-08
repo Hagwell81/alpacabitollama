@@ -79,3 +79,13 @@ minisign.key
 # CI-generated trusted artifact manifest and signature (downloaded from releases)
 desktop/resources/trusted-artifacts.json
 desktop/resources/trusted-artifacts.json.minisig
+
+# Kiro spec/tooling (local development only)
+.kiro/
+
+# Semantic review reports (local development only)
+semantic-review/
+
+# Local build guide and release setup notes (not shipped to users)
+BUILD_GUIDE.md
+GITHUB_RELEASE_SETUP.md
