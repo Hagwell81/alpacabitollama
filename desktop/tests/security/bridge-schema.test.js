@@ -25,6 +25,11 @@ test('main validation rejects missing, destroyed, or untrusted renderer senders'
   assert.throws(() => validateSender({ sender: { isDestroyed: () => true } }), /destroyed/);
   assert.throws(() => validateSender({ sender: {}, senderFrame: { url: 'https://evil.example' } }), /trusted/);
   assert.doesNotThrow(() => validateSender({ sender: {}, senderFrame: { url: 'file:///app/index.html' } }));
+  assert.doesNotThrow(() => validateSender({ sender: {}, senderFrame: { url: 'http://localhost:13434/' } }));
+  assert.doesNotThrow(() => validateSender({ sender: {}, senderFrame: { url: 'http://127.0.0.1:13434/' } }));
+  assert.doesNotThrow(() => validateSender({ sender: {}, senderFrame: { url: 'http://127.0.0.1:13434' } }));
+  assert.doesNotThrow(() => validateSender({ sender: {}, senderFrame: { url: 'http://[::1]:13434/' } }));
+  assert.throws(() => validateSender({ sender: {}, senderFrame: { url: 'http://192.168.1.5:13434/' } }), /trusted/);
 });
 
 test('bridge schema validates compatibility multi-argument channels', () => {

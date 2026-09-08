@@ -93,8 +93,11 @@ function validateEventCallback(callback) { if (typeof callback !== 'function') t
 function validateSender(event) {
   if (!event || !event.sender) throw new Error('IPC sender is not available');
   if (event.sender.isDestroyed?.()) throw new Error('IPC sender is destroyed');
+  // The renderer loads the WebUI from the llama-server at http://127.0.0.1:PORT,
+  // from file:// (setup/splash pages), or from http://localhost:PORT in some
+  // configurations. All loopback origins are trusted; everything else is rejected.
   const url = event.senderFrame?.url;
-  if (url && !/^(file:|https?:\/\/localhost(?::\d+)?(?:\/|$))/.test(url)) throw new Error('IPC sender is not trusted');
+  if (url && !/^(file:|https?:\/\/(?:localhost|127\.0\.0\.1|\[::1\])(?::\d+)?(?:\/|$))/.test(url)) throw new Error('IPC sender is not trusted');
   return event;
 }
 function installMainValidation(ipcMain) {
