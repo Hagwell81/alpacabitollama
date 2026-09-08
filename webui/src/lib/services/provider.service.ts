@@ -196,20 +196,23 @@ export class ProviderService {
 		}
 		const chunkModel = ProviderService.extractModel(parsed);
 		const delta = parsed.choices?.[0]?.delta;
-		if (!delta) return { kind: 'protocol-error', message: 'Malformed stream event.' };
 		const timings = parsed.timings;
 		const promptProgress = parsed.prompt_progress;
-		if (timings || promptProgress) {
-			return { kind: 'timings', timings, promptProgress, model: chunkModel };
-		}
-		if (delta.tool_calls?.length) {
+		// Check content/reasoning/tool_calls FIRST — when return_progress is enabled,
+		// the server includes timings in content events. Checking timings before
+		// content causes ALL content to be dropped, producing empty responses.
+		if (delta?.tool_calls?.length) {
 			return { kind: 'tool-call', delta: delta.tool_calls, model: chunkModel };
 		}
-		if (delta.reasoning_content) {
+		if (delta?.reasoning_content) {
 			return { kind: 'reasoning', text: delta.reasoning_content, model: chunkModel };
 		}
-		if (delta.content) {
+		if (delta?.content) {
 			return { kind: 'content', text: delta.content, model: chunkModel };
+		}
+		// Content-less events: timings, progress, completion, or model metadata
+		if (timings || promptProgress) {
+			return { kind: 'timings', timings, promptProgress, model: chunkModel };
 		}
 		if (parsed.choices?.[0]?.finish_reason) {
 			return {

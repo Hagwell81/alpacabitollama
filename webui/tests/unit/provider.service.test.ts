@@ -97,7 +97,6 @@ describe('ProviderService', () => {
 
 		expect(events).toEqual([
 			{ kind: 'protocol-error', message: 'Malformed provider stream event.' },
-			{ kind: 'protocol-error', message: 'Malformed stream event.' },
 			{ kind: 'content', text: 'recovered' },
 			{ kind: 'complete' }
 		]);
@@ -119,12 +118,36 @@ describe('ProviderService', () => {
 		});
 	});
 
-	it('returns a safe protocol error for a malformed terminal-shaped event', () => {
+	it('extracts content from events that also carry timings (return_progress mode)', () => {
+		// When return_progress is enabled, llama-server includes timings in
+		// content events. Content must be extracted, not dropped as timings.
+		expect(
+			ProviderService.normalizeStreamLine(
+				'data: {"choices":[{"delta":{"content":"hello"}}],"timings":{"predicted_n":5}}'
+			)
+		).toEqual({
+			kind: 'content',
+			text: 'hello',
+			model: undefined
+		});
+		expect(
+			ProviderService.normalizeStreamLine(
+				'data: {"choices":[{"delta":{"reasoning_content":"thinking"}}],"timings":{"predicted_n":3}}'
+			)
+		).toEqual({
+			kind: 'reasoning',
+			text: 'thinking',
+			model: undefined
+		});
+	});
+
+	it('returns a complete event for a terminal event without delta', () => {
 		expect(
 			ProviderService.normalizeStreamLine('data: {"choices":[{"finish_reason":"stop"}]}')
 		).toEqual({
-			kind: 'protocol-error',
-			message: 'Malformed stream event.'
+			kind: 'complete',
+			finishReason: 'stop',
+			model: undefined
 		});
 		expect(ProviderService.normalizeStreamLine('data: null')).toEqual({
 			kind: 'protocol-error',
