@@ -139,6 +139,7 @@ interface LlamaAPI {
 	switchModel: (filename: string) => Promise<void>;
 	searchHuggingFace: (repoId: string, hfToken?: string) => Promise<any>;
 	downloadHuggingFaceModel: (repoId: string, filename: string, hfToken?: string) => Promise<any>;
+	setModelMmproj: (modelFilename: string, mmprojFilename: string) => Promise<any>;
 	getDownloadProgress: (downloadId: string) => Promise<any>;
 	getAllDownloadProgress: () => Promise<any>;
 	getStorageInfo: () => Promise<any>;

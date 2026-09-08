@@ -66,6 +66,7 @@ contextBridge.exposeInMainWorld('llamaAPI', {
   // HuggingFace search and download
   searchHuggingFace: (repoId, hfToken) => invoke('search-huggingface', repoId, hfToken),
   downloadHuggingFaceModel: (repoId, filename, hfToken) => invoke('download-huggingface-model', repoId, filename, hfToken),
+  setModelMmproj: (modelFilename, mmprojFilename) => invoke('set-model-mmproj', modelFilename, mmprojFilename),
   getDownloadProgress: (downloadId) => invoke('get-download-progress', downloadId),
   getAllDownloadProgress: () => invoke('get-all-download-progress'),
   // Storage info

@@ -29,6 +29,7 @@ const channelSchemas = new Map([
   ['get-model-fit-plan', [isString, isPlainObject]],
   ['search-huggingface', [isString, isOptional(isString)]],
   ['download-huggingface-model', [isString, isString, isOptional(isString)]],
+  ['set-model-mmproj', [isString, isString]],
   ['register-user', [isString, isString, isOptional(isString), isOptional(isString)]],
   ['login-user', [isString, isString]],
   ['web-search', [isString, isOptional(isNumber)]],

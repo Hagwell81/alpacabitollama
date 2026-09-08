@@ -182,6 +182,17 @@
 					await downloadModel(repoId, mmprojFile.filename);
 				}
 			}
+			// Store the mmproj association so startLlamaServer can find it
+			// when switching to this model. Use the first mmproj file as the
+			// paired projector.
+			const api = getApi();
+			if (api?.setModelMmproj && searchResults.mmprojFiles.length > 0) {
+				try {
+					await api.setModelMmproj(filename, searchResults.mmprojFiles[0].filename);
+				} catch (e) {
+					console.error('Failed to set mmproj association:', e);
+				}
+			}
 		}
 	}
 

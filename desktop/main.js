@@ -1789,23 +1789,40 @@ async function startLlamaServer(forceCpuBackend = false) {
     }
   }
 
+  // 2b. Check mmproj associations store (set by HF search download UI)
+  if (!mmprojPath) {
+    const associations = store.get('mmprojAssociations', {});
+    const associatedMmproj = associations[activeModelFilename];
+    if (associatedMmproj) {
+      const assocPath = path.join(modelsDir, associatedMmproj);
+      if (fs.existsSync(assocPath)) {
+        mmprojPath = assocPath;
+        console.log('Using associated mmproj for active model:', mmprojPath);
+      }
+    }
+  }
+
   // 3. Fall back: scan directory and try to match by model base name
   if (!mmprojPath) {
     const modelBaseName = path.basename(modelPath, '.gguf');
+    // Strip common quantization suffixes so that e.g.
+    // "Ministral-3-3B-Reasoning-2512-Q4_K_M" matches "mmproj-Ministral-3-3B-Reasoning-2512-BF16"
+    const modelBaseNameNoQuant = modelBaseName.replace(/[-_](Q[0-9]+_[A-Z_]+|F16|BF16|IQ[0-9_]+|F32)$/i, '');
     const allMmprojFiles = fs.readdirSync(modelsDir)
       .filter((f) => f.toLowerCase().startsWith('mmproj-') && f.toLowerCase().endsWith('.gguf'));
-    // Look for an mmproj whose filename contains the model base name
-    const matchedMmproj = allMmprojFiles.find((f) =>
-      f.toLowerCase().includes(modelBaseName.toLowerCase())
-    );
+    // Look for an mmproj whose filename contains the model base name (with or without quant suffix)
+    const matchedMmproj = allMmprojFiles.find((f) => {
+      const fLower = f.toLowerCase();
+      return fLower.includes(modelBaseName.toLowerCase()) ||
+             (modelBaseNameNoQuant !== modelBaseName && fLower.includes(modelBaseNameNoQuant.toLowerCase()));
+    });
     if (matchedMmproj) {
       mmprojPath = path.join(modelsDir, matchedMmproj);
       console.log('Using matched mmproj for active model:', mmprojPath);
-    } else if (allMmprojFiles.length > 0) {
-      // Last resort: use the only mmproj available (single-model setup)
-      mmprojPath = path.join(modelsDir, allMmprojFiles[0]);
-      console.warn('No specific mmproj matched for', modelBaseName, '- using first available:', mmprojPath);
     }
+    // Do NOT fall back to an arbitrary mmproj — applying a vision projector
+    // from a different model causes an n_embd mismatch and crashes
+    // llama-server. Non-vision models should run without --mmproj.
   }
 
   if (mmprojPath) {
@@ -4402,6 +4419,17 @@ ipcMain.handle('download-huggingface-model', async (event, repoId, filename, hfT
   return { downloadId, started: true };
 });
 
+ipcMain.handle('set-model-mmproj', (event, modelFilename, mmprojFilename) => {
+  if (typeof modelFilename !== 'string' || typeof mmprojFilename !== 'string') {
+    return { success: false, error: 'Invalid arguments' };
+  }
+  const associations = store.get('mmprojAssociations', {});
+  associations[modelFilename] = mmprojFilename;
+  store.set('mmprojAssociations', associations);
+  console.log(`[set-model-mmproj] Associated ${modelFilename} with ${mmprojFilename}`);
+  return { success: true };
+});
+
 ipcMain.handle('get-download-progress', (event, downloadId) => {
   return getDownloadProgress(downloadId);
 });
@@ -4513,8 +4541,16 @@ async function performLegacyModelSwitch(event, filename, context) {
     store.set('activeModelMmprojFilename', modelEntry.mmprojFilename);
     console.log(`[switch-model] Stored mmproj filename: ${modelEntry.mmprojFilename}`);
   } else {
-    store.delete('activeModelMmprojFilename');
-    console.log('[switch-model] Cleared stored mmproj filename (model has no paired mmproj)');
+    // Check HF download mmproj associations before clearing
+    const associations = store.get('mmprojAssociations', {});
+    const associatedMmproj = associations[filename];
+    if (associatedMmproj) {
+      store.set('activeModelMmprojFilename', associatedMmproj);
+      console.log(`[switch-model] Stored HF-associated mmproj filename: ${associatedMmproj}`);
+    } else {
+      store.delete('activeModelMmprojFilename');
+      console.log('[switch-model] Cleared stored mmproj filename (model has no paired mmproj)');
+    }
   }
 
   // Restart server if it's running
